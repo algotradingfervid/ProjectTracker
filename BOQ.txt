@@ -1,0 +1,7 @@
+I want to create a BOQ creating page.
+1. In this page first create main BOQ. This is the same BOQ which we get from the purchase order this will have qty,description, UOM, quoted price, budgeted price, HSN code (optional), GST% etc, let us call each line item in this BOQ a Main BOQ LineItem 
+2. Each Main BOQ LineItem can have multiple subitems. these subitems can be either a product or a service. this line item will have qty/main BOQ lineItem,description, UOM, budgeted price, HSN code(optional), GST% etc. The sum of all the budgeted prices of the sub items will be what we will be the Budgeted price of the Main BOQ line item.
+3. I should have options to create add and edit the BOQ  and the line items.
+interview me in detail using AskUserQuestionTool about literally anything
+I want to create this using latest version of pocketbase and htmlx. 
+create a PRD for this

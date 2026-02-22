@@ -1,0 +1,41 @@
+package templates
+
+templ TopHeader() {
+	<header class="w-full h-14 flex items-center justify-between px-6" style="background-color: var(--bg-sidebar);">
+		<!-- Left: Company logo + name (260px to align with sidebar) -->
+		<div class="w-[260px] flex items-center gap-2.5">
+			<div class="w-8 h-8 flex items-center justify-center" style="background-color: var(--terracotta);">
+				<span class="text-lg font-bold" style="color: var(--text-light); font-family: 'Space Grotesk', sans-serif;">A</span>
+			</div>
+			<span class="text-sm font-bold tracking-[2px]" style="color: var(--text-light); font-family: 'Space Grotesk', sans-serif;">
+				FERVID SMART SOLUTIONS
+			</span>
+		</div>
+		<!-- Center: Project selector -->
+		<div class="flex items-center">
+			<div class="flex items-center gap-2.5 px-4 py-2" style="background-color: #2a2a2a;">
+				<svg class="w-4 h-4" style="color: var(--terracotta);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"></path>
+				</svg>
+				<span class="text-xs font-medium" style="color: var(--text-light); font-family: 'Space Grotesk', sans-serif;">
+					Interior Fit-Out — Block A
+				</span>
+				<svg class="w-3.5 h-3.5" style="color: #666666;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="m6 9 6 6 6-6"></path>
+				</svg>
+			</div>
+		</div>
+		<!-- Right: Bell + Avatar (260px to align with sidebar) -->
+		<div class="w-[260px] flex items-center justify-end gap-4">
+			<button style="color: #666666;">
+				<svg class="w-[18px] h-[18px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M10.268 21a2 2 0 0 0 3.464 0"></path>
+					<path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path>
+				</svg>
+			</button>
+			<div class="w-8 h-8 flex items-center justify-center" style="background-color: var(--border-dark);">
+				<span class="text-[11px] font-semibold" style="color: var(--text-muted); font-family: 'Space Grotesk', sans-serif;">PM</span>
+			</div>
+		</div>
+	</header>
+}

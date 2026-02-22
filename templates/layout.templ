@@ -1,0 +1,42 @@
+package templates
+
+templ Layout(title string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ title }</title>
+			<link rel="preconnect" href="https://fonts.googleapis.com"/>
+			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+			<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+			<link rel="stylesheet" href="/static/css/output.css"/>
+			<script src="https://unpkg.com/htmx.org@2.0.7"></script>
+			<script src="https://unpkg.com/htmx-ext-idiomorph@0.3.0/idiomorph-ext.js"></script>
+			<script src="https://unpkg.com/htmx-ext-response-targets@2.0.2/response-targets.js"></script>
+			<script src="https://unpkg.com/htmx-ext-loading-states@2.0.0/loading-states.js"></script>
+			<script src="https://unpkg.com/htmx-ext-json-enc@2.0.1/json-enc.js"></script>
+			<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.8/dist/cdn.min.js"></script>
+			<script>
+				// Re-initialize Alpine.js components after HTMX content swaps
+				document.addEventListener('htmx:afterSettle', function(event) {
+					if (window.Alpine && event.detail.target) {
+						// Find all uninitialized Alpine components in the swapped content
+						event.detail.target.querySelectorAll('[x-data]').forEach(function(el) {
+							if (!el._x_dataStack) {
+								window.Alpine.initTree(el);
+							}
+						});
+						// Also process HTMX attributes on new content
+						if (window.htmx) {
+							window.htmx.process(event.detail.target);
+						}
+					}
+				});
+			</script>
+		</head>
+		<body hx-ext="idiomorph,response-targets,loading-states,json-enc">
+			{ children... }
+		</body>
+	</html>
+}

@@ -1,0 +1,526 @@
+package templates
+
+import (
+	"encoding/json"
+	"projectcreation/templates/partials"
+)
+
+type PricingInit struct {
+	MainItems   map[string]MainItemPricing   `json:"mainItems"`
+	SubItems    map[string]SubItemPricing    `json:"subItems"`
+	SubSubItems map[string]SubSubItemPricing `json:"subSubItems"`
+}
+
+type MainItemPricing struct {
+	Qty         float64  `json:"qty"`
+	QuotedPrice float64  `json:"quotedPrice"`
+	Budgeted    float64  `json:"budgeted"`
+	SubItemIDs  []string `json:"subItemIds"`
+	Description string   `json:"description"`
+}
+
+type SubItemPricing struct {
+	QtyPerUnit     float64  `json:"qtyPerUnit"`
+	UnitPrice      float64  `json:"unitPrice"`
+	Budgeted       float64  `json:"budgeted"`
+	MainItemID     string   `json:"mainItemId"`
+	SubSubItemIDs  []string `json:"subSubItemIds"`
+	HasSubSubItems bool     `json:"hasSubSubItems"`
+	Description    string   `json:"description"`
+	Type           string   `json:"type"`
+}
+
+type SubSubItemPricing struct {
+	QtyPerUnit  float64 `json:"qtyPerUnit"`
+	UnitPrice   float64 `json:"unitPrice"`
+	Budgeted    float64 `json:"budgeted"`
+	SubItemID   string  `json:"subItemId"`
+	Description string  `json:"description"`
+	Type        string  `json:"type"`
+}
+
+func buildPricingInit(data BOQEditData) string {
+	init := PricingInit{
+		MainItems:   make(map[string]MainItemPricing),
+		SubItems:    make(map[string]SubItemPricing),
+		SubSubItems: make(map[string]SubSubItemPricing),
+	}
+	for _, mi := range data.MainItems {
+		var subIDs []string
+		for _, si := range mi.SubItems {
+			subIDs = append(subIDs, si.ID)
+			var ssIDs []string
+			for _, ss := range si.SubSubItems {
+				ssIDs = append(ssIDs, ss.ID)
+				init.SubSubItems[ss.ID] = SubSubItemPricing{
+					QtyPerUnit:  ss.QtyPerUnit,
+					UnitPrice:   ss.UnitPrice,
+					Budgeted:    ss.QtyPerUnit * ss.UnitPrice,
+					SubItemID:   si.ID,
+					Description: ss.Description,
+					Type:        ss.Type,
+				}
+			}
+			init.SubItems[si.ID] = SubItemPricing{
+				QtyPerUnit:     si.QtyPerUnit,
+				UnitPrice:      si.UnitPrice,
+				Budgeted:       si.BudgetedPrice,
+				MainItemID:     mi.ID,
+				SubSubItemIDs:  ssIDs,
+				HasSubSubItems: len(si.SubSubItems) > 0,
+				Description:    si.Description,
+				Type:           si.Type,
+			}
+		}
+		init.MainItems[mi.ID] = MainItemPricing{
+			Qty:         mi.Qty,
+			QuotedPrice: mi.QuotedPrice,
+			Budgeted:    mi.BudgetedPrice,
+			SubItemIDs:  subIDs,
+			Description: mi.Description,
+		}
+	}
+	b, _ := json.Marshal(init)
+	return string(b)
+}
+
+func pricingScript(data BOQEditData) string {
+	initJSON := buildPricingInit(data)
+	return `<script id="pricing-init" type="application/json">` + initJSON + `</script>
+<script>
+function boqPricing() {
+    const initData = JSON.parse(document.getElementById('pricing-init').textContent);
+    return {
+        hasChanges: false,
+        pricing: initData,
+
+        recalcSubSub(id) {
+            const ss = this.pricing.subSubItems[id];
+            if (!ss) return;
+            ss.budgeted = (ss.qtyPerUnit || 0) * (ss.unitPrice || 0);
+            this.recalcSubItem(ss.subItemId);
+        },
+
+        recalcSubItem(id) {
+            const si = this.pricing.subItems[id];
+            if (!si) return;
+            if (si.hasSubSubItems && si.subSubItemIds && si.subSubItemIds.length > 0) {
+                let total = 0;
+                for (const ssId of si.subSubItemIds) {
+                    const ss = this.pricing.subSubItems[ssId];
+                    if (ss) total += ss.budgeted;
+                }
+                si.budgeted = total;
+            } else {
+                si.budgeted = (si.qtyPerUnit || 0) * (si.unitPrice || 0);
+            }
+            this.recalcMainItem(si.mainItemId);
+        },
+
+        recalcMainItem(id) {
+            const mi = this.pricing.mainItems[id];
+            if (!mi) return;
+            if (mi.subItemIds && mi.subItemIds.length > 0) {
+                let total = 0;
+                for (const siId of mi.subItemIds) {
+                    const si = this.pricing.subItems[siId];
+                    if (si) total += si.budgeted;
+                }
+                mi.budgeted = total;
+            }
+        },
+
+        recalcTotals() {
+            // Totals are computed via getters, no action needed
+        },
+
+        get totalQuoted() {
+            let total = 0;
+            for (const id in this.pricing.mainItems) {
+                const mi = this.pricing.mainItems[id];
+                total += (mi.quotedPrice || 0) * (mi.qty || 0);
+            }
+            return total;
+        },
+
+        get totalBudgeted() {
+            let total = 0;
+            for (const id in this.pricing.mainItems) {
+                const mi = this.pricing.mainItems[id];
+                total += (mi.budgeted || 0) * (mi.qty || 0);
+            }
+            return total;
+        },
+
+        get margin() {
+            return this.totalQuoted - this.totalBudgeted;
+        },
+
+        get marginPercent() {
+            if (this.totalQuoted === 0) return 0;
+            return (this.margin / this.totalQuoted) * 100;
+        },
+
+        formatINR(amount) {
+            const negative = amount < 0;
+            const abs = Math.abs(amount);
+            const parts = abs.toFixed(2).split('.');
+            let intPart = parts[0];
+            const decPart = parts[1];
+            if (intPart.length > 3) {
+                let last3 = intPart.slice(-3);
+                let remaining = intPart.slice(0, -3);
+                let groups = [];
+                while (remaining.length > 2) {
+                    groups.unshift(remaining.slice(-2));
+                    remaining = remaining.slice(0, -2);
+                }
+                if (remaining.length > 0) groups.unshift(remaining);
+                intPart = groups.join(',') + ',' + last3;
+            }
+            return (negative ? '-' : '') + '\u20B9' + intPart + '.' + decPart;
+        }
+    };
+}
+</script>`
+}
+
+type SubSubItemEdit struct {
+	ID            string
+	Type          string
+	Description   string
+	QtyPerUnit    float64
+	UOM           string
+	UnitPrice     float64
+	BudgetedPrice float64
+	HSNCode       string
+	GSTPercent    float64
+}
+
+type SubItemEdit struct {
+	ID            string
+	Type          string
+	Description   string
+	QtyPerUnit    float64
+	UOM           string
+	UnitPrice     float64
+	BudgetedPrice float64
+	HSNCode       string
+	GSTPercent    float64
+	SubSubItems   []SubSubItemEdit
+}
+
+type MainItemEdit struct {
+	ID            string
+	Index         int
+	Description   string
+	Qty           float64
+	UOM           string
+	QuotedPrice   float64
+	BudgetedPrice float64
+	HSNCode       string
+	GSTPercent    float64
+	SubItems      []SubItemEdit
+}
+
+type BOQEditData struct {
+	ID               string
+	Title            string
+	ReferenceNumber  string
+	CreatedDate      string
+	MainItems        []MainItemEdit
+	TotalQuoted      string
+	TotalBudgeted    string
+	Margin           string
+	MarginPercent    string
+	IsPositiveMargin bool
+	UOMOptions       []string
+	GSTOptions       []int
+	OpenMainItemIDs  map[string]bool
+	OpenSubItemIDs   map[string]bool
+}
+
+templ EditSubSubItemsBlock(boqID string, subSubItems []SubSubItemEdit, uomOptions []string, gstOptions []int) {
+	for _, ss := range subSubItems {
+		@partials.SubSubItemRowEdit(partials.SubSubItemRowEditData{
+			BOQID:         boqID,
+			ID:            ss.ID,
+			Type:          ss.Type,
+			Description:   ss.Description,
+			QtyPerUnit:    ss.QtyPerUnit,
+			UOM:           ss.UOM,
+			UnitPrice:     ss.UnitPrice,
+			BudgetedPrice: ss.BudgetedPrice,
+			HSNCode:       ss.HSNCode,
+			GSTPercent:    ss.GSTPercent,
+			UOMOptions:    uomOptions,
+			GSTOptions:    gstOptions,
+		})
+	}
+}
+
+templ EditSubItemsBlock(boqID string, subItems []SubItemEdit, uomOptions []string, gstOptions []int, openSubItemIDs map[string]bool) {
+	for _, sub := range subItems {
+		@partials.SubItemRowEdit(partials.SubItemRowEditData{
+			BOQID:           boqID,
+			ID:              sub.ID,
+			Type:            sub.Type,
+			Description:     sub.Description,
+			QtyPerUnit:      sub.QtyPerUnit,
+			UOM:             sub.UOM,
+			UnitPrice:       sub.UnitPrice,
+			BudgetedPrice:   sub.BudgetedPrice,
+			HSNCode:         sub.HSNCode,
+			GSTPercent:      sub.GSTPercent,
+			UOMOptions:      uomOptions,
+			GSTOptions:      gstOptions,
+			HasSubSubItems:  len(sub.SubSubItems) > 0,
+			SubSubItemsHTML: EditSubSubItemsBlock(boqID, sub.SubSubItems, uomOptions, gstOptions),
+			DefaultOpen:     openSubItemIDs[sub.ID],
+		})
+	}
+}
+
+templ BOQEditContent(data BOQEditData) {
+	@templ.Raw(pricingScript(data))
+	<div
+		x-data="boqPricing()"
+		@beforeunload.window="if (hasChanges) { event.preventDefault(); event.returnValue = ''; }"
+	>
+		<!-- Breadcrumbs -->
+		<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+			<a
+				hx-get="/boq"
+				hx-target="#main-content"
+				hx-push-url="true"
+				style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-decoration: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;"
+			>
+				PROJECTS
+			</a>
+			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+				{ data.Title }
+			</span>
+			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+			<a
+				hx-get={ "/boq/" + data.ID + "/view" }
+				hx-target="#main-content"
+				hx-push-url="true"
+				style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-decoration: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;"
+			>
+				BOQ
+			</a>
+			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+				EDITING
+			</span>
+		</div>
+		<!-- Page Header -->
+		<div class="flex justify-between items-start">
+			<div>
+				<div class="flex items-center" style="gap: 12px;">
+					<h1
+						style="font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--text-primary); margin: 0;"
+					>
+						{ data.Title }
+					</h1>
+					<!-- Unsaved Changes Badge (inline with title) -->
+					<div
+						x-show="hasChanges"
+						x-cloak
+						style="padding: 4px 10px; background-color: #F0DDD7; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--terracotta); text-transform: uppercase;"
+					>
+						UNSAVED
+					</div>
+				</div>
+				<!-- Metadata row -->
+				<div style="margin-top: 12px;">
+					<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);">
+						if data.ReferenceNumber != "" {
+							{ data.ReferenceNumber }
+							if data.CreatedDate != "" {
+								{ " · " }
+							}
+						}
+						if data.CreatedDate != "" {
+							Created { data.CreatedDate }
+						}
+					</span>
+				</div>
+			</div>
+			<!-- Action Buttons -->
+			<div class="flex items-center" style="gap: 12px;">
+				<!-- Cancel Button -->
+				<a
+					hx-get={ "/boq/" + data.ID + "/view" }
+					hx-target="#main-content"
+					hx-push-url="true"
+					class="flex items-center"
+					style="padding: 10px 16px; gap: 8px; background-color: var(--bg-card); border: none; cursor: pointer; text-decoration: none;"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"></line><line x1="6" x2="18" y1="6" y2="18"></line></svg>
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase;">CANCEL</span>
+				</a>
+				<!-- Calculate Button -->
+				<button
+					type="button"
+					@click="recalcTotals(); $nextTick(() => { const el = document.getElementById('boq-edit-summary'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); })"
+					class="flex items-center"
+					style="padding: 10px 16px; gap: 8px; background-color: var(--bg-card); border: none; cursor: pointer;"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"></rect><line x1="8" x2="16" y1="6" y2="6"></line><line x1="16" x2="16" y1="14" y2="18"></line><path d="M16 10h.01"></path><path d="M12 10h.01"></path><path d="M8 10h.01"></path><path d="M12 14h.01"></path><path d="M8 14h.01"></path><path d="M12 18h.01"></path><path d="M8 18h.01"></path></svg>
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase;">CALCULATE</span>
+				</button>
+				<!-- Save BOQ Button -->
+				<button
+					type="submit"
+					form="boq-edit-form"
+					class="flex items-center"
+					style="padding: 10px 16px; gap: 8px; background-color: var(--terracotta); border: none; cursor: pointer;"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1-2 2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2Z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); text-transform: uppercase;">SAVE BOQ</span>
+				</button>
+			</div>
+		</div>
+		<!-- Edit Form -->
+		<form
+			id="boq-edit-form"
+			hx-post={ "/boq/" + data.ID + "/save" }
+			hx-target="#main-content"
+			hx-push-url={ "/boq/" + data.ID }
+			hx-ext="json-enc"
+			style="margin-top: 24px;"
+		>
+			<!-- Accordion Table -->
+			<div style="background-color: var(--bg-card);">
+				<!-- Table Header -->
+				<div class="flex items-center" style="padding: 12px 20px; background-color: #E2DED6; border-bottom: 1px solid var(--border-light);">
+					<!-- Spacer for chevron -->
+					<div style="width: 24px; margin-right: 8px;"></div>
+					<!-- # -->
+					<div style="width: 40px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;">
+						#
+					</div>
+					<!-- Description -->
+					<div class="flex-1" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;">
+						DESCRIPTION
+					</div>
+					<!-- Qty -->
+					<div style="width: 60px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;">
+						QTY
+					</div>
+					<!-- UOM -->
+					<div style="width: 60px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;">
+						UOM
+					</div>
+					<!-- Quoted Price -->
+					<div style="width: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;">
+						QUOTED ₹
+					</div>
+					<!-- Budgeted Price -->
+					<div style="width: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;">
+						BUDGETED ₹
+					</div>
+					<!-- GST% -->
+					<div style="width: 55px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;">
+						GST%
+					</div>
+					<!-- Actions -->
+					<div style="width: 40px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;">
+					</div>
+				</div>
+				<!-- Main Item Rows -->
+				if len(data.MainItems) == 0 {
+					<div class="flex justify-center items-center" style="padding: 32px 0; color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 14px;">
+						No items found. Add a main item to get started.
+					</div>
+				} else {
+					for _, item := range data.MainItems {
+						@partials.MainItemRowEdit(partials.MainItemRowEditData{
+							BOQID:         data.ID,
+							ID:            item.ID,
+							Index:         item.Index,
+							Description:   item.Description,
+							Qty:           item.Qty,
+							UOM:           item.UOM,
+							QuotedPrice:   item.QuotedPrice,
+							BudgetedPrice: item.BudgetedPrice,
+							HSNCode:       item.HSNCode,
+							GSTPercent:    item.GSTPercent,
+							UOMOptions:    data.UOMOptions,
+							GSTOptions:    data.GSTOptions,
+							HasSubItems:   len(item.SubItems) > 0,
+							SubItemsHTML:  EditSubItemsBlock(data.ID, item.SubItems, data.UOMOptions, data.GSTOptions, data.OpenSubItemIDs),
+							DefaultOpen:   data.OpenMainItemIDs[item.ID],
+						})
+					}
+				}
+				<!-- No results message -->
+				<div
+					x-show="false"
+					x-cloak
+					class="flex justify-center items-center"
+					style="padding: 32px 0; color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 14px;"
+				>
+					No items match your search criteria.
+				</div>
+			</div>
+			<!-- Add Main Item Button -->
+			<div style="padding: 16px; background-color: var(--bg-card); border-top: 1px solid var(--border-light);">
+				<button
+					type="button"
+					hx-post={ "/boq/" + data.ID + "/main-items" }
+					hx-target="#main-content"
+					hx-push-url="false"
+					class="flex items-center"
+					style="width: 100%; padding: 12px 16px; gap: 8px; background-color: var(--bg-page); border: none; cursor: pointer; justify-content: center;"
+					@click="hasChanges = true"
+				>
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 600; color: var(--text-secondary);">+</span>
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;">Add Main Item</span>
+				</button>
+			</div>
+		</form>
+		<!-- Summary Section -->
+		<div id="boq-edit-summary" class="flex" style="gap: 24px; margin-top: 24px; justify-content: flex-end;">
+			<!-- Total Quoted -->
+			<div style="width: 220px; background-color: var(--bg-card); padding: 20px;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					TOTAL QUOTED
+				</div>
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 8px;">
+					<span x-text="formatINR(totalQuoted)">{ data.TotalQuoted }</span>
+				</div>
+			</div>
+			<!-- Total Budgeted -->
+			<div style="width: 220px; background-color: var(--bg-card); padding: 20px;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					TOTAL BUDGETED
+				</div>
+				<div
+					x-bind:style="'font-family: Space Grotesk, sans-serif; font-size: 24px; font-weight: 700; margin-top: 8px; color: ' + (margin >= 0 ? 'var(--success)' : 'var(--terracotta)')"
+				>
+					<span x-text="formatINR(totalBudgeted)">{ data.TotalBudgeted }</span>
+				</div>
+			</div>
+			<!-- Margin -->
+			<div style="width: 220px; background-color: var(--bg-card); padding: 20px;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					MARGIN
+				</div>
+				<div
+					x-bind:style="'font-family: Space Grotesk, sans-serif; font-size: 24px; font-weight: 700; margin-top: 8px; color: ' + (margin >= 0 ? 'var(--success)' : 'var(--terracotta)')"
+				>
+					<span x-text="formatINR(margin)">{ data.Margin }</span>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ BOQEditPage(data BOQEditData) {
+	@PageShell("Edit BOQ -- Project Creation") {
+		@BOQEditContent(data)
+	}
+}

@@ -1,0 +1,18 @@
+# Binary
+projectcreation
+
+# Dependencies
+node_modules/
+
+# PocketBase data
+pb_data/
+
+# OS files
+.DS_Store
+*.swp
+*.swo
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace

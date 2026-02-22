@@ -1,0 +1,74 @@
+package partials
+
+type SummaryData struct {
+	TotalQuoted      string
+	TotalBudgeted    string
+	Margin           string
+	MarginPercent    string
+	IsPositiveMargin bool
+}
+
+templ Summary(data SummaryData) {
+	<div
+		class="flex items-center"
+		style="background-color: var(--bg-card); border-top: 2px solid var(--bg-sidebar); padding: 20px 24px;"
+	>
+		<!-- Total Quoted Price -->
+		<div class="flex-1" style="display: flex; flex-direction: column; gap: 6px;">
+			<span
+				style={
+					"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-secondary);",
+				}
+			>
+				TOTAL QUOTED PRICE
+			</span>
+			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--text-primary);">
+				{ data.TotalQuoted }
+			</span>
+		</div>
+		<!-- Total Budgeted Price -->
+		<div class="flex-1" style="display: flex; flex-direction: column; gap: 6px;">
+			<span
+				style={
+					"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-secondary);",
+				}
+			>
+				TOTAL BUDGETED PRICE
+			</span>
+			if data.IsPositiveMargin {
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--success);">
+					{ data.TotalBudgeted }
+				</span>
+			} else {
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--terracotta);">
+					{ data.TotalBudgeted }
+				</span>
+			}
+		</div>
+		<!-- Margin -->
+		<div class="flex-1" style="display: flex; flex-direction: column; gap: 6px;">
+			<span
+				style={
+					"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-secondary);",
+				}
+			>
+				MARGIN
+			</span>
+			if data.IsPositiveMargin {
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--success);">
+					{ data.Margin }
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: var(--success); margin-left: 6px;">
+						({ data.MarginPercent })
+					</span>
+				</span>
+			} else {
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--terracotta);">
+					{ data.Margin }
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: var(--terracotta); margin-left: 6px;">
+						({ data.MarginPercent })
+					</span>
+				</span>
+			}
+		</div>
+	</div>
+}

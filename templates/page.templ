@@ -1,0 +1,15 @@
+package templates
+
+templ PageShell(title string) {
+	@Layout(title) {
+		<div class="flex flex-col h-screen">
+			@TopHeader()
+			<div class="flex flex-1 overflow-hidden">
+				@Sidebar()
+				<main id="main-content" class="flex-1 overflow-y-auto" style="background-color: var(--bg-page); padding: 40px 48px;">
+					{ children... }
+				</main>
+			</div>
+		</div>
+	}
+}

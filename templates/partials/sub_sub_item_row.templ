@@ -1,0 +1,67 @@
+package partials
+
+type SubSubItemRowData struct {
+	ID            string
+	Description   string
+	Type          string
+	QtyPerUnit    string
+	UOM           string
+	UnitPrice     string
+	BudgetedPrice string
+	HSNCode       string
+	GSTPercent    string
+}
+
+templ SubSubItemRow(data SubSubItemRowData) {
+	<div
+		x-show={ "isSubSubItemVisible('" + data.ID + "')" }
+		data-description={ data.Description }
+		data-type={ data.Type }
+		class="flex items-center"
+		style="padding: 10px 20px; padding-left: 80px; background-color: #FFFFFF; border-bottom: 1px solid rgba(229, 229, 229, 0.5);"
+	>
+		<!-- Spacer for alignment with parent chevron columns -->
+		<div style="width: 24px; margin-right: 8px;"></div>
+		<!-- Description + Type badge -->
+		<div class="flex-1" style="display: flex; flex-direction: column; gap: 2px;">
+			<span
+				style={
+					"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;",
+				}
+			>
+				if data.Type == "product" {
+					Product
+				} else {
+					Service
+				}
+			</span>
+			<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+				{ data.Description }
+			</span>
+		</div>
+		<!-- Qty/Unit -->
+		<div style="width: 60px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right;">
+			{ data.QtyPerUnit }
+		</div>
+		<!-- UOM -->
+		<div style="width: 60px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: center;">
+			{ data.UOM }
+		</div>
+		<!-- Unit Price -->
+		<div style="width: 100px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right;">
+			{ data.UnitPrice }
+		</div>
+		<!-- Budgeted Price -->
+		<div style="width: 100px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right;">
+			{ data.BudgetedPrice }
+		</div>
+		<!-- HSN Code -->
+		<div style="width: 60px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center;">
+			{ data.HSNCode }
+		</div>
+		<!-- GST% -->
+		<div style="width: 55px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center;">
+			{ data.GSTPercent }
+		</div>
+	</div>
+}

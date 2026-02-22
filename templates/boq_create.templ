@@ -1,0 +1,532 @@
+package templates
+
+type BOQCreateData struct {
+	Title           string
+	ReferenceNumber string
+	Date            string
+	UOMOptions      []string
+	GSTOptions      []int
+	Errors          map[string]string
+}
+
+templ BOQCreatePage(data BOQCreateData) {
+	@PageShell("Create BOQ — Project Creation") {
+		<!-- Breadcrumbs -->
+		<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+				PROJECTS
+			</span>
+			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+				INTERIOR FIT-OUT — BLOCK A
+			</span>
+			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+				NEW BOQ
+			</span>
+		</div>
+		<!-- Page Header -->
+		<div>
+			<h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--text-primary); margin: 0;">
+				Create New BOQ
+			</h1>
+			<p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-top: 8px;">
+				Add a new Bill of Quantities to this project
+			</p>
+		</div>
+
+		<!-- Form -->
+		<form method="POST" action="/boq" x-data={`{
+			items: [{
+				description: '', qty: '', uom: 'Nos', quoted_price: '', budgeted_price: '', gst_percent: '18', expanded: true,
+				subs: []
+			}],
+			calculated: false,
+			newSub() {
+				return {
+					type: 'product', description: '', qty_per_unit: '', uom: 'Nos', budgeted_price: '', gst_percent: '18', expanded: true,
+					sub_subs: []
+				};
+			},
+			newSubSub() {
+				return { type: 'product', description: '', qty_per_unit: '', uom: 'Nos', budgeted_price: '', gst_percent: '18' };
+			},
+			addItem() {
+				this.items.push({
+					description: '', qty: '', uom: 'Nos', quoted_price: '', budgeted_price: '', gst_percent: '18', expanded: true,
+					subs: []
+				});
+			},
+			removeItem(i) {
+				if (this.items.length > 1) this.items.splice(i, 1);
+			},
+			addSub(item) {
+				item.subs.push(this.newSub());
+			},
+			removeSub(item, si) {
+				item.subs.splice(si, 1);
+			},
+			addSubSub(sub) {
+				sub.sub_subs.push(this.newSubSub());
+			},
+			removeSubSub(sub, ssi) {
+				sub.sub_subs.splice(ssi, 1);
+			},
+			get totalQuoted() {
+				let total = 0;
+				for (const item of this.items) {
+					total += (parseFloat(item.quoted_price) || 0) * (parseFloat(item.qty) || 0);
+				}
+				return total;
+			},
+			get totalBudgeted() {
+				let total = 0;
+				for (const item of this.items) {
+					total += (parseFloat(item.budgeted_price) || 0) * (parseFloat(item.qty) || 0);
+				}
+				return total;
+			},
+			get margin() {
+				return this.totalQuoted - this.totalBudgeted;
+			},
+			get marginPercent() {
+				if (this.totalQuoted === 0) return 0;
+				return (this.margin / this.totalQuoted) * 100;
+			},
+			formatINR(amount) {
+				const negative = amount < 0;
+				const abs = Math.abs(amount);
+				const parts = abs.toFixed(2).split('.');
+				let intPart = parts[0];
+				const decPart = parts[1];
+				if (intPart.length > 3) {
+					let last3 = intPart.slice(-3);
+					let remaining = intPart.slice(0, -3);
+					let groups = [];
+					while (remaining.length > 2) {
+						groups.unshift(remaining.slice(-2));
+						remaining = remaining.slice(0, -2);
+					}
+					if (remaining.length > 0) groups.unshift(remaining);
+					intPart = groups.join(',') + ',' + last3;
+				}
+				return (negative ? '-' : '') + '\u20B9' + intPart + '.' + decPart;
+			},
+			calculate() {
+				for (const item of this.items) {
+					let mainBudgetedTotal = 0;
+					let hasSubs = false;
+					for (const sub of item.subs) {
+						let subBudgetedTotal = 0;
+						let hasSubSubs = false;
+						for (const ss of sub.sub_subs) {
+							const bp = parseFloat(ss.budgeted_price) || 0;
+							subBudgetedTotal += bp;
+							if (bp > 0) hasSubSubs = true;
+						}
+						if (hasSubSubs) {
+							sub.budgeted_price = subBudgetedTotal;
+						}
+						mainBudgetedTotal += parseFloat(sub.budgeted_price) || 0;
+						hasSubs = true;
+					}
+					if (hasSubs && mainBudgetedTotal > 0) {
+						item.budgeted_price = mainBudgetedTotal;
+					}
+				}
+				this.calculated = true;
+				this.$nextTick(() => {
+					const el = document.getElementById('boq-create-summary');
+					if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+				});
+			}
+		}`} style="margin-top: 32px;">
+
+			<!-- Validation Error Banner -->
+			if len(data.Errors) > 0 {
+				<div style="background-color: #FEE2E2; border: 1px solid #EF4444; padding: 12px 16px; margin-bottom: 24px;">
+					for _, msg := range data.Errors {
+						<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: #DC2626;">
+							{ msg }
+						</div>
+					}
+				</div>
+			}
+
+			<!-- BOQ Details Card -->
+			<div style="background-color: var(--bg-card);">
+				<!-- Card Header -->
+				<div style="background-color: #E2DED6; padding: 16px 24px;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+						BOQ DETAILS
+					</span>
+				</div>
+				<!-- Card Body -->
+				<div style="padding: 24px;">
+					<!-- Row 1: Title + Reference Number -->
+					<div class="flex" style="gap: 24px; margin-bottom: 16px;">
+						<div class="flex-1">
+							<label for="title" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+								BOQ TITLE <span style="color: var(--terracotta);">*</span>
+							</label>
+							<input
+								type="text" id="title" name="title" value={ data.Title }
+								placeholder="Enter BOQ title" required
+								style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+							/>
+						</div>
+						<div style="width: 300px; min-width: 300px;">
+							<label for="reference_number" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+								REFERENCE NUMBER
+							</label>
+							<input
+								type="text" id="reference_number" name="reference_number" value={ data.ReferenceNumber }
+								placeholder="e.g. PO-001"
+								style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+							/>
+						</div>
+					</div>
+					<!-- Row 2: Date alone -->
+					<div>
+						<div style="width: 220px;">
+							<label for="date" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+								DATE
+							</label>
+							<input
+								type="date" id="date" name="date" value={ data.Date }
+								style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+							/>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Line Items Section -->
+			<div style="background-color: var(--bg-card); margin-top: 24px;">
+				<!-- Section Header -->
+				<div class="flex justify-between items-center" style="background-color: #E2DED6; padding: 16px 24px;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+						LINE ITEMS
+					</span>
+					<span style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-muted);">
+						You can add line items now or after creation
+					</span>
+				</div>
+
+				<div style="padding: 24px;">
+					<!-- Main Items Column Headers -->
+					<div class="flex items-center" style="padding: 8px 16px; gap: 8px; border-bottom: 1px solid var(--border-light);">
+						<div style="width: 20px; min-width: 20px;"></div>
+						<div style="width: 30px; min-width: 30px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">#</div>
+						<div class="flex-1" style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">DESCRIPTION</div>
+						<div style="width: 70px; min-width: 70px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">QTY</div>
+						<div style="width: 80px; min-width: 80px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">UOM</div>
+						<div style="width: 120px; min-width: 120px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">QUOTED PRICE</div>
+						<div style="width: 120px; min-width: 120px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">BUDGETED PRICE</div>
+						<div style="width: 70px; min-width: 70px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">GST%</div>
+						<div style="width: 30px; min-width: 30px;"></div>
+					</div>
+
+					<!-- Main Items Loop -->
+					<template x-for="(item, i) in items" :key="i">
+						<div style="margin-bottom: 16px; border: 1px solid var(--border-light); border-top: none;">
+							<!-- Main Item Row -->
+							<div class="flex items-center" style="padding: 10px 16px; background-color: var(--bg-page); gap: 8px;">
+								<button type="button" @click="item.expanded = !item.expanded" style="background: none; border: none; cursor: pointer; padding: 0; color: var(--text-secondary); width: 20px; min-width: 20px; display: flex; align-items: center; justify-content: center;">
+									<svg x-show="item.expanded" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+									<svg x-show="!item.expanded" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+								</button>
+								<div style="width: 30px; min-width: 30px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary);" x-text="i + 1"></div>
+								<div class="flex-1">
+									<input type="text" x-model="item.description" :name="'items[' + i + '].description'" placeholder="Main item description"
+										style="width: 100%; padding: 8px 10px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+									/>
+								</div>
+								<div style="width: 70px; min-width: 70px;">
+									<input type="number" x-model="item.qty" :name="'items[' + i + '].qty'" placeholder="0" min="0" step="any"
+										style="width: 100%; padding: 8px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+									/>
+								</div>
+								<div style="width: 80px; min-width: 80px;">
+									<select x-model="item.uom" :name="'items[' + i + '].uom'"
+										style="width: 100%; padding: 8px 10px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; appearance: auto;"
+									>
+										for _, uom := range data.UOMOptions {
+											<option value={ uom }>{ uom }</option>
+										}
+									</select>
+								</div>
+								<div style="width: 120px; min-width: 120px;">
+									<input type="number" x-model="item.quoted_price" :name="'items[' + i + '].quoted_price'" placeholder="0.00" min="0" step="any"
+										style="width: 100%; padding: 8px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+									/>
+								</div>
+								<div style="width: 120px; min-width: 120px;">
+									<input type="number" x-model="item.budgeted_price" :name="'items[' + i + '].budgeted_price'" placeholder="0.00" min="0" step="any"
+										style="width: 100%; padding: 8px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+									/>
+								</div>
+								<div style="width: 70px; min-width: 70px;">
+									<select x-model="item.gst_percent" :name="'items[' + i + '].gst_percent'"
+										style="width: 100%; padding: 8px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; appearance: auto;"
+									>
+										<option value="0">0%</option>
+										<option value="5">5%</option>
+										<option value="12">12%</option>
+										<option value="18">18%</option>
+										<option value="28">28%</option>
+									</select>
+								</div>
+								<div style="width: 30px; min-width: 30px; text-align: center;">
+									<button type="button" @click="removeItem(i)" x-show="items.length > 1"
+										style="background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;" title="Remove main item"
+									>
+										<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
+									</button>
+								</div>
+							</div>
+
+							<!-- Expanded Sub Items -->
+							<div x-show="item.expanded" style="padding: 0 16px 16px 46px;">
+								<!-- Sub Items Header -->
+								<div class="flex justify-between items-center" style="padding: 12px 0 8px 0;">
+									<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">SUB ITEMS</span>
+									<button type="button" @click="addSub(item)" class="flex items-center"
+										style="background: none; border: 1px solid var(--border-light); padding: 4px 10px; gap: 4px; cursor: pointer;"
+									>
+										<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+										<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">ADD SUB</span>
+									</button>
+								</div>
+
+								<!-- Sub Items Column Headers (only show when subs exist) -->
+								<template x-if="item.subs.length > 0">
+									<div class="flex items-center" style="padding: 6px 12px; gap: 6px; border-bottom: 1px solid var(--border-light);">
+										<div style="width: 20px; min-width: 20px;"></div>
+										<div style="width: 30px; min-width: 30px; font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">#</div>
+										<div style="width: 90px; min-width: 90px; font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">TYPE</div>
+										<div class="flex-1" style="font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">DESCRIPTION</div>
+										<div style="width: 75px; min-width: 75px; font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">QTY/UNIT</div>
+										<div style="width: 90px; min-width: 90px; font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">UOM</div>
+										<div style="width: 100px; min-width: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">BUDGETED PRICE</div>
+										<div style="width: 65px; min-width: 65px; font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">GST%</div>
+										<div style="width: 24px; min-width: 24px;"></div>
+									</div>
+								</template>
+
+								<!-- Sub Items Loop -->
+								<template x-for="(sub, si) in item.subs" :key="si">
+									<div style="margin-bottom: 10px; border: 1px solid var(--border-light); background-color: var(--bg-page);">
+										<!-- Sub Item Row -->
+										<div class="flex items-center" style="padding: 8px 12px; gap: 6px;">
+											<button type="button" @click="sub.expanded = !sub.expanded" style="background: none; border: none; cursor: pointer; padding: 2px; color: var(--text-muted);">
+												<svg x-show="sub.expanded" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+												<svg x-show="!sub.expanded" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+											</button>
+											<div style="width: 30px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 500; color: var(--text-muted);" x-text="(i+1) + '.' + (si+1)"></div>
+											<div style="width: 90px;">
+												<select x-model="sub.type" :name="'items[' + i + '].subs[' + si + '].type'"
+													style="width: 100%; padding: 6px 8px; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; appearance: auto;"
+												>
+													<option value="product">Product</option>
+													<option value="service">Service</option>
+												</select>
+											</div>
+											<div class="flex-1">
+												<input type="text" x-model="sub.description" :name="'items[' + i + '].subs[' + si + '].description'" placeholder="Sub item description"
+													style="width: 100%; padding: 6px 8px; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+												/>
+											</div>
+											<div style="width: 75px; min-width: 75px;">
+												<input type="number" x-model="sub.qty_per_unit" :name="'items[' + i + '].subs[' + si + '].qty_per_unit'" placeholder="0" min="0" step="any"
+													style="width: 100%; padding: 6px 8px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+												/>
+											</div>
+											<div style="width: 90px; min-width: 90px;">
+												<select x-model="sub.uom" :name="'items[' + i + '].subs[' + si + '].uom'"
+													style="width: 100%; padding: 6px 8px; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; appearance: auto;"
+												>
+													for _, uom := range data.UOMOptions {
+														<option value={ uom }>{ uom }</option>
+													}
+												</select>
+											</div>
+											<div style="width: 100px; min-width: 100px;">
+												<input type="number" x-model="sub.budgeted_price" :name="'items[' + i + '].subs[' + si + '].budgeted_price'" placeholder="0.00" min="0" step="any"
+													style="width: 100%; padding: 6px 8px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+												/>
+											</div>
+											<div style="width: 65px;">
+												<select x-model="sub.gst_percent" :name="'items[' + i + '].subs[' + si + '].gst_percent'"
+													style="width: 100%; padding: 6px 8px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; appearance: auto;"
+												>
+													<option value="0">0%</option>
+													<option value="5">5%</option>
+													<option value="12">12%</option>
+													<option value="18">18%</option>
+													<option value="28">28%</option>
+												</select>
+											</div>
+											<button type="button" @click="removeSub(item, si)"
+												style="background: none; border: none; cursor: pointer; padding: 4px; width: 24px; display: flex; align-items: center; justify-content: center;" title="Remove sub item"
+											>
+												<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
+											</button>
+										</div>
+
+										<!-- Expanded Sub-Sub Items -->
+										<div x-show="sub.expanded" style="padding: 0 12px 12px 40px;">
+											<!-- Sub-Sub Header -->
+											<div class="flex justify-between items-center" style="padding: 8px 0 6px 0;">
+												<span style="font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">SUB-SUB ITEMS</span>
+												<button type="button" @click="addSubSub(sub)" class="flex items-center"
+													style="background: none; border: 1px solid var(--border-light); padding: 3px 8px; gap: 4px; cursor: pointer;"
+												>
+													<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+													<span style="font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">ADD</span>
+												</button>
+											</div>
+
+											<!-- Sub-Sub Column Headers (only show when sub_subs exist) -->
+											<template x-if="sub.sub_subs.length > 0">
+												<div class="flex items-center" style="padding: 4px 0; gap: 6px; border-bottom: 1px solid var(--border-light);">
+													<div style="width: 36px; min-width: 36px; font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">#</div>
+													<div style="width: 80px; min-width: 80px; font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">TYPE</div>
+													<div class="flex-1" style="font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">DESCRIPTION</div>
+													<div style="width: 65px; min-width: 65px; font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">QTY/UNIT</div>
+													<div style="width: 80px; min-width: 80px; font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">UOM</div>
+													<div style="width: 90px; min-width: 90px; font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">BUDGETED PRICE</div>
+													<div style="width: 60px; min-width: 60px; font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">GST%</div>
+													<div style="width: 20px; min-width: 20px;"></div>
+												</div>
+											</template>
+
+											<!-- Sub-Sub Items Loop -->
+											<template x-for="(ss, ssi) in sub.sub_subs" :key="ssi">
+												<div class="flex items-center" style="padding: 6px 0; border-bottom: 1px solid var(--border-light); gap: 6px;">
+													<div style="width: 36px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-muted);" x-text="(i+1) + '.' + (si+1) + '.' + (ssi+1)"></div>
+													<div style="width: 80px;">
+														<select x-model="ss.type" :name="'items[' + i + '].subs[' + si + '].sub_subs[' + ssi + '].type'"
+															style="width: 100%; padding: 5px 6px; font-family: 'Inter', sans-serif; font-size: 11px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; appearance: auto;"
+														>
+															<option value="product">Product</option>
+															<option value="service">Service</option>
+														</select>
+													</div>
+													<div class="flex-1">
+														<input type="text" x-model="ss.description" :name="'items[' + i + '].subs[' + si + '].sub_subs[' + ssi + '].description'" placeholder="Sub-sub item description"
+															style="width: 100%; padding: 5px 6px; font-family: 'Inter', sans-serif; font-size: 11px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+														/>
+													</div>
+													<div style="width: 65px; min-width: 65px;">
+														<input type="number" x-model="ss.qty_per_unit" :name="'items[' + i + '].subs[' + si + '].sub_subs[' + ssi + '].qty_per_unit'" placeholder="0" min="0" step="any"
+															style="width: 100%; padding: 5px 6px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+														/>
+													</div>
+													<div style="width: 80px; min-width: 80px;">
+														<select x-model="ss.uom" :name="'items[' + i + '].subs[' + si + '].sub_subs[' + ssi + '].uom'"
+															style="width: 100%; padding: 5px 6px; font-family: 'Inter', sans-serif; font-size: 11px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; appearance: auto;"
+														>
+															for _, uom := range data.UOMOptions {
+																<option value={ uom }>{ uom }</option>
+															}
+														</select>
+													</div>
+													<div style="width: 90px; min-width: 90px;">
+														<input type="number" x-model="ss.budgeted_price" :name="'items[' + i + '].subs[' + si + '].sub_subs[' + ssi + '].budgeted_price'" placeholder="0.00" min="0" step="any"
+															style="width: 100%; padding: 5px 6px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+														/>
+													</div>
+													<div style="width: 60px;">
+														<select x-model="ss.gst_percent" :name="'items[' + i + '].subs[' + si + '].sub_subs[' + ssi + '].gst_percent'"
+															style="width: 100%; padding: 5px 6px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; appearance: auto;"
+														>
+															<option value="0">0%</option>
+															<option value="5">5%</option>
+															<option value="12">12%</option>
+															<option value="18">18%</option>
+															<option value="28">28%</option>
+														</select>
+													</div>
+													<button type="button" @click="removeSubSub(sub, ssi)"
+														style="background: none; border: none; cursor: pointer; padding: 4px; width: 20px; display: flex; align-items: center; justify-content: center;" title="Remove"
+													>
+														<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
+													</button>
+												</div>
+											</template>
+										</div>
+									</div>
+								</template>
+							</div>
+						</div>
+					</template>
+
+					<!-- Add Main Item Button (inside table area) -->
+					<div style="padding: 16px 0;">
+						<button
+							type="button" @click="addItem()"
+							class="flex items-center justify-center"
+							style="width: 100%; padding: 12px 16px; gap: 8px; background-color: var(--bg-page); border: none; cursor: pointer;"
+						>
+							<span style="font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 600; color: var(--text-secondary);">+</span>
+							<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">ADD MAIN ITEM</span>
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Summary Section (shown after Calculate) -->
+			<div id="boq-create-summary" x-show="calculated" x-cloak class="flex" style="gap: 24px; margin-top: 24px; justify-content: flex-end;">
+				<!-- Total Quoted -->
+				<div style="width: 220px; background-color: var(--bg-card); padding: 20px;">
+					<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+						TOTAL QUOTED
+					</div>
+					<div style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 8px;">
+						<span x-text="formatINR(totalQuoted)"></span>
+					</div>
+				</div>
+				<!-- Total Budgeted -->
+				<div style="width: 220px; background-color: var(--bg-card); padding: 20px;">
+					<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+						TOTAL BUDGETED
+					</div>
+					<div
+						x-bind:style="'font-family: Space Grotesk, sans-serif; font-size: 24px; font-weight: 700; margin-top: 8px; color: ' + (margin >= 0 ? 'var(--success)' : 'var(--terracotta)')"
+					>
+						<span x-text="formatINR(totalBudgeted)"></span>
+					</div>
+				</div>
+				<!-- Margin -->
+				<div style="width: 220px; background-color: var(--bg-card); padding: 20px;">
+					<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+						MARGIN
+					</div>
+					<div
+						x-bind:style="'font-family: Space Grotesk, sans-serif; font-size: 24px; font-weight: 700; margin-top: 8px; color: ' + (margin >= 0 ? 'var(--success)' : 'var(--terracotta)')"
+					>
+						<span x-text="formatINR(margin)"></span>
+						<span x-show="totalQuoted > 0" style="font-size: 13px; font-weight: 500;" x-text="'(' + marginPercent.toFixed(1) + '%)'"></span>
+					</div>
+				</div>
+			</div>
+
+			<!-- Action Buttons -->
+			<div class="flex justify-end" style="gap: 12px; margin-top: 24px;">
+				<a href="/boq" class="flex items-center justify-center"
+					style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); background-color: var(--bg-card); border: none; text-decoration: none;"
+				>CANCEL</a>
+				<button type="button" @click="calculate()" class="flex items-center justify-center"
+					style="padding: 12px 24px; gap: 8px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); background-color: var(--bg-card); border: none; cursor: pointer;"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"></rect><line x1="8" x2="16" y1="6" y2="6"></line><line x1="16" x2="16" y1="14" y2="18"></line><path d="M16 10h.01"></path><path d="M12 10h.01"></path><path d="M8 10h.01"></path><path d="M12 14h.01"></path><path d="M8 14h.01"></path><path d="M12 18h.01"></path><path d="M8 18h.01"></path></svg>
+					CALCULATE
+				</button>
+				<button type="submit" class="flex items-center justify-center"
+					style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); background-color: var(--terracotta); border: none; cursor: pointer;"
+				>CREATE BOQ</button>
+			</div>
+		</form>
+	}
+}

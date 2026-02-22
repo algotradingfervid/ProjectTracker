@@ -1,0 +1,144 @@
+package partials
+
+type SubItemRowData struct {
+	ID              string
+	Description     string
+	Type            string // "product" or "service"
+	QtyPerUnit      string
+	UOM             string
+	UnitPrice       string
+	BudgetedPrice   string
+	HSNCode         string
+	GSTPercent      string
+	HasSubSubItems  bool
+	SubSubItemsHTML templ.Component
+}
+
+templ SubItemRow(data SubItemRowData) {
+	if data.HasSubSubItems {
+		<div x-data="{ open: false }" x-show={ "isSubItemVisible('" + data.ID + "')" } data-description={ data.Description } data-type={ data.Type }>
+			<!-- Sub Item Row (expandable) -->
+			<div
+				class="flex items-center cursor-pointer"
+				style="padding: 10px 20px; padding-left: 40px; background-color: #FFFFFF; border-bottom: 1px solid var(--border-light);"
+				@click="open = !open"
+			>
+				<!-- Chevron -->
+				<div style="width: 24px; margin-right: 8px; display: flex; align-items: center; justify-content: center;">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="12"
+						height="12"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="var(--text-secondary)"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						style="transition: transform 0.2s ease;"
+						x-bind:class="{ 'rotate-90': open }"
+					>
+						<path d="m9 18 6-6-6-6"></path>
+					</svg>
+				</div>
+				<!-- Description + Type badge -->
+				<div class="flex-1" style="display: flex; flex-direction: column; gap: 2px;">
+					<span
+						style={
+							"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;",
+						}
+					>
+						if data.Type == "product" {
+							Product
+						} else {
+							Service
+						}
+					</span>
+					<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+						{ data.Description }
+					</span>
+				</div>
+				<!-- Qty/Unit -->
+				<div style="width: 60px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right;">
+					{ data.QtyPerUnit }
+				</div>
+				<!-- UOM -->
+				<div style="width: 60px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: center;">
+					{ data.UOM }
+				</div>
+				<!-- Unit Price -->
+				<div style="width: 100px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right;">
+					{ data.UnitPrice }
+				</div>
+				<!-- Budgeted Price -->
+				<div style="width: 100px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right;">
+					{ data.BudgetedPrice }
+				</div>
+				<!-- HSN Code -->
+				<div style="width: 60px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center;">
+					{ data.HSNCode }
+				</div>
+				<!-- GST% -->
+				<div style="width: 55px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center;">
+					{ data.GSTPercent }
+				</div>
+			</div>
+			<!-- Sub-sub-items container (accordion) -->
+			<div x-show="open" x-collapse>
+				@data.SubSubItemsHTML
+			</div>
+		</div>
+	} else {
+		<div x-show={ "isSubItemVisible('" + data.ID + "')" } data-description={ data.Description } data-type={ data.Type }>
+			<!-- Sub Item Row (no expand) -->
+			<div
+				class="flex items-center"
+				style="padding: 10px 20px; padding-left: 40px; background-color: #FFFFFF; border-bottom: 1px solid var(--border-light);"
+			>
+				<!-- Spacer for chevron alignment -->
+				<div style="width: 24px; margin-right: 8px;"></div>
+				<!-- Description + Type badge -->
+				<div class="flex-1" style="display: flex; flex-direction: column; gap: 2px;">
+					<span
+						style={
+							"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;",
+						}
+					>
+						if data.Type == "product" {
+							Product
+						} else {
+							Service
+						}
+					</span>
+					<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+						{ data.Description }
+					</span>
+				</div>
+				<!-- Qty/Unit -->
+				<div style="width: 60px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right;">
+					{ data.QtyPerUnit }
+				</div>
+				<!-- UOM -->
+				<div style="width: 60px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: center;">
+					{ data.UOM }
+				</div>
+				<!-- Unit Price -->
+				<div style="width: 100px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right;">
+					{ data.UnitPrice }
+				</div>
+				<!-- Budgeted Price -->
+				<div style="width: 100px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right;">
+					{ data.BudgetedPrice }
+				</div>
+				<!-- HSN Code -->
+				<div style="width: 60px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center;">
+					{ data.HSNCode }
+				</div>
+				<!-- GST% -->
+				<div style="width: 55px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center;">
+					{ data.GSTPercent }
+				</div>
+			</div>
+		</div>
+	}
+}

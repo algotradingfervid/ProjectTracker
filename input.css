@@ -1,0 +1,30 @@
+@import "tailwindcss";
+@source "./templates/*.templ";
+@plugin "daisyui";
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-page: #F5F3EF;
+  --bg-sidebar: #1a1a1a;
+  --bg-card: #E8E4DC;
+  --terracotta: #C05A3C;
+  --success: #4A7C59;
+  --text-primary: #1a1a1a;
+  --text-secondary: #555555;
+  --text-muted: #888888;
+  --text-light: #F5F3EF;
+  --border-light: #D1CCC4;
+  --border-dark: #3a3a3a;
+  --error: #DC2626;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', sans-serif;
+}
