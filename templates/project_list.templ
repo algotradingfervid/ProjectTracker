@@ -1,0 +1,168 @@
+package templates
+
+import "strconv"
+
+type ProjectListItem struct {
+	ID                    string
+	Name                  string
+	ClientName            string
+	ReferenceNumber       string
+	Status                string
+	StatusBadgeClass      string
+	BOQCount              int
+	AddressCount          int
+	ShipToEqualsInstallAt bool
+	CreatedDate           string
+}
+
+type ProjectListData struct {
+	Items      []ProjectListItem
+	TotalCount int
+}
+
+templ ProjectListContent(data ProjectListData) {
+	<!-- Page Header -->
+	<div class="flex justify-between items-center">
+		<div>
+			<h1
+				style="font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; color: var(--text-primary); margin: 0;"
+			>
+				Projects
+			</h1>
+			<p
+				style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-top: 8px;"
+			>
+				Manage all your projects and their BOQs, addresses
+			</p>
+		</div>
+		<a
+			href="/projects/create"
+			hx-get="/projects/create"
+			hx-target="#main-content"
+			hx-push-url="true"
+			class="flex items-center hover:opacity-90"
+			style="background-color: var(--bg-sidebar); padding: 10px 16px; gap: 8px; text-decoration: none;"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-light);">NEW PROJECT</span>
+		</a>
+	</div>
+	<!-- Stats -->
+	<div class="flex" style="gap: 20px; margin-top: 32px;">
+		<div class="flex-1" style="background-color: var(--bg-card); padding: 24px;">
+			<div style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+				TOTAL PROJECTS
+			</div>
+			<div style="font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--text-primary); margin-top: 12px;">
+				{ strconv.Itoa(data.TotalCount) }
+			</div>
+		</div>
+	</div>
+	<!-- Project Cards Grid -->
+	<div style="margin-top: 32px;">
+		if len(data.Items) == 0 {
+			<div class="flex flex-col items-center justify-center" style="padding: 64px 0; color: var(--text-muted);">
+				<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>
+				<p style="font-family: 'Inter', sans-serif; font-size: 14px; margin-top: 16px;">No projects yet</p>
+				<a
+					href="/projects/create"
+					hx-get="/projects/create"
+					hx-target="#main-content"
+					hx-push-url="true"
+					style="font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--terracotta); margin-top: 8px; text-decoration: none;"
+				>
+					Create your first project
+				</a>
+			</div>
+		} else {
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style="gap: 20px;">
+				for _, item := range data.Items {
+					<div
+						style="background-color: var(--bg-card); padding: 24px; cursor: pointer; transition: transform 0.15s;"
+						hx-get={ "/projects/" + item.ID + "/edit" }
+						hx-target="#main-content"
+						hx-push-url="true"
+					>
+						<!-- Card Header -->
+						<div class="flex justify-between items-start">
+							<div style="flex: 1; min-width: 0;">
+								<h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+									{ item.Name }
+								</h3>
+								if item.ClientName != "" {
+									<p style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+										{ item.ClientName }
+									</p>
+								}
+							</div>
+							<span
+								style={
+									"font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; padding: 4px 10px; text-transform: uppercase; " +
+									statusColor(item.Status),
+								}
+							>
+								{ formatStatus(item.Status) }
+							</span>
+						</div>
+						<!-- Card Body -->
+						<div class="flex" style="gap: 24px; margin-top: 20px;">
+							<div>
+								<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">BOQs</div>
+								<div style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--text-primary); margin-top: 4px;">{ strconv.Itoa(item.BOQCount) }</div>
+							</div>
+							<div>
+								<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted);">ADDRESSES</div>
+								<div style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--text-primary); margin-top: 4px;">{ strconv.Itoa(item.AddressCount) }</div>
+							</div>
+						</div>
+						<!-- Card Footer -->
+						<div class="flex justify-between items-center" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-light);">
+							if item.ReferenceNumber != "" {
+								<span style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-muted);">
+									{ item.ReferenceNumber }
+								</span>
+							} else {
+								<span></span>
+							}
+							<span style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-muted);">
+								{ item.CreatedDate }
+							</span>
+						</div>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}
+
+templ ProjectListPage(data ProjectListData, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject("Projects — Project Creation", headerData, sidebarData) {
+		@ProjectListContent(data)
+	}
+}
+
+func statusColor(status string) string {
+	switch status {
+	case "active":
+		return "background-color: #DCFCE7; color: #166534;"
+	case "completed":
+		return "background-color: #DBEAFE; color: #1E40AF;"
+	case "on_hold":
+		return "background-color: #FEF3C7; color: #92400E;"
+	default:
+		return "background-color: var(--bg-page); color: var(--text-muted);"
+	}
+}
+
+func formatStatus(status string) string {
+	switch status {
+	case "active":
+		return "Active"
+	case "completed":
+		return "Completed"
+	case "on_hold":
+		return "On Hold"
+	default:
+		return status
+	}
+}

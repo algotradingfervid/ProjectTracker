@@ -1,0 +1,427 @@
+package templates
+
+import "fmt"
+
+// AddressFormData holds all data needed to render the address create/edit form.
+type AddressFormData struct {
+	// Mode
+	IsEdit    bool
+	AddressID string // empty for create
+
+	// Context
+	ProjectID    string
+	ProjectName  string
+	AddressType  string // slug: "bill_from", "ship_from", etc.
+	AddressLabel string // display: "Bill From", "Ship From", etc.
+
+	// Field values (pre-populated for edit, empty for create)
+	CompanyName   string
+	ContactPerson string
+	AddressLine1  string
+	AddressLine2  string
+	City          string
+	State         string
+	PinCode       string
+	Country       string
+	Phone         string
+	Email         string
+	GSTIN         string
+	PAN           string
+	CIN           string
+	Website       string
+	Fax           string
+	Landmark      string
+	District      string
+
+	// Required field indicators (from project_address_settings)
+	RequiredFields map[string]bool
+
+	// Validation errors (field name -> error message)
+	Errors map[string]string
+
+	// Dropdown options
+	StateOptions   []string
+	CountryOptions []string
+
+	// Install At specific: Ship To parent addresses for linking
+	ShowShipToParent bool
+	ShipToAddresses  []ShipToOption
+	SelectedShipToID string
+}
+
+// ShipToOption represents a Ship To address for the parent dropdown.
+type ShipToOption struct {
+	ID          string
+	CompanyName string
+	City        string
+}
+
+func addressTypeSlug(addressType string) string {
+	switch addressType {
+	case "bill_from":
+		return "bill-from"
+	case "ship_from":
+		return "ship-from"
+	case "bill_to":
+		return "bill-to"
+	case "ship_to":
+		return "ship-to"
+	case "install_at":
+		return "install-at"
+	default:
+		return addressType
+	}
+}
+
+// addressField renders a single form field with label, required indicator, and error message.
+templ addressField(name string, label string, inputType string, value string, placeholder string, required bool, errorMsg string) {
+	<label
+		for={ name }
+		style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;"
+	>
+		{ label }
+		if required {
+			<span style="color: var(--terracotta);">*</span>
+		}
+	</label>
+	<input
+		type={ inputType }
+		id={ name }
+		name={ name }
+		value={ value }
+		placeholder={ placeholder }
+		if required {
+			required
+		}
+		if errorMsg != "" {
+			style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid #EF4444; border-radius: 0; outline: none; box-sizing: border-box;"
+		} else {
+			style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+		}
+	/>
+	if errorMsg != "" {
+		<div style="font-family: 'Inter', sans-serif; font-size: 12px; color: #DC2626; margin-top: 4px;">
+			{ errorMsg }
+		</div>
+	}
+}
+
+templ AddressFormContent(data AddressFormData) {
+	<!-- Breadcrumbs -->
+	<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+		<a
+			href="/projects"
+			hx-get="/projects"
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;"
+		>
+			PROJECTS
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+			{ data.ProjectName }
+		</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<a
+			href={ templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s", data.ProjectID, addressTypeSlug(data.AddressType))) }
+			hx-get={ fmt.Sprintf("/projects/%s/addresses/%s", data.ProjectID, addressTypeSlug(data.AddressType)) }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;"
+		>
+			{ data.AddressLabel }
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+			if data.IsEdit {
+				EDIT
+			} else {
+				ADD NEW
+			}
+		</span>
+	</div>
+
+	<!-- Page Header -->
+	<div>
+		<h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--text-primary); margin: 0;">
+			if data.IsEdit {
+				Edit { data.AddressLabel } Address
+			} else {
+				Add { data.AddressLabel } Address
+			}
+		</h1>
+		<p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-top: 8px;">
+			if data.IsEdit {
+				Update the address details below
+			} else {
+				Fill in the address details below
+			}
+		</p>
+	</div>
+
+	<!-- Validation Error Banner -->
+	if len(data.Errors) > 0 {
+		<div style="background-color: #FEE2E2; border: 1px solid #EF4444; padding: 12px 16px; margin-top: 24px;">
+			<div style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: #DC2626; margin-bottom: 4px;">
+				PLEASE FIX THE FOLLOWING ERRORS
+			</div>
+			for _, msg := range data.Errors {
+				<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: #DC2626;">
+					{ msg }
+				</div>
+			}
+		</div>
+	}
+
+	<!-- Form -->
+	<form
+		if data.IsEdit {
+			method="POST"
+			action={ templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/%s/edit", data.ProjectID, addressTypeSlug(data.AddressType), data.AddressID)) }
+		} else {
+			method="POST"
+			action={ templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/new", data.ProjectID, addressTypeSlug(data.AddressType))) }
+		}
+		style="margin-top: 24px;"
+	>
+		<!-- ========================================= -->
+		<!-- SECTION 1: Company Information -->
+		<!-- ========================================= -->
+		<div style="background-color: var(--bg-card);">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					COMPANY INFORMATION
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				<!-- Row: Company Name + Contact Person -->
+				<div class="flex" style="gap: 24px; margin-bottom: 16px;">
+					<div class="flex-1">
+						@addressField("company_name", "COMPANY NAME", "text", data.CompanyName, "Enter company name", data.RequiredFields["company_name"], data.Errors["company_name"])
+					</div>
+					<div class="flex-1">
+						@addressField("contact_person", "CONTACT PERSON", "text", data.ContactPerson, "Enter contact person name", data.RequiredFields["contact_person"], data.Errors["contact_person"])
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- ========================================= -->
+		<!-- SECTION 2: Address Details -->
+		<!-- ========================================= -->
+		<div style="background-color: var(--bg-card); margin-top: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					ADDRESS DETAILS
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				<!-- Row: Address Line 1 -->
+				<div style="margin-bottom: 16px;">
+					@addressField("address_line_1", "ADDRESS LINE 1", "text", data.AddressLine1, "Street address, building name", data.RequiredFields["address_line_1"], data.Errors["address_line_1"])
+				</div>
+				<!-- Row: Address Line 2 -->
+				<div style="margin-bottom: 16px;">
+					@addressField("address_line_2", "ADDRESS LINE 2", "text", data.AddressLine2, "Floor, suite, unit (optional)", data.RequiredFields["address_line_2"], data.Errors["address_line_2"])
+				</div>
+				<!-- Row: Landmark + District -->
+				<div class="flex" style="gap: 24px; margin-bottom: 16px;">
+					<div class="flex-1">
+						@addressField("landmark", "LANDMARK", "text", data.Landmark, "Nearby landmark", data.RequiredFields["landmark"], data.Errors["landmark"])
+					</div>
+					<div class="flex-1">
+						@addressField("district", "DISTRICT", "text", data.District, "Enter district", data.RequiredFields["district"], data.Errors["district"])
+					</div>
+				</div>
+				<!-- Row: City + State + PIN Code -->
+				<div class="flex" style="gap: 24px; margin-bottom: 16px;">
+					<div class="flex-1">
+						@addressField("city", "CITY", "text", data.City, "Enter city", data.RequiredFields["city"], data.Errors["city"])
+					</div>
+					<div class="flex-1">
+						<!-- State dropdown -->
+						<label for="state" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+							STATE
+							if data.RequiredFields["state"] {
+								<span style="color: var(--terracotta);">*</span>
+							}
+						</label>
+						<select
+							id="state" name="state"
+							if data.RequiredFields["state"] {
+								required
+							}
+							if data.Errors["state"] != "" {
+								style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid #EF4444; border-radius: 0; outline: none; box-sizing: border-box; appearance: auto;"
+							} else {
+								style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; appearance: auto;"
+							}
+						>
+							<option value="">Select state</option>
+							for _, state := range data.StateOptions {
+								<option value={ state } selected?={ data.State == state }>{ state }</option>
+							}
+						</select>
+						if data.Errors["state"] != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 12px; color: #DC2626; margin-top: 4px;">
+								{ data.Errors["state"] }
+							</div>
+						}
+					</div>
+					<div style="width: 200px; min-width: 200px;">
+						@addressField("pin_code", "PIN CODE", "text", data.PinCode, "6-digit PIN", data.RequiredFields["pin_code"], data.Errors["pin_code"])
+					</div>
+				</div>
+				<!-- Row: Country -->
+				<div style="width: 300px;">
+					<label for="country" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						COUNTRY
+						if data.RequiredFields["country"] {
+							<span style="color: var(--terracotta);">*</span>
+						}
+					</label>
+					<select
+						id="country" name="country"
+						if data.RequiredFields["country"] {
+							required
+						}
+						style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; appearance: auto;"
+					>
+						for _, country := range data.CountryOptions {
+							<option value={ country } selected?={ data.Country == country }>{ country }</option>
+						}
+					</select>
+				</div>
+			</div>
+		</div>
+
+		<!-- ========================================= -->
+		<!-- SECTION 3: Contact Information -->
+		<!-- ========================================= -->
+		<div style="background-color: var(--bg-card); margin-top: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					CONTACT INFORMATION
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				<!-- Row: Phone + Email -->
+				<div class="flex" style="gap: 24px; margin-bottom: 16px;">
+					<div class="flex-1">
+						@addressField("phone", "PHONE", "tel", data.Phone, "10-digit mobile number", data.RequiredFields["phone"], data.Errors["phone"])
+					</div>
+					<div class="flex-1">
+						@addressField("email", "EMAIL", "email", data.Email, "email@example.com", data.RequiredFields["email"], data.Errors["email"])
+					</div>
+				</div>
+				<!-- Row: Website + Fax -->
+				<div class="flex" style="gap: 24px;">
+					<div class="flex-1">
+						@addressField("website", "WEBSITE", "url", data.Website, "https://www.example.com", data.RequiredFields["website"], data.Errors["website"])
+					</div>
+					<div class="flex-1">
+						@addressField("fax", "FAX", "text", data.Fax, "Enter fax number", data.RequiredFields["fax"], data.Errors["fax"])
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- ========================================= -->
+		<!-- SECTION 4: Tax & Legal Information -->
+		<!-- ========================================= -->
+		<div style="background-color: var(--bg-card); margin-top: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					TAX & LEGAL INFORMATION
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				<!-- Row: GSTIN + PAN -->
+				<div class="flex" style="gap: 24px; margin-bottom: 16px;">
+					<div class="flex-1">
+						@addressField("gstin", "GSTIN", "text", data.GSTIN, "e.g., 27AAPFU0939F1ZV", data.RequiredFields["gstin"], data.Errors["gstin"])
+					</div>
+					<div class="flex-1">
+						@addressField("pan", "PAN", "text", data.PAN, "e.g., ABCDE1234F", data.RequiredFields["pan"], data.Errors["pan"])
+					</div>
+				</div>
+				<!-- Row: CIN -->
+				<div style="width: 50%;">
+					@addressField("cin", "CIN", "text", data.CIN, "Corporate Identity Number", data.RequiredFields["cin"], data.Errors["cin"])
+				</div>
+			</div>
+		</div>
+
+		<!-- ========================================= -->
+		<!-- SECTION 5: Ship To Parent (Install At only) -->
+		<!-- ========================================= -->
+		if data.ShowShipToParent {
+			<div style="background-color: var(--bg-card); margin-top: 24px;">
+				<div style="background-color: #E2DED6; padding: 16px 24px;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+						LINKED SHIP TO ADDRESS (OPTIONAL)
+					</span>
+				</div>
+				<div style="padding: 24px;">
+					<label for="ship_to_parent" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						SHIP TO PARENT
+					</label>
+					<select
+						id="ship_to_parent" name="ship_to_parent"
+						style="width: 100%; max-width: 500px; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; appearance: auto;"
+					>
+						<option value="">None (standalone Install At)</option>
+						for _, st := range data.ShipToAddresses {
+							<option value={ st.ID } selected?={ data.SelectedShipToID == st.ID }>
+								{ st.CompanyName } - { st.City }
+							</option>
+						}
+					</select>
+					<p style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-muted); margin-top: 6px;">
+						Optionally link this Install At address to a Ship To address
+					</p>
+				</div>
+			</div>
+		}
+
+		<!-- ========================================= -->
+		<!-- Action Buttons -->
+		<!-- ========================================= -->
+		<div class="flex justify-end" style="gap: 12px; margin-top: 24px;">
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s", data.ProjectID, addressTypeSlug(data.AddressType))) }
+				hx-get={ fmt.Sprintf("/projects/%s/addresses/%s", data.ProjectID, addressTypeSlug(data.AddressType)) }
+				hx-target="#main-content"
+				hx-push-url="true"
+				class="flex items-center justify-center"
+				style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); background-color: var(--bg-card); border: none; text-decoration: none;"
+			>
+				CANCEL
+			</a>
+			<button
+				type="submit"
+				class="flex items-center justify-center"
+				style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); background-color: var(--terracotta); border: none; cursor: pointer;"
+			>
+				if data.IsEdit {
+					UPDATE ADDRESS
+				} else {
+					SAVE ADDRESS
+				}
+			</button>
+		</div>
+	</form>
+}
+
+templ AddressFormPage(data AddressFormData, headerData HeaderData, sidebarData SidebarData) {
+	if data.IsEdit {
+		@PageShellWithProject("Edit " + data.AddressLabel + " Address — Project Creation", headerData, sidebarData) {
+			@AddressFormContent(data)
+		}
+	} else {
+		@PageShellWithProject("Add " + data.AddressLabel + " Address — Project Creation", headerData, sidebarData) {
+			@AddressFormContent(data)
+		}
+	}
+}

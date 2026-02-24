@@ -24,6 +24,7 @@ func formatQty(val float64) string {
 // HandleBOQView returns a handler that renders the BOQ detail/view page.
 func HandleBOQView(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		projectID := e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		if boqID == "" {
 			return e.String(400, "Missing BOQ ID")
@@ -156,6 +157,7 @@ func HandleBOQView(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 
 		// 7. Build view data
 		data := templates.BOQViewData{
+			ProjectID:        projectID,
 			ID:               boqRecord.Id,
 			Title:            boqRecord.GetString("title"),
 			ReferenceNumber:  boqRecord.GetString("reference_number"),
@@ -173,7 +175,9 @@ func HandleBOQView(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 		if e.Request.Header.Get("HX-Request") == "true" {
 			component = templates.BOQViewContent(data)
 		} else {
-			component = templates.BOQViewPage(data)
+			headerData := GetHeaderData(e.Request)
+			sidebarData := GetSidebarData(e.Request)
+			component = templates.BOQViewPage(data, headerData, sidebarData)
 		}
 		return component.Render(e.Request.Context(), e.Response)
 	}

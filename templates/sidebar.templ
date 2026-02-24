@@ -1,59 +1,338 @@
 package templates
 
+import "fmt"
+import "strings"
+import "strconv"
+
+type AddressTypeCounts struct {
+	BillFrom  int
+	ShipFrom  int
+	BillTo    int
+	ShipTo    int
+	InstallAt int
+	Total     int
+}
+
+type SidebarData struct {
+	ActiveProject     *ActiveProject
+	ActivePath        string
+	AddressCounts     AddressTypeCounts
+	BOQCount          int
+	ShipToIsInstallAt bool
+}
+
+// Backward-compatible: renders sidebar without project context
 templ Sidebar() {
+	@SidebarWithProject(SidebarData{})
+}
+
+// Project-aware sidebar
+templ SidebarWithProject(data SidebarData) {
 	<aside class="w-[260px] min-h-screen flex flex-col" style="background-color: var(--bg-sidebar); padding: 32px 24px;">
 		<div class="flex flex-col" style="gap: 32px;">
-			<!-- Nav -->
 			<div class="flex flex-col">
 				<!-- Dashboard -->
-				<a href="#" class="flex items-center" style="gap: 12px; padding: 14px 0;">
-					<svg style="width: 20px; height: 20px; color: #666666;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<a
+					href="/"
+					hx-get="/"
+					hx-target="#main-content"
+					hx-push-url="true"
+					class="flex items-center"
+					style={ sidebarLinkStyle(data.ActivePath == "/") + " gap: 12px; padding: 14px 0;" }
+				>
+					<svg style={ sidebarIconStyle(data.ActivePath == "/") + " width: 20px; height: 20px;" } xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						<rect width="7" height="7" x="3" y="3" rx="1"></rect>
 						<rect width="7" height="7" x="14" y="3" rx="1"></rect>
 						<rect width="7" height="7" x="14" y="14" rx="1"></rect>
 						<rect width="7" height="7" x="3" y="14" rx="1"></rect>
 					</svg>
-					<span style="color: #666666; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 500; letter-spacing: 1px;">DASHBOARD</span>
+					<span style={ sidebarLabelStyle(data.ActivePath == "/") }>DASHBOARD</span>
 				</a>
-				<!-- Project Details (Active) -->
-				<div class="flex flex-col">
-					<div class="flex items-center" style="gap: 12px; padding: 14px 0; border-top: 2px solid var(--terracotta);">
-						<svg style="width: 20px; height: 20px; color: var(--terracotta);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"></path>
-						</svg>
-						<span style="color: var(--text-light); font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px;">PROJECT DETAILS</span>
-						<svg style="width: 14px; height: 14px; color: var(--text-light);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="m6 9 6 6 6-6"></path>
-						</svg>
-					</div>
-					<!-- Sub-nav -->
-					<div class="flex flex-col" style="padding-left: 32px;">
-						<!-- BOQ (active) -->
-						<a href="/boq" hx-get="/boq" hx-target="#main-content" hx-push-url="true" class="flex items-center" style="gap: 8px; padding: 10px 0;">
-							<div style="width: 6px; height: 6px; background-color: var(--terracotta);"></div>
-							<span style="color: var(--text-light); font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px;">BOQ</span>
-						</a>
-						<!-- Timeline -->
-						<a href="#" class="flex items-center" style="gap: 8px; padding: 10px 0;">
-							<div style="width: 6px; height: 6px; background-color: #666666;"></div>
-							<span style="color: #666666; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 1px;">TIMELINE</span>
-						</a>
-						<!-- Team -->
-						<a href="#" class="flex items-center" style="gap: 8px; padding: 10px 0;">
-							<div style="width: 6px; height: 6px; background-color: #666666;"></div>
-							<span style="color: #666666; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 1px;">TEAM</span>
-						</a>
-					</div>
-				</div>
+
+				if data.ActiveProject != nil {
+					<!-- PROJECT DETAILS (Active project selected) -->
+					@SidebarProjectSection(data)
+				} else {
+					<!-- Projects link (no project selected) -->
+					@SidebarProjectsLink(data)
+				}
+
 				<!-- Settings -->
-				<a href="#" class="flex items-center" style="gap: 12px; padding: 14px 0; border-top: 1px solid var(--border-dark);">
-					<svg style="width: 20px; height: 20px; color: #666666;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-						<circle cx="12" cy="12" r="3"></circle>
-					</svg>
-					<span style="color: #666666; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 500; letter-spacing: 1px;">SETTINGS</span>
-				</a>
+				if data.ActiveProject != nil {
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/projects/%s/settings", data.ActiveProject.ID)) }
+						hx-get={ fmt.Sprintf("/projects/%s/settings", data.ActiveProject.ID) }
+						hx-target="#main-content"
+						hx-push-url="true"
+						class="flex items-center"
+						style={ sidebarLinkStyle(isPathActive(data.ActivePath, fmt.Sprintf("/projects/%s/settings", data.ActiveProject.ID))) + " gap: 12px; padding: 14px 0; border-top: 1px solid var(--border-dark);" }
+					>
+						<svg style={ sidebarIconStyle(isPathActive(data.ActivePath, fmt.Sprintf("/projects/%s/settings", data.ActiveProject.ID))) + " width: 20px; height: 20px;" } xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+							<circle cx="12" cy="12" r="3"></circle>
+						</svg>
+						<span style={ sidebarLabelStyle(isPathActive(data.ActivePath, fmt.Sprintf("/projects/%s/settings", data.ActiveProject.ID))) }>SETTINGS</span>
+					</a>
+				} else {
+					<a
+						href="/settings"
+						class="flex items-center"
+						style="gap: 12px; padding: 14px 0; border-top: 1px solid var(--border-dark);"
+					>
+						<svg style="width: 20px; height: 20px; color: #666666;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+							<circle cx="12" cy="12" r="3"></circle>
+						</svg>
+						<span style="color: #666666; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 500; letter-spacing: 1px;">SETTINGS</span>
+					</a>
+				}
 			</div>
 		</div>
 	</aside>
+}
+
+// SidebarProjectsLink renders a simple "Projects" link when no project is active
+templ SidebarProjectsLink(data SidebarData) {
+	<a
+		href="/projects"
+		hx-get="/projects"
+		hx-target="#main-content"
+		hx-push-url="true"
+		class="flex items-center"
+		style={ sidebarLinkStyle(isPathActive(data.ActivePath, "/projects")) + " gap: 12px; padding: 14px 0; border-top: 1px solid var(--border-dark);" }
+	>
+		<svg style={ sidebarIconStyle(isPathActive(data.ActivePath, "/projects")) + " width: 20px; height: 20px;" } xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+			<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"></path>
+		</svg>
+		<span style={ sidebarLabelStyle(isPathActive(data.ActivePath, "/projects")) }>PROJECTS</span>
+	</a>
+}
+
+// SidebarProjectSection renders the full project navigation when a project is active
+templ SidebarProjectSection(data SidebarData) {
+	<div class="flex flex-col">
+		<!-- Project Details Header -->
+		<div class="flex items-center" style="gap: 12px; padding: 14px 0; border-top: 2px solid var(--terracotta);">
+			<svg style="width: 20px; height: 20px; color: var(--terracotta);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"></path>
+			</svg>
+			<span style="color: var(--text-light); font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px;">
+				PROJECT DETAILS
+			</span>
+		</div>
+
+		<!-- Sub Navigation -->
+		<div class="flex flex-col" style="padding-left: 32px;">
+			<!-- Overview Link -->
+			@SidebarSubLink(
+				fmt.Sprintf("/projects/%s", data.ActiveProject.ID),
+				"OVERVIEW",
+				data.ActivePath == fmt.Sprintf("/projects/%s", data.ActiveProject.ID),
+				0,
+			)
+			<!-- BOQ Link -->
+			@SidebarSubLink(
+				fmt.Sprintf("/projects/%s/boq", data.ActiveProject.ID),
+				"BOQ",
+				isPathActive(data.ActivePath, fmt.Sprintf("/projects/%s/boq", data.ActiveProject.ID)),
+				data.BOQCount,
+			)
+
+			<!-- Addresses Accordion (Alpine.js) -->
+			<div
+				x-data={ fmt.Sprintf(`{ addressOpen: %t }`, isAddressPath(data.ActivePath, data.ActiveProject.ID)) }
+			>
+				<!-- Accordion Trigger -->
+				<button
+					@click="addressOpen = !addressOpen"
+					class="w-full flex items-center justify-between"
+					style="background: none; border: none; cursor: pointer; padding: 10px 0; text-align: left;"
+				>
+					<div class="flex items-center" style="gap: 8px;">
+						<div
+							style={ subnavDotStyle(isAnyAddressActive(data.ActivePath, data.ActiveProject.ID)) }
+						></div>
+						<span style={ subnavLabelStyle(isAnyAddressActive(data.ActivePath, data.ActiveProject.ID)) }>
+							ADDRESSES
+						</span>
+						<!-- Total count badge -->
+						if data.AddressCounts.Total > 0 {
+							<span style="padding: 1px 6px; font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; color: var(--text-light); background-color: var(--border-dark); border-radius: 2px;">
+								{ strconv.Itoa(data.AddressCounts.Total) }
+							</span>
+						}
+					</div>
+					<!-- Chevron -->
+					<svg
+						class="transition-transform duration-200"
+						:class="{ 'rotate-180': addressOpen }"
+						style="width: 12px; height: 12px; color: #666666;"
+						xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+					>
+						<path d="m6 9 6 6 6-6"></path>
+					</svg>
+				</button>
+
+				<!-- Accordion Body -->
+				<div
+					x-show="addressOpen"
+					x-transition:enter="transition ease-out duration-200"
+					x-transition:enter-start="opacity-0 -translate-y-1"
+					x-transition:enter-end="opacity-100 translate-y-0"
+					x-transition:leave="transition ease-in duration-150"
+					x-transition:leave-start="opacity-100 translate-y-0"
+					x-transition:leave-end="opacity-0 -translate-y-1"
+					x-cloak
+					class="flex flex-col"
+					style="padding-left: 14px;"
+				>
+					@SidebarAddressSubLink(
+						fmt.Sprintf("/projects/%s/addresses/bill-from", data.ActiveProject.ID),
+						"Bill From",
+						data.AddressCounts.BillFrom,
+						data.ActivePath,
+					)
+					@SidebarAddressSubLink(
+						fmt.Sprintf("/projects/%s/addresses/ship-from", data.ActiveProject.ID),
+						"Ship From",
+						data.AddressCounts.ShipFrom,
+						data.ActivePath,
+					)
+					@SidebarAddressSubLink(
+						fmt.Sprintf("/projects/%s/addresses/bill-to", data.ActiveProject.ID),
+						"Bill To",
+						data.AddressCounts.BillTo,
+						data.ActivePath,
+					)
+					@SidebarAddressSubLink(
+						fmt.Sprintf("/projects/%s/addresses/ship-to", data.ActiveProject.ID),
+						"Ship To",
+						data.AddressCounts.ShipTo,
+						data.ActivePath,
+					)
+					if !data.ShipToIsInstallAt {
+						@SidebarAddressSubLink(
+							fmt.Sprintf("/projects/%s/addresses/install-at", data.ActiveProject.ID),
+							"Install At",
+							data.AddressCounts.InstallAt,
+							data.ActivePath,
+						)
+					}
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+// SidebarSubLink renders a single sub-navigation link with an optional count badge
+templ SidebarSubLink(href string, label string, isActive bool, count int) {
+	<a
+		href={ templ.SafeURL(href) }
+		hx-get={ href }
+		hx-target="#main-content"
+		hx-push-url="true"
+		class="flex items-center justify-between"
+		style="padding: 10px 0;"
+	>
+		<div class="flex items-center" style="gap: 8px;">
+			<div style={ subnavDotStyle(isActive) }></div>
+			<span style={ subnavLabelStyle(isActive) }>{ label }</span>
+		</div>
+		if count > 0 {
+			<span style="padding: 1px 6px; font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; color: var(--text-light); background-color: var(--border-dark); border-radius: 2px;">
+				{ strconv.Itoa(count) }
+			</span>
+		}
+	</a>
+}
+
+// SidebarAddressSubLink renders an address type link inside the accordion
+templ SidebarAddressSubLink(href string, label string, count int, activePath string) {
+	<a
+		href={ templ.SafeURL(href) }
+		hx-get={ href }
+		hx-target="#main-content"
+		hx-push-url="true"
+		class="flex items-center justify-between"
+		style="padding: 8px 0;"
+	>
+		<div class="flex items-center" style="gap: 8px;">
+			<div style={ addressDotStyle(activePath == href) }></div>
+			<span style={ addressLabelStyle(activePath == href) }>{ label }</span>
+		</div>
+		<span style={ addressCountStyle(count) }>
+			{ strconv.Itoa(count) }
+		</span>
+	</a>
+}
+
+// --- Go helper functions for dynamic styling ---
+
+func sidebarLinkStyle(active bool) string {
+	return "text-decoration: none;"
+}
+
+func sidebarIconStyle(active bool) string {
+	if active {
+		return "color: var(--terracotta);"
+	}
+	return "color: #666666;"
+}
+
+func sidebarLabelStyle(active bool) string {
+	if active {
+		return "color: var(--text-light); font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px;"
+	}
+	return "color: #666666; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 500; letter-spacing: 1px;"
+}
+
+func subnavDotStyle(active bool) string {
+	if active {
+		return "width: 6px; height: 6px; background-color: var(--terracotta); flex-shrink: 0;"
+	}
+	return "width: 6px; height: 6px; background-color: #666666; flex-shrink: 0;"
+}
+
+func subnavLabelStyle(active bool) string {
+	if active {
+		return "color: var(--text-light); font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px;"
+	}
+	return "color: #666666; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 1px;"
+}
+
+func addressDotStyle(active bool) string {
+	if active {
+		return "width: 4px; height: 4px; background-color: var(--terracotta); flex-shrink: 0;"
+	}
+	return "width: 4px; height: 4px; background-color: #555555; flex-shrink: 0;"
+}
+
+func addressLabelStyle(active bool) string {
+	if active {
+		return "color: var(--text-light); font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600;"
+	}
+	return "color: #666666; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 400;"
+}
+
+func addressCountStyle(count int) string {
+	base := "padding: 1px 6px; font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; border-radius: 2px;"
+	if count > 0 {
+		return base + " color: var(--text-light); background-color: var(--border-dark);"
+	}
+	return base + " color: #555555; background-color: transparent;"
+}
+
+// Path matching helpers
+
+func isPathActive(currentPath, targetPath string) bool {
+	return currentPath == targetPath || strings.HasPrefix(currentPath, targetPath+"/")
+}
+
+func isAddressPath(currentPath, projectID string) bool {
+	prefix := fmt.Sprintf("/projects/%s/addresses", projectID)
+	return strings.HasPrefix(currentPath, prefix)
+}
+
+func isAnyAddressActive(currentPath, projectID string) bool {
+	return isAddressPath(currentPath, projectID)
 }

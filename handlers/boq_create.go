@@ -18,13 +18,17 @@ import (
 // HandleBOQCreate returns a handler that renders the BOQ creation form.
 func HandleBOQCreate(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		projectID := e.Request.PathValue("projectId")
 		data := templates.BOQCreateData{
+			ProjectID:  projectID,
 			Date:       time.Now().Format("2006-01-02"),
 			UOMOptions: services.UOMOptions,
 			GSTOptions: services.GSTOptions,
 			Errors:     make(map[string]string),
 		}
-		component := templates.BOQCreatePage(data)
+		headerData := GetHeaderData(e.Request)
+		sidebarData := GetSidebarData(e.Request)
+		component := templates.BOQCreatePage(data, headerData, sidebarData)
 		return component.Render(e.Request.Context(), e.Response)
 	}
 }
@@ -32,6 +36,7 @@ func HandleBOQCreate(app *pocketbase.PocketBase) func(*core.RequestEvent) error 
 // HandleBOQSave returns a handler that processes the BOQ creation form submission.
 func HandleBOQSave(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		projectID := e.Request.PathValue("projectId")
 		if err := e.Request.ParseForm(); err != nil {
 			log.Printf("boq_create: could not parse form: %v", err)
 			return e.String(http.StatusBadRequest, "Invalid form data")
@@ -64,6 +69,7 @@ func HandleBOQSave(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 
 		if len(errors) > 0 {
 			data := templates.BOQCreateData{
+				ProjectID:       projectID,
 				Title:           title,
 				ReferenceNumber: refNumber,
 				Date:            e.Request.FormValue("date"),
@@ -71,7 +77,9 @@ func HandleBOQSave(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 				GSTOptions:      services.GSTOptions,
 				Errors:          errors,
 			}
-			component := templates.BOQCreatePage(data)
+			headerData := GetHeaderData(e.Request)
+			sidebarData := GetSidebarData(e.Request)
+			component := templates.BOQCreatePage(data, headerData, sidebarData)
 			return component.Render(e.Request.Context(), e.Response)
 		}
 
@@ -85,6 +93,7 @@ func HandleBOQSave(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 		boqRecord := core.NewRecord(boqsCol)
 		boqRecord.Set("title", title)
 		boqRecord.Set("reference_number", refNumber)
+		boqRecord.Set("project", projectID)
 
 		if err := app.Save(boqRecord); err != nil {
 			log.Printf("boq_create: could not save BOQ: %v", err)
@@ -97,7 +106,7 @@ func HandleBOQSave(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 		mainItemsCol, err := app.FindCollectionByNameOrId("main_boq_items")
 		if err != nil {
 			log.Printf("boq_create: could not find main_boq_items collection: %v", err)
-			return e.Redirect(http.StatusFound, "/boq/"+boqID)
+			return e.Redirect(http.StatusFound, fmt.Sprintf("/projects/%s/boq/%s", projectID, boqID))
 		}
 
 		subItemsCol, err := app.FindCollectionByNameOrId("sub_items")
@@ -283,6 +292,6 @@ func HandleBOQSave(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 			}
 		}
 
-		return e.Redirect(http.StatusFound, "/boq/"+boqID)
+		return e.Redirect(http.StatusFound, fmt.Sprintf("/projects/%s/boq/%s", projectID, boqID))
 	}
 }

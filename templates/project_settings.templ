@@ -1,0 +1,153 @@
+package templates
+
+type AddressFieldConfig struct {
+	Field    string // e.g. "req_company_name"
+	Label    string // e.g. "Company Name"
+	Required bool
+}
+
+type AddressTypeConfig struct {
+	Type   string // e.g. "bill_from"
+	Label  string // e.g. "Bill From"
+	Fields []AddressFieldConfig
+}
+
+type ProjectSettingsData struct {
+	ProjectID             string
+	ProjectName           string
+	AddressTypes          []AddressTypeConfig
+	Errors                map[string]string
+	ShipToEqualsInstallAt bool
+}
+
+templ ProjectSettingsContent(data ProjectSettingsData) {
+	<div x-data="{ saved: false }"
+	     @settings-saved.window="saved = true; setTimeout(() => saved = false, 3000)">
+		<div x-show="saved" x-transition x-cloak
+		     class="fixed top-4 right-4 z-50 flex items-center gap-2"
+		     style="padding: 12px 20px; background-color: var(--success); color: white; font-family: 'Inter', sans-serif; font-size: 14px;">
+			Settings saved successfully
+		</div>
+	</div>
+	<!-- Breadcrumbs -->
+	<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+		<a
+			href="/projects"
+			hx-get="/projects"
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;"
+		>
+			PROJECTS
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<a
+			hx-get={ "/projects/" + data.ProjectID + "/edit" }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none; cursor: pointer;"
+		>
+			{ data.ProjectName }
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+			SETTINGS
+		</span>
+	</div>
+	<!-- Page Header -->
+	<div>
+		<h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--text-primary); margin: 0;">
+			Project Settings
+		</h1>
+		<p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-top: 8px;">
+			Configure required fields for each address type
+		</p>
+	</div>
+	<!-- Validation Error Banner -->
+	if len(data.Errors) > 0 {
+		<div style="background-color: #FEE2E2; border: 1px solid #EF4444; padding: 12px 16px; margin-top: 24px;">
+			for _, msg := range data.Errors {
+				<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: #DC2626;">
+					{ msg }
+				</div>
+			}
+		</div>
+	}
+	<!-- Form with DaisyUI Tabs -->
+	<form method="POST" action={ templ.SafeURL("/projects/" + data.ProjectID + "/settings") } style="margin-top: 32px;">
+		<div style="background-color: var(--bg-card); padding: 24px; margin-bottom: 8px;">
+			<label class="flex items-center cursor-pointer" style="gap: 12px;">
+				<input type="checkbox" name="ship_to_equals_install_at"
+					if data.ShipToEqualsInstallAt {
+						checked
+					}
+					style="width: 18px; height: 18px; accent-color: var(--terracotta); cursor: pointer;"
+					value="true"
+				/>
+				<div>
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: var(--text-primary);">
+						Ship To = Install At
+					</span>
+					<p style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+						When enabled, the Ship To address is automatically used as the Install At address
+					</p>
+				</div>
+			</label>
+		</div>
+		<div class="tabs tabs-box" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">
+			for i, addrType := range data.AddressTypes {
+				if i == 0 {
+					<input type="radio" name="settings_tabs" class="tab" aria-label={ addrType.Label } checked="checked"/>
+				} else {
+					<input type="radio" name="settings_tabs" class="tab" aria-label={ addrType.Label }/>
+				}
+				<div class="tab-content" style="padding: 24px 24px 16px;">
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 40px;">
+					for _, field := range addrType.Fields {
+						<label class="flex items-center cursor-pointer" style="padding: 10px 0; gap: 12px;">
+							if field.Required {
+								<input
+									type="checkbox"
+									name={ addrType.Type + "." + field.Field }
+									checked
+									style="width: 18px; height: 18px; accent-color: var(--terracotta); cursor: pointer;"
+									value="true"
+								/>
+							} else {
+								<input
+									type="checkbox"
+									name={ addrType.Type + "." + field.Field }
+									style="width: 18px; height: 18px; accent-color: var(--terracotta); cursor: pointer;"
+									value="true"
+								/>
+							}
+							<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+								{ field.Label }
+							</span>
+						</label>
+					}
+				</div>
+				</div>
+			}
+		</div>
+		<!-- Action Buttons -->
+		<div class="flex justify-end" style="gap: 12px; margin-top: 24px;">
+			<a
+				hx-get={ "/projects/" + data.ProjectID + "/edit" }
+				hx-target="#main-content"
+				hx-push-url="true"
+				class="flex items-center justify-center"
+				style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); background-color: var(--bg-card); border: none; text-decoration: none; cursor: pointer;"
+			>CANCEL</a>
+			<button type="submit" class="flex items-center justify-center"
+				style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); background-color: var(--terracotta); border: none; cursor: pointer;"
+			>SAVE SETTINGS</button>
+		</div>
+	</form>
+}
+
+templ ProjectSettingsPage(data ProjectSettingsData, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject("Project Settings — Project Creation", headerData, sidebarData) {
+		@ProjectSettingsContent(data)
+	}
+}

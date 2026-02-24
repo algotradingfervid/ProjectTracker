@@ -146,6 +146,7 @@ func sanitizeFilename(s string) string {
 // HandleBOQExportExcel returns a handler that generates and downloads an Excel file for a BOQ.
 func HandleBOQExportExcel(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		_ = e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		if boqID == "" {
 			return e.String(http.StatusBadRequest, "Missing BOQ ID")
@@ -175,6 +176,7 @@ func HandleBOQExportExcel(app *pocketbase.PocketBase) func(*core.RequestEvent) e
 // HandleBOQExportPDF returns a handler that generates and downloads a PDF file for a BOQ.
 func HandleBOQExportPDF(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		_ = e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		if boqID == "" {
 			return e.String(http.StatusBadRequest, "Missing BOQ ID")

@@ -1,0 +1,56 @@
+package services
+
+// IndianStates is the list of Indian states and union territories for the State dropdown.
+var IndianStates = []string{
+	"Andhra Pradesh",
+	"Arunachal Pradesh",
+	"Assam",
+	"Bihar",
+	"Chhattisgarh",
+	"Goa",
+	"Gujarat",
+	"Haryana",
+	"Himachal Pradesh",
+	"Jharkhand",
+	"Karnataka",
+	"Kerala",
+	"Madhya Pradesh",
+	"Maharashtra",
+	"Manipur",
+	"Meghalaya",
+	"Mizoram",
+	"Nagaland",
+	"Odisha",
+	"Punjab",
+	"Rajasthan",
+	"Sikkim",
+	"Tamil Nadu",
+	"Telangana",
+	"Tripura",
+	"Uttar Pradesh",
+	"Uttarakhand",
+	"West Bengal",
+	// Union Territories
+	"Andaman and Nicobar Islands",
+	"Chandigarh",
+	"Dadra and Nagar Haveli and Daman and Diu",
+	"Delhi",
+	"Jammu and Kashmir",
+	"Ladakh",
+	"Lakshadweep",
+	"Puducherry",
+}
+
+// Countries is a minimal list with India as default.
+var Countries = []string{
+	"India",
+	"United States",
+	"United Kingdom",
+	"United Arab Emirates",
+	"Singapore",
+	"Australia",
+	"Canada",
+	"Germany",
+	"Japan",
+	"Other",
+}

@@ -1,6 +1,9 @@
 package templates
 
+import "fmt"
+
 type BOQCreateData struct {
+	ProjectID       string
 	Title           string
 	ReferenceNumber string
 	Date            string
@@ -9,8 +12,8 @@ type BOQCreateData struct {
 	Errors          map[string]string
 }
 
-templ BOQCreatePage(data BOQCreateData) {
-	@PageShell("Create BOQ — Project Creation") {
+templ BOQCreatePage(data BOQCreateData, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject("Create BOQ — Project Creation", headerData, sidebarData) {
 		<!-- Breadcrumbs -->
 		<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
 			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
@@ -36,7 +39,7 @@ templ BOQCreatePage(data BOQCreateData) {
 		</div>
 
 		<!-- Form -->
-		<form method="POST" action="/boq" x-data={`{
+		<form method="POST" action={ fmt.Sprintf("/projects/%s/boq", data.ProjectID) } x-data={`{
 			items: [{
 				description: '', qty: '', uom: 'Nos', quoted_price: '', budgeted_price: '', gst_percent: '18', expanded: true,
 				subs: []
@@ -514,7 +517,7 @@ templ BOQCreatePage(data BOQCreateData) {
 
 			<!-- Action Buttons -->
 			<div class="flex justify-end" style="gap: 12px; margin-top: 24px;">
-				<a href="/boq" class="flex items-center justify-center"
+				<a href={ templ.SafeURL(fmt.Sprintf("/projects/%s/boq", data.ProjectID)) } class="flex items-center justify-center"
 					style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); background-color: var(--bg-card); border: none; text-decoration: none;"
 				>CANCEL</a>
 				<button type="button" @click="calculate()" class="flex items-center justify-center"

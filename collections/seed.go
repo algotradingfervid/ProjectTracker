@@ -28,10 +28,27 @@ func Seed(app *pocketbase.PocketBase) error {
 
 	log.Println("seed: boqs collection is empty – inserting seed data …")
 
-	// ── 1. Create the BOQ ─────────────────────────────────────────────
+	// ── 1. Create the Project ─────────────────────────────────────────
+	projectsCol, err := app.FindCollectionByNameOrId("projects")
+	if err != nil {
+		return fmt.Errorf("seed: could not find projects collection: %w", err)
+	}
+
+	projectRecord := core.NewRecord(projectsCol)
+	projectRecord.Set("name", "Interior Fit-Out — Block A")
+	projectRecord.Set("client_name", "Acme Constructions Pvt. Ltd.")
+	projectRecord.Set("reference_number", "PO-2025-001")
+	projectRecord.Set("status", "active")
+	projectRecord.Set("ship_to_equals_install_at", true)
+	if err := app.Save(projectRecord); err != nil {
+		return fmt.Errorf("seed: save project: %w", err)
+	}
+
+	// ── 2. Create the BOQ (linked to project) ─────────────────────────
 	boqRecord := core.NewRecord(boqsCol)
 	boqRecord.Set("title", "Interior Fit-Out — Block A")
 	boqRecord.Set("reference_number", "PO-2025-001")
+	boqRecord.Set("project", projectRecord.Id)
 	if err := app.Save(boqRecord); err != nil {
 		return fmt.Errorf("seed: save boq: %w", err)
 	}
