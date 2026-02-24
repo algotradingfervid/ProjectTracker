@@ -16,7 +16,7 @@ type SubItemRowData struct {
 
 templ SubItemRow(data SubItemRowData) {
 	if data.HasSubSubItems {
-		<div x-data="{ open: false }" x-show={ "isSubItemVisible('" + data.ID + "')" } data-description={ data.Description } data-type={ data.Type }>
+		<div x-data="{ open: false }" x-show={ "isSubItemVisible('" + data.ID + "')" } data-description={ data.Description } data-type={ data.Type } data-accordion-row>
 			<!-- Sub Item Row (expandable) -->
 			<div
 				class="flex items-center cursor-pointer"

@@ -10,6 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"encoding/json"
+	"fmt"
 	"projectcreation/templates/partials"
 )
 
@@ -232,6 +233,7 @@ type MainItemEdit struct {
 }
 
 type BOQEditData struct {
+	ProjectID        string
 	ID               string
 	Title            string
 	ReferenceNumber  string
@@ -248,7 +250,7 @@ type BOQEditData struct {
 	OpenSubItemIDs   map[string]bool
 }
 
-func EditSubSubItemsBlock(boqID string, subSubItems []SubSubItemEdit, uomOptions []string, gstOptions []int) templ.Component {
+func EditSubSubItemsBlock(projectID string, boqID string, subSubItems []SubSubItemEdit, uomOptions []string, gstOptions []int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -271,6 +273,7 @@ func EditSubSubItemsBlock(boqID string, subSubItems []SubSubItemEdit, uomOptions
 		ctx = templ.ClearChildren(ctx)
 		for _, ss := range subSubItems {
 			templ_7745c5c3_Err = partials.SubSubItemRowEdit(partials.SubSubItemRowEditData{
+				ProjectID:     projectID,
 				BOQID:         boqID,
 				ID:            ss.ID,
 				Type:          ss.Type,
@@ -292,7 +295,7 @@ func EditSubSubItemsBlock(boqID string, subSubItems []SubSubItemEdit, uomOptions
 	})
 }
 
-func EditSubItemsBlock(boqID string, subItems []SubItemEdit, uomOptions []string, gstOptions []int, openSubItemIDs map[string]bool) templ.Component {
+func EditSubItemsBlock(projectID string, boqID string, subItems []SubItemEdit, uomOptions []string, gstOptions []int, openSubItemIDs map[string]bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -315,6 +318,7 @@ func EditSubItemsBlock(boqID string, subItems []SubItemEdit, uomOptions []string
 		ctx = templ.ClearChildren(ctx)
 		for _, sub := range subItems {
 			templ_7745c5c3_Err = partials.SubItemRowEdit(partials.SubItemRowEditData{
+				ProjectID:       projectID,
 				BOQID:           boqID,
 				ID:              sub.ID,
 				Type:            sub.Type,
@@ -328,7 +332,7 @@ func EditSubItemsBlock(boqID string, subItems []SubItemEdit, uomOptions []string
 				UOMOptions:      uomOptions,
 				GSTOptions:      gstOptions,
 				HasSubSubItems:  len(sub.SubSubItems) > 0,
-				SubSubItemsHTML: EditSubSubItemsBlock(boqID, sub.SubSubItems, uomOptions, gstOptions),
+				SubSubItemsHTML: EditSubSubItemsBlock(projectID, boqID, sub.SubSubItems, uomOptions, gstOptions),
 				DefaultOpen:     openSubItemIDs[sub.ID],
 			}).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
@@ -364,145 +368,159 @@ func BOQEditContent(data BOQEditData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div x-data=\"boqPricing()\" @beforeunload.window=\"if (hasChanges) { event.preventDefault(); event.returnValue = ''; }\"><!-- Breadcrumbs --><div class=\"flex items-center\" style=\"gap: 6px; margin-bottom: 16px;\"><a hx-get=\"/boq\" hx-target=\"#main-content\" hx-push-url=\"true\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-decoration: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;\">PROJECTS</a> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);\">/</span> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div x-data=\"boqPricing()\" @beforeunload.window=\"if (hasChanges) { event.preventDefault(); event.returnValue = ''; }\"><!-- Breadcrumbs --><div class=\"flex items-center\" style=\"gap: 6px; margin-bottom: 16px;\"><a hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.Title)
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/boq", data.ProjectID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 302, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 297, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</span> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);\">/</span> <a hx-get=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" hx-target=\"#main-content\" hx-push-url=\"true\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-decoration: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;\">PROJECTS</a> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);\">/</span> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs("/boq/" + data.ID + "/view")
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(data.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 306, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 306, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" hx-target=\"#main-content\" hx-push-url=\"true\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-decoration: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;\">BOQ</a> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);\">/</span> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;\">EDITING</span></div><!-- Page Header --><div class=\"flex justify-between items-start\"><div><div class=\"flex items-center\" style=\"gap: 12px;\"><h1 style=\"font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--text-primary); margin: 0;\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);\">/</span> <a hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(data.Title)
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/boq/%s/view", data.ProjectID, data.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 325, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 310, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</h1><!-- Unsaved Changes Badge (inline with title) --><div x-show=\"hasChanges\" x-cloak style=\"padding: 4px 10px; background-color: #F0DDD7; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--terracotta); text-transform: uppercase;\">UNSAVED</div></div><!-- Metadata row --><div style=\"margin-top: 12px;\"><span style=\"font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" hx-target=\"#main-content\" hx-push-url=\"true\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-decoration: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;\">BOQ</a> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);\">/</span> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;\">EDITING</span></div><!-- Page Header --><div class=\"flex justify-between items-start\"><div><div class=\"flex items-center\" style=\"gap: 12px;\"><h1 style=\"font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--text-primary); margin: 0;\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var7 string
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(data.Title)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 329, Col: 18}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</h1><!-- Unsaved Changes Badge (inline with title) --><div x-show=\"hasChanges\" x-cloak style=\"padding: 4px 10px; background-color: #F0DDD7; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--terracotta); text-transform: uppercase;\">UNSAVED</div></div><!-- Metadata row --><div style=\"margin-top: 12px;\"><span style=\"font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if data.ReferenceNumber != "" {
-			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(data.ReferenceNumber)
+			var templ_7745c5c3_Var8 string
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(data.ReferenceNumber)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 340, Col: 29}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 344, Col: 29}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if data.CreatedDate != "" {
-				var templ_7745c5c3_Var8 string
-				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(" · ")
+				var templ_7745c5c3_Var9 string
+				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(" · ")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 342, Col: 16}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 346, Col: 16}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, " ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
 		if data.CreatedDate != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "Created ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "Created ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(data.CreatedDate)
+			var templ_7745c5c3_Var10 string
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(data.CreatedDate)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 346, Col: 33}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 350, Col: 33}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</span></div></div><!-- Action Buttons --><div class=\"flex items-center\" style=\"gap: 12px;\"><!-- Cancel Button --><a hx-get=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var10 string
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs("/boq/" + data.ID + "/view")
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 355, Col: 41}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"flex items-center\" style=\"padding: 10px 16px; gap: 8px; background-color: var(--bg-card); border: none; cursor: pointer; text-decoration: none;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-primary)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"18\" x2=\"6\" y1=\"6\" y2=\"18\"></line><line x1=\"6\" x2=\"18\" y1=\"6\" y2=\"18\"></line></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase;\">CANCEL</span></a><!-- Calculate Button --><button type=\"button\" @click=\"recalcTotals(); $nextTick(() => { const el = document.getElementById('boq-edit-summary'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); })\" class=\"flex items-center\" style=\"padding: 10px 16px; gap: 8px; background-color: var(--bg-card); border: none; cursor: pointer;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-primary)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"16\" height=\"20\" x=\"4\" y=\"2\" rx=\"2\"></rect><line x1=\"8\" x2=\"16\" y1=\"6\" y2=\"6\"></line><line x1=\"16\" x2=\"16\" y1=\"14\" y2=\"18\"></line><path d=\"M16 10h.01\"></path><path d=\"M12 10h.01\"></path><path d=\"M8 10h.01\"></path><path d=\"M12 14h.01\"></path><path d=\"M8 14h.01\"></path><path d=\"M12 18h.01\"></path><path d=\"M8 18h.01\"></path></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase;\">CALCULATE</span></button><!-- Save BOQ Button --><button type=\"submit\" form=\"boq-edit-form\" class=\"flex items-center\" style=\"padding: 10px 16px; gap: 8px; background-color: var(--terracotta); border: none; cursor: pointer;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-light)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1-2 2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2Z\"></path><polyline points=\"17 21 17 13 7 13 7 21\"></polyline><polyline points=\"7 3 7 8 15 8\"></polyline></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); text-transform: uppercase;\">SAVE BOQ</span></button></div></div><!-- Edit Form --><form id=\"boq-edit-form\" hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</span></div></div><!-- Action Buttons --><div class=\"flex items-center\" style=\"gap: 12px;\"><!-- Cancel Button --><a hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var11 string
-		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs("/boq/" + data.ID + "/save")
+		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/boq/%s/view", data.ProjectID, data.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 389, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 359, Col: 78}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" hx-target=\"#main-content\" hx-push-url=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"flex items-center\" style=\"padding: 10px 16px; gap: 8px; background-color: var(--bg-card); border: none; cursor: pointer; text-decoration: none;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-primary)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"18\" x2=\"6\" y1=\"6\" y2=\"18\"></line><line x1=\"6\" x2=\"18\" y1=\"6\" y2=\"18\"></line></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase;\">CANCEL</span></a><!-- Calculate Button --><button type=\"button\" @click=\"recalcTotals(); $nextTick(() => { const el = document.getElementById('boq-edit-summary'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); })\" class=\"flex items-center\" style=\"padding: 10px 16px; gap: 8px; background-color: var(--bg-card); border: none; cursor: pointer;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-primary)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"16\" height=\"20\" x=\"4\" y=\"2\" rx=\"2\"></rect><line x1=\"8\" x2=\"16\" y1=\"6\" y2=\"6\"></line><line x1=\"16\" x2=\"16\" y1=\"14\" y2=\"18\"></line><path d=\"M16 10h.01\"></path><path d=\"M12 10h.01\"></path><path d=\"M8 10h.01\"></path><path d=\"M12 14h.01\"></path><path d=\"M8 14h.01\"></path><path d=\"M12 18h.01\"></path><path d=\"M8 18h.01\"></path></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase;\">CALCULATE</span></button><!-- Save BOQ Button --><button type=\"submit\" form=\"boq-edit-form\" class=\"flex items-center\" style=\"padding: 10px 16px; gap: 8px; background-color: var(--terracotta); border: none; cursor: pointer;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-light)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1-2 2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2Z\"></path><polyline points=\"17 21 17 13 7 13 7 21\"></polyline><polyline points=\"7 3 7 8 15 8\"></polyline></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); text-transform: uppercase;\">SAVE BOQ</span></button></div></div><!-- Edit Form --><form id=\"boq-edit-form\" hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs("/boq/" + data.ID)
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/boq/%s/save", data.ProjectID, data.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 391, Col: 34}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 393, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" hx-ext=\"json-enc\" style=\"margin-top: 24px;\"><!-- Accordion Table --><div style=\"background-color: var(--bg-card);\"><!-- Table Header --><div class=\"flex items-center\" style=\"padding: 12px 20px; background-color: #E2DED6; border-bottom: 1px solid var(--border-light);\"><!-- Spacer for chevron --><div style=\"width: 24px; margin-right: 8px;\"></div><!-- # --><div style=\"width: 40px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\">#</div><!-- Description --><div class=\"flex-1\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\">DESCRIPTION</div><!-- Qty --><div style=\"width: 60px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">QTY</div><!-- UOM --><div style=\"width: 60px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\">UOM</div><!-- Quoted Price --><div style=\"width: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">QUOTED ₹</div><!-- Budgeted Price --><div style=\"width: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">BUDGETED ₹</div><!-- GST% --><div style=\"width: 55px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\">GST%</div><!-- Actions --><div style=\"width: 40px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\"></div></div><!-- Main Item Rows -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" hx-target=\"#main-content\" hx-push-url=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var13 string
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/boq/%s", data.ProjectID, data.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 395, Col: 76}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" style=\"margin-top: 24px;\"><!-- Accordion Table --><div style=\"background-color: var(--bg-card);\"><!-- Table Header --><div class=\"flex items-center\" style=\"padding: 12px 20px; background-color: #E2DED6; border-bottom: 1px solid var(--border-light);\"><!-- Spacer for chevron --><div style=\"width: 24px; margin-right: 8px;\"></div><!-- # --><div style=\"width: 40px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\">#</div><!-- Description --><div class=\"flex-1\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\">DESCRIPTION</div><!-- Qty --><div style=\"width: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">QTY</div><!-- UOM --><div style=\"width: 80px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\">UOM</div><!-- Quoted Price --><div style=\"width: 110px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">QUOTED ₹</div><!-- Budgeted Price --><div style=\"width: 110px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">BUDGETED ₹</div><!-- GST% --><div style=\"width: 70px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\">GST%</div><!-- Actions --><div style=\"width: 40px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\"></div></div><!-- Main Item Rows -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(data.MainItems) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"flex justify-center items-center\" style=\"padding: 32px 0; color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 14px;\">No items found. Add a main item to get started.</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div class=\"flex justify-center items-center\" style=\"padding: 32px 0; color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 14px;\">No items found. Add a main item to get started.</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
 			for _, item := range data.MainItems {
 				templ_7745c5c3_Err = partials.MainItemRowEdit(partials.MainItemRowEditData{
+					ProjectID:     data.ProjectID,
 					BOQID:         data.ID,
 					ID:            item.ID,
 					Index:         item.Index,
@@ -516,7 +534,7 @@ func BOQEditContent(data BOQEditData) templ.Component {
 					UOMOptions:    data.UOMOptions,
 					GSTOptions:    data.GSTOptions,
 					HasSubItems:   len(item.SubItems) > 0,
-					SubItemsHTML:  EditSubItemsBlock(data.ID, item.SubItems, data.UOMOptions, data.GSTOptions, data.OpenSubItemIDs),
+					SubItemsHTML:  EditSubItemsBlock(data.ProjectID, data.ID, item.SubItems, data.UOMOptions, data.GSTOptions, data.OpenSubItemIDs),
 					DefaultOpen:   data.OpenMainItemIDs[item.ID],
 				}).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
@@ -524,59 +542,59 @@ func BOQEditContent(data BOQEditData) templ.Component {
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<!-- No results message --><div x-show=\"false\" x-cloak class=\"flex justify-center items-center\" style=\"padding: 32px 0; color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 14px;\">No items match your search criteria.</div></div><!-- Add Main Item Button --><div style=\"padding: 16px; background-color: var(--bg-card); border-top: 1px solid var(--border-light);\"><button type=\"button\" hx-post=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var13 string
-		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs("/boq/" + data.ID + "/main-items")
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 473, Col: 48}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" hx-target=\"#main-content\" hx-push-url=\"false\" class=\"flex items-center\" style=\"width: 100%; padding: 12px 16px; gap: 8px; background-color: var(--bg-page); border: none; cursor: pointer; justify-content: center;\" @click=\"hasChanges = true\"><span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 600; color: var(--text-secondary);\">+</span> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\">Add Main Item</span></button></div></form><!-- Summary Section --><div id=\"boq-edit-summary\" class=\"flex\" style=\"gap: 24px; margin-top: 24px; justify-content: flex-end;\"><!-- Total Quoted --><div style=\"width: 220px; background-color: var(--bg-card); padding: 20px;\"><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);\">TOTAL QUOTED</div><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 8px;\"><span x-text=\"formatINR(totalQuoted)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<!-- No results message --><div x-show=\"false\" x-cloak class=\"flex justify-center items-center\" style=\"padding: 32px 0; color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 14px;\">No items match your search criteria.</div></div><!-- Add Main Item Button --><div style=\"padding: 16px; background-color: var(--bg-card); border-top: 1px solid var(--border-light);\"><button type=\"button\" hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(data.TotalQuoted)
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/boq/%s/main-items", data.ProjectID, data.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 493, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 478, Col: 85}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</span></div></div><!-- Total Budgeted --><div style=\"width: 220px; background-color: var(--bg-card); padding: 20px;\"><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);\">TOTAL BUDGETED</div><div x-bind:style=\"'font-family: Space Grotesk, sans-serif; font-size: 24px; font-weight: 700; margin-top: 8px; color: ' + (margin >= 0 ? 'var(--success)' : 'var(--terracotta)')\"><span x-text=\"formatINR(totalBudgeted)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" hx-target=\"#main-content\" hx-push-url=\"false\" class=\"flex items-center\" style=\"width: 100%; padding: 12px 16px; gap: 8px; background-color: var(--bg-page); border: none; cursor: pointer; justify-content: center;\" @click=\"hasChanges = true\"><span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 600; color: var(--text-secondary);\">+</span> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\">Add Main Item</span></button></div></form><!-- Summary Section --><div id=\"boq-edit-summary\" class=\"flex\" style=\"gap: 24px; margin-top: 24px; justify-content: flex-end;\"><!-- Total Quoted --><div style=\"width: 220px; background-color: var(--bg-card); padding: 20px;\"><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);\">TOTAL QUOTED</div><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 8px;\"><span x-text=\"formatINR(totalQuoted)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var15 string
-		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(data.TotalBudgeted)
+		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(data.TotalQuoted)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 504, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 498, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</span></div></div><!-- Margin --><div style=\"width: 220px; background-color: var(--bg-card); padding: 20px;\"><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);\">MARGIN</div><div x-bind:style=\"'font-family: Space Grotesk, sans-serif; font-size: 24px; font-weight: 700; margin-top: 8px; color: ' + (margin >= 0 ? 'var(--success)' : 'var(--terracotta)')\"><span x-text=\"formatINR(margin)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</span></div></div><!-- Total Budgeted --><div style=\"width: 220px; background-color: var(--bg-card); padding: 20px;\"><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);\">TOTAL BUDGETED</div><div x-bind:style=\"'font-family: Space Grotesk, sans-serif; font-size: 24px; font-weight: 700; margin-top: 8px; color: ' + (margin >= 0 ? 'var(--success)' : 'var(--terracotta)')\"><span x-text=\"formatINR(totalBudgeted)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var16 string
-		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(data.Margin)
+		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(data.TotalBudgeted)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 515, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 509, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</span></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</span></div></div><!-- Margin --><div style=\"width: 220px; background-color: var(--bg-card); padding: 20px;\"><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);\">MARGIN</div><div x-bind:style=\"'font-family: Space Grotesk, sans-serif; font-size: 24px; font-weight: 700; margin-top: 8px; color: ' + (margin >= 0 ? 'var(--success)' : 'var(--terracotta)')\"><span x-text=\"formatINR(margin)\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var17 string
+		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(data.Margin)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 520, Col: 51}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</span></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -584,7 +602,7 @@ func BOQEditContent(data BOQEditData) templ.Component {
 	})
 }
 
-func BOQEditPage(data BOQEditData) templ.Component {
+func BOQEditPage(data BOQEditData, headerData HeaderData, sidebarData SidebarData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -600,12 +618,12 @@ func BOQEditPage(data BOQEditData) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var17 == nil {
-			templ_7745c5c3_Var17 = templ.NopComponent
+		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var18 == nil {
+			templ_7745c5c3_Var18 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var18 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var19 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -623,7 +641,7 @@ func BOQEditPage(data BOQEditData) templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = PageShell("Edit BOQ -- Project Creation").Render(templ.WithChildren(ctx, templ_7745c5c3_Var18), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = PageShellWithProject("Edit BOQ -- Project Creation", headerData, sidebarData).Render(templ.WithChildren(ctx, templ_7745c5c3_Var19), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

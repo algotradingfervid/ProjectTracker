@@ -139,7 +139,7 @@ func GenerateExcel(data ExportData) ([]byte, error) {
 	if err := f.MergeCell(sheetName, "A1", lastCol+"1"); err != nil {
 		return nil, fmt.Errorf("merge title: %w", err)
 	}
-	f.SetCellValue(sheetName, "A1", data.Title)
+	f.SetCellValue(sheetName, "A1", sanitizeExcelCell(data.Title))
 	f.SetCellStyle(sheetName, "A1", lastCol+"1", titleStyle)
 
 	// Row 2: Reference number (if present).
@@ -184,13 +184,13 @@ func GenerateExcel(data ExportData) ([]byte, error) {
 		case 2:
 			desc = "    " + desc
 		}
-		f.SetCellValue(sheetName, "B"+rowStr, desc)
+		f.SetCellValue(sheetName, "B"+rowStr, sanitizeExcelCell(desc))
 
 		// Qty.
 		f.SetCellValue(sheetName, "C"+rowStr, r.Qty)
 
 		// UOM.
-		f.SetCellValue(sheetName, "D"+rowStr, r.UOM)
+		f.SetCellValue(sheetName, "D"+rowStr, sanitizeExcelCell(r.UOM))
 
 		// Quoted Price (formatted string).
 		f.SetCellValue(sheetName, "E"+rowStr, FormatINR(r.QuotedPrice))
@@ -199,7 +199,7 @@ func GenerateExcel(data ExportData) ([]byte, error) {
 		f.SetCellValue(sheetName, "F"+rowStr, FormatINR(r.BudgetedPrice))
 
 		// HSN Code.
-		f.SetCellValue(sheetName, "G"+rowStr, r.HSNCode)
+		f.SetCellValue(sheetName, "G"+rowStr, sanitizeExcelCell(r.HSNCode))
 
 		// GST%.
 		f.SetCellValue(sheetName, "H"+rowStr, r.GSTPercent)
@@ -251,6 +251,20 @@ func GenerateExcel(data ExportData) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+// sanitizeExcelCell prevents formula injection by prefixing dangerous leading
+// characters with a single quote. Excel interprets cells starting with =, +, -,
+// @, \t or \r as formulas, which can be abused for code execution or data theft.
+func sanitizeExcelCell(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	switch s[0] {
+	case '=', '+', '-', '@', '\t', '\r', '|':
+		return "'" + s
+	}
+	return s
 }
 
 // thinBorders returns a slice of excelize.Border for thin borders on all four sides.

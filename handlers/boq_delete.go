@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -11,6 +12,7 @@ import (
 // HandleBOQDelete returns a handler that deletes a BOQ and all its items (via cascade).
 func HandleBOQDelete(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		projectID := e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		if boqID == "" {
 			return e.String(http.StatusBadRequest, "Missing BOQ ID")
@@ -30,10 +32,11 @@ func HandleBOQDelete(app *pocketbase.PocketBase) func(*core.RequestEvent) error 
 		}
 
 		// Redirect to BOQ list
+		boqListURL := fmt.Sprintf("/projects/%s/boq", projectID)
 		if e.Request.Header.Get("HX-Request") == "true" {
-			e.Response.Header().Set("HX-Redirect", "/boq")
+			e.Response.Header().Set("HX-Redirect", boqListURL)
 			return e.String(http.StatusOK, "")
 		}
-		return e.Redirect(http.StatusFound, "/boq")
+		return e.Redirect(http.StatusFound, boqListURL)
 	}
 }

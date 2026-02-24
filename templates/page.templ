@@ -1,11 +1,15 @@
 package templates
 
 templ PageShell(title string) {
+	@PageShellWithProject(title, HeaderData{}, SidebarData{})
+}
+
+templ PageShellWithProject(title string, headerData HeaderData, sidebarData SidebarData) {
 	@Layout(title) {
 		<div class="flex flex-col h-screen">
-			@TopHeader()
+			@TopHeaderWithProject(headerData)
 			<div class="flex flex-1 overflow-hidden">
-				@Sidebar()
+				@SidebarWithProject(sidebarData)
 				<main id="main-content" class="flex-1 overflow-y-auto" style="background-color: var(--bg-page); padding: 40px 48px;">
 					{ children... }
 				</main>

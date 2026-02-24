@@ -1,0 +1,447 @@
+package templates
+
+import (
+	"encoding/json"
+	"fmt"
+	"projectcreation/services"
+)
+
+type AddressImportData struct {
+	ProjectID   string
+	ProjectName string
+	AddressType string // "ship_to" or "install_at"
+	AddressSlug string // "ship-to" or "install-at"
+}
+
+func addressImportTypeName(t string) string {
+	if t == "install_at" {
+		return "Install At"
+	}
+	return "Ship To"
+}
+
+func errorsToJSON(errors []services.ValidationError) string {
+	b, _ := json.Marshal(errors)
+	return string(b)
+}
+
+templ AddressImportContent(data AddressImportData) {
+	<div style="max-width: 900px; margin: 0 auto;">
+		<!-- Page Header -->
+		<div style="margin-bottom: 32px;">
+			<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s", data.ProjectID, data.AddressSlug)) }
+					hx-get={ fmt.Sprintf("/projects/%s/addresses/%s", data.ProjectID, data.AddressSlug) }
+					hx-target="#main-content"
+					hx-push-url="true"
+					style="color: var(--text-secondary); text-decoration: none; display: flex; align-items: center;"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+				</a>
+				<h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--text-primary); margin: 0;">
+					Import { addressImportTypeName(data.AddressType) } Addresses
+				</h1>
+			</div>
+			<p style="font-size: 14px; color: var(--text-secondary); margin: 0; padding-left: 32px;">
+				Project: { data.ProjectName }
+			</p>
+		</div>
+
+		<!-- Download template link -->
+		<div style="background-color: #EFF6FF; border: 1px solid #BFDBFE; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+			<span style="font-size: 14px; color: #1E40AF;">
+				Need the template?
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/template", data.ProjectID, data.AddressType)) }
+					style="color: var(--terracotta); font-weight: 600; text-decoration: underline;"
+				>
+					Download Excel Template
+				</a>
+			</span>
+		</div>
+
+		<!-- Upload form with drag-and-drop -->
+		<div
+			x-data="{
+				dragging: false,
+				fileName: '',
+				handleDrop(e) {
+					this.dragging = false;
+					const file = e.dataTransfer.files[0];
+					if (file) {
+						this.fileName = file.name;
+						this.$refs.fileInput.files = e.dataTransfer.files;
+						htmx.trigger(this.$refs.uploadForm, 'submit');
+					}
+				}
+			}"
+			style="margin-bottom: 24px;"
+		>
+			<form
+				x-ref="uploadForm"
+				hx-post={ fmt.Sprintf("/projects/%s/addresses/%s/import", data.ProjectID, data.AddressSlug) }
+				hx-target="#validation-results"
+				hx-swap="innerHTML"
+				hx-encoding="multipart/form-data"
+				hx-indicator="#upload-spinner"
+			>
+				<div
+					style="border: 2px dashed var(--border-light); padding: 48px; text-align: center; transition: all 0.2s; background-color: var(--bg-card);"
+					x-bind:style="dragging ? 'border-color: var(--terracotta); background-color: rgba(192, 90, 60, 0.05); border: 2px dashed var(--terracotta); padding: 48px; text-align: center;' : 'border: 2px dashed var(--border-light); padding: 48px; text-align: center; background-color: var(--bg-card);'"
+					@dragover.prevent="dragging = true"
+					@dragleave.prevent="dragging = false"
+					@drop.prevent="handleDrop($event)"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px; opacity: 0.4;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
+					<p style="font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">
+						Drop your CSV or Excel file here
+					</p>
+					<p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">or</p>
+					<label style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px; background-color: var(--terracotta); color: white; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.5px; cursor: pointer; text-transform: uppercase;">
+						Browse Files
+						<input
+							x-ref="fileInput"
+							type="file"
+							name="file"
+							accept=".csv,.xlsx"
+							style="display: none;"
+							@change="fileName = $event.target.files[0]?.name || ''; if(fileName) htmx.trigger($refs.uploadForm, 'submit')"
+						/>
+					</label>
+					<p
+						x-show="fileName"
+						x-text="'Selected: ' + fileName"
+						style="margin-top: 12px; font-size: 13px; color: var(--success); font-weight: 500;"
+					></p>
+				</div>
+			</form>
+
+			<!-- Loading spinner -->
+			<div id="upload-spinner" class="htmx-indicator" style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 16px; padding: 16px;">
+				<span class="loading loading-spinner loading-md" style="color: var(--terracotta);"></span>
+				<span style="font-size: 14px; color: var(--text-secondary);">Validating file...</span>
+			</div>
+		</div>
+
+		<!-- Validation results target -->
+		<div id="validation-results"></div>
+	</div>
+}
+
+templ AddressImportPage(data AddressImportData, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject(fmt.Sprintf("Import %s Addresses", addressImportTypeName(data.AddressType)), headerData, sidebarData) {
+		@AddressImportContent(data)
+	}
+}
+
+templ AddressValidationResults(projectID, addressType, addressSlug string, result *services.ValidationResult, parsedRowsJSON string) {
+	<div style="display: flex; flex-direction: column; gap: 24px;">
+		<!-- Summary cards -->
+		<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+			<div style="background-color: var(--bg-card); padding: 20px; text-align: center;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;">
+					TOTAL ROWS
+				</div>
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: var(--text-primary);">
+					{ fmt.Sprint(result.TotalRows) }
+				</div>
+			</div>
+			<div style="background-color: rgba(74, 124, 89, 0.1); padding: 20px; text-align: center;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--success); text-transform: uppercase; margin-bottom: 8px;">
+					VALID
+				</div>
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: var(--success);">
+					{ fmt.Sprint(result.ValidRows) }
+				</div>
+			</div>
+			if result.ErrorRows > 0 {
+				<div style="background-color: rgba(220, 38, 38, 0.1); padding: 20px; text-align: center;">
+					<div style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--error); text-transform: uppercase; margin-bottom: 8px;">
+						ERRORS
+					</div>
+					<div style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: var(--error);">
+						{ fmt.Sprint(result.ErrorRows) }
+					</div>
+				</div>
+			} else {
+				<div style="background-color: var(--bg-card); padding: 20px; text-align: center;">
+					<div style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;">
+						ERRORS
+					</div>
+					<div style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: var(--text-secondary);">
+						0
+					</div>
+				</div>
+			}
+		</div>
+
+		if result.ErrorRows > 0 {
+			<!-- Error table -->
+			<div style="background-color: var(--bg-card); border: 1px solid var(--border-light);">
+				<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-light);">
+					<h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: var(--error); margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
+						Validation Errors ({ fmt.Sprint(len(result.Errors)) })
+					</h3>
+					<button
+						style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border: 1px solid var(--border-light); background: white; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; cursor: pointer; color: var(--text-secondary); text-transform: uppercase;"
+						data-errors={ errorsToJSON(result.Errors) }
+						data-url={ fmt.Sprintf("/projects/%s/addresses/%s/import/errors", projectID, addressSlug) }
+						onclick="
+							var errors = JSON.parse(this.getAttribute('data-errors'));
+							var url = this.getAttribute('data-url');
+							fetch(url, {
+								method: 'POST',
+								headers: {'Content-Type': 'application/json'},
+								body: JSON.stringify(errors)
+							})
+							.then(function(r) { return r.blob(); })
+							.then(function(blob) {
+								var u = URL.createObjectURL(blob);
+								var a = document.createElement('a');
+								a.href = u;
+								a.download = 'error_report.xlsx';
+								a.click();
+								URL.revokeObjectURL(u);
+							});
+						"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
+						Download Error Report
+					</button>
+				</div>
+				<div style="max-height: 400px; overflow-y: auto;">
+					<table style="width: 100%; border-collapse: collapse;">
+						<thead>
+							<tr style="background-color: var(--bg-page);">
+								<th style="padding: 10px 16px; text-align: left; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-light); width: 80px;">
+									ROW #
+								</th>
+								<th style="padding: 10px 16px; text-align: left; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-light); width: 180px;">
+									FIELD
+								</th>
+								<th style="padding: 10px 16px; text-align: left; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-light);">
+									ERROR
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, err := range result.Errors {
+								<tr style="border-bottom: 1px solid var(--border-light);">
+									<td style="padding: 10px 16px; font-size: 13px; color: var(--text-primary); font-weight: 600;">
+										{ fmt.Sprint(err.Row) }
+									</td>
+									<td style="padding: 10px 16px; font-size: 13px; color: var(--text-primary);">
+										{ err.Field }
+									</td>
+									<td style="padding: 10px 16px; font-size: 13px; color: var(--error);">
+										{ err.Message }
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		}
+
+		<!-- Action buttons -->
+		<div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 8px;">
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/import", projectID, addressSlug)) }
+				hx-get={ fmt.Sprintf("/projects/%s/addresses/%s/import", projectID, addressSlug) }
+				hx-target="#main-content"
+				hx-push-url="true"
+				style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border: 1px solid var(--border-light); background: white; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; cursor: pointer; color: var(--text-secondary); text-decoration: none; text-transform: uppercase;"
+			>
+				Upload Different File
+			</a>
+			if result.ErrorRows == 0 {
+				<form
+					hx-post={ fmt.Sprintf("/projects/%s/addresses/%s/import/commit", projectID, addressSlug) }
+					hx-target="#validation-results"
+					hx-swap="innerHTML"
+					hx-indicator="#commit-spinner"
+					style="display: inline;"
+				>
+					<input type="hidden" name="parsed_rows_json" value={ parsedRowsJSON }/>
+					<button
+						type="submit"
+						style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px; background-color: var(--terracotta); color: white; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; cursor: pointer; border: none; text-transform: uppercase;"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
+						Confirm Import ({ fmt.Sprint(result.ValidRows) } rows)
+					</button>
+				</form>
+				<!-- Commit spinner -->
+				<div id="commit-spinner" class="htmx-indicator" style="display: flex; align-items: center; gap: 8px;">
+					<span class="loading loading-spinner loading-sm" style="color: var(--terracotta);"></span>
+					<span style="font-size: 13px; color: var(--text-secondary);">Importing...</span>
+				</div>
+			} else {
+				<button
+					style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px; background-color: #999; color: white; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; border: none; text-transform: uppercase; cursor: not-allowed; opacity: 0.6;"
+					disabled
+				>
+					Confirm Import (fix errors first)
+				</button>
+			}
+		</div>
+	</div>
+}
+
+templ AddressImportSuccess(projectID, addressSlug string, count int) {
+	<div style="display: flex; flex-direction: column; gap: 24px;">
+		<!-- Success alert -->
+		<div style="background-color: rgba(74, 124, 89, 0.1); border: 1px solid var(--success); padding: 24px; display: flex; align-items: center; gap: 16px;">
+			<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+				<polyline points="22 4 12 14.01 9 11.01"></polyline>
+			</svg>
+			<div>
+				<h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--success); margin: 0 0 4px 0;">
+					Import Successful
+				</h3>
+				<p style="font-size: 14px; color: var(--text-primary); margin: 0;">
+					{ fmt.Sprint(count) } addresses imported successfully.
+				</p>
+			</div>
+		</div>
+
+		<!-- Action buttons -->
+		<div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 8px;">
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/import", projectID, addressSlug)) }
+				hx-get={ fmt.Sprintf("/projects/%s/addresses/%s/import", projectID, addressSlug) }
+				hx-target="#main-content"
+				hx-push-url="true"
+				style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border: 1px solid var(--border-light); background: white; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; cursor: pointer; color: var(--text-secondary); text-decoration: none; text-transform: uppercase;"
+			>
+				Import More
+			</a>
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s", projectID, addressSlug)) }
+				hx-get={ fmt.Sprintf("/projects/%s/addresses/%s", projectID, addressSlug) }
+				hx-target="#main-content"
+				hx-push-url="true"
+				style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px; background-color: var(--terracotta); color: white; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; cursor: pointer; border: none; text-decoration: none; text-transform: uppercase;"
+			>
+				View Address List
+			</a>
+		</div>
+	</div>
+}
+
+templ AddressImportFailure(projectID, addressSlug string, result *services.ImportResult) {
+	<div style="display: flex; flex-direction: column; gap: 24px;">
+		<!-- Error alert -->
+		<div style="background-color: rgba(220, 38, 38, 0.1); border: 1px solid var(--error); padding: 24px; display: flex; align-items: center; gap: 16px;">
+			<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<circle cx="12" cy="12" r="10"></circle>
+				<line x1="15" y1="9" x2="9" y2="15"></line>
+				<line x1="9" y1="9" x2="15" y2="15"></line>
+			</svg>
+			<div>
+				<h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--error); margin: 0 0 4px 0;">
+					Import Failed
+				</h3>
+				if result.RolledBack {
+					<p style="font-size: 14px; color: var(--text-primary); margin: 0;">
+						The import was rolled back due to errors.
+						{ fmt.Sprint(result.Failed) } rows failed out of { fmt.Sprint(result.TotalRows) }.
+					</p>
+				} else {
+					<p style="font-size: 14px; color: var(--text-primary); margin: 0;">
+						{ fmt.Sprint(result.Imported) } rows imported, { fmt.Sprint(result.Failed) } rows failed.
+					</p>
+				}
+			</div>
+		</div>
+
+		<!-- Summary cards -->
+		<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+			<div style="background-color: var(--bg-card); padding: 20px; text-align: center;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;">
+					TOTAL ROWS
+				</div>
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: var(--text-primary);">
+					{ fmt.Sprint(result.TotalRows) }
+				</div>
+			</div>
+			<div style="background-color: rgba(74, 124, 89, 0.1); padding: 20px; text-align: center;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--success); text-transform: uppercase; margin-bottom: 8px;">
+					IMPORTED
+				</div>
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: var(--success);">
+					{ fmt.Sprint(result.Imported) }
+				</div>
+			</div>
+			<div style="background-color: rgba(220, 38, 38, 0.1); padding: 20px; text-align: center;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--error); text-transform: uppercase; margin-bottom: 8px;">
+					FAILED
+				</div>
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: var(--error);">
+					{ fmt.Sprint(result.Failed) }
+				</div>
+			</div>
+		</div>
+
+		if len(result.Errors) > 0 {
+			<!-- Error details table -->
+			<div style="background-color: var(--bg-card); border: 1px solid var(--border-light);">
+				<div style="padding: 16px 20px; border-bottom: 1px solid var(--border-light);">
+					<h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: var(--error); margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
+						Failed Rows ({ fmt.Sprint(len(result.Errors)) })
+					</h3>
+				</div>
+				<div style="max-height: 400px; overflow-y: auto;">
+					<table style="width: 100%; border-collapse: collapse;">
+						<thead>
+							<tr style="background-color: var(--bg-page);">
+								<th style="padding: 10px 16px; text-align: left; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-light); width: 80px;">
+									ROW #
+								</th>
+								<th style="padding: 10px 16px; text-align: left; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-light); width: 180px;">
+									FIELD
+								</th>
+								<th style="padding: 10px 16px; text-align: left; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-light);">
+									ERROR
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, rowErr := range result.Errors {
+								<tr style="border-bottom: 1px solid var(--border-light);">
+									<td style="padding: 10px 16px; font-size: 13px; color: var(--text-primary); font-weight: 600;">
+										{ fmt.Sprint(rowErr.Row) }
+									</td>
+									<td style="padding: 10px 16px; font-size: 13px; color: var(--text-primary);">
+										{ rowErr.Field }
+									</td>
+									<td style="padding: 10px 16px; font-size: 13px; color: var(--error);">
+										{ rowErr.Message }
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		}
+
+		<!-- Action buttons -->
+		<div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 8px;">
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/import", projectID, addressSlug)) }
+				hx-get={ fmt.Sprintf("/projects/%s/addresses/%s/import", projectID, addressSlug) }
+				hx-target="#main-content"
+				hx-push-url="true"
+				style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px; background-color: var(--terracotta); color: white; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; cursor: pointer; border: none; text-decoration: none; text-transform: uppercase;"
+			>
+				Re-upload File
+			</a>
+		</div>
+	</div>
+}
+

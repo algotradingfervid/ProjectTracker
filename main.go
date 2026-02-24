@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -22,6 +23,12 @@ func main() {
 		if err := collections.Seed(app); err != nil {
 			log.Printf("Warning: seed data failed: %v", err)
 		}
+		if err := collections.MigrateOrphanBOQsToProjects(app); err != nil {
+			log.Printf("Warning: project migration failed: %v", err)
+		}
+		if err := collections.MigrateDefaultAddressSettings(app); err != nil {
+			log.Printf("Warning: address settings migration failed: %v", err)
+		}
 		return se.Next()
 	})
 
@@ -29,49 +36,162 @@ func main() {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.GET("/static/{path...}", apis.Static(os.DirFS("./static"), false))
 
+		// Apply active project middleware globally
+		se.Router.BindFunc(handlers.ActiveProjectMiddleware(app))
+
+		// ── Project activation ───────────────────────────────────
+		se.Router.POST("/projects/{id}/activate", handlers.HandleProjectActivate(app))
+		se.Router.POST("/projects/deactivate", handlers.HandleProjectDeactivate(app))
+
+		// ── Project CRUD ─────────────────────────────────────────
+		se.Router.GET("/projects", handlers.HandleProjectList(app))
+		se.Router.GET("/projects/create", handlers.HandleProjectCreate(app))
+		se.Router.POST("/projects", handlers.HandleProjectSave(app))
+		se.Router.GET("/projects/{id}/edit", handlers.HandleProjectEdit(app))
+		se.Router.POST("/projects/{id}/save", handlers.HandleProjectUpdate(app))
+		se.Router.DELETE("/projects/{id}", handlers.HandleProjectDelete(app))
+		se.Router.GET("/projects/{id}/settings", handlers.HandleProjectSettings(app))
+		se.Router.GET("/projects/{id}", handlers.HandleProjectView(app))
+		se.Router.POST("/projects/{id}/settings", handlers.HandleProjectSettingsSave(app))
+
+		// Project-scoped address routes
+		addressTypes := []struct {
+			slug     string
+			addrType handlers.AddressType
+		}{
+			{"bill-from", handlers.AddressTypeBillFrom},
+			{"ship-from", handlers.AddressTypeShipFrom},
+			{"bill-to", handlers.AddressTypeBillTo},
+			{"ship-to", handlers.AddressTypeShipTo},
+			{"install-at", handlers.AddressTypeInstallAt},
+		}
+		for _, at := range addressTypes {
+			se.Router.GET(
+				"/projects/{projectId}/addresses/"+at.slug,
+				handlers.HandleAddressList(app, at.addrType),
+			)
+			se.Router.GET(
+				"/projects/{projectId}/addresses/"+at.slug+"/count",
+				handlers.HandleAddressCount(app, at.addrType),
+			)
+
+			// Create form (GET renders form, POST saves new address)
+			se.Router.GET(
+				"/projects/{projectId}/addresses/"+at.slug+"/new",
+				handlers.HandleAddressCreate(app, at.addrType),
+			)
+			se.Router.POST(
+				"/projects/{projectId}/addresses/"+at.slug+"/new",
+				handlers.HandleAddressSave(app, at.addrType),
+			)
+
+			// Edit form (GET renders form, POST updates address)
+			se.Router.GET(
+				"/projects/{projectId}/addresses/"+at.slug+"/{addressId}/edit",
+				handlers.HandleAddressEdit(app, at.addrType),
+			)
+			se.Router.POST(
+				"/projects/{projectId}/addresses/"+at.slug+"/{addressId}/edit",
+				handlers.HandleAddressUpdate(app, at.addrType),
+			)
+		}
+
+		// Address template download
+		se.Router.GET("/projects/{projectId}/addresses/{type}/template",
+			handlers.HandleAddressTemplateDownload(app))
+
+		// Address import - upload & validate
+		se.Router.GET("/projects/{projectId}/addresses/{type}/import",
+			handlers.HandleAddressImportPage(app))
+		se.Router.POST("/projects/{projectId}/addresses/{type}/import",
+			handlers.HandleAddressValidate(app))
+
+		// Address import - commit
+		se.Router.POST("/projects/{projectId}/addresses/{type}/import/commit",
+			handlers.HandleAddressImportCommit(app))
+
+		// Address import - download error report
+		se.Router.POST("/projects/{projectId}/addresses/{type}/import/errors",
+			handlers.HandleAddressErrorReport(app))
+
+		// Address export
+		se.Router.GET("/projects/{projectId}/addresses/{type}/export",
+			handlers.HandleAddressExportExcel(app))
+
+		// Address delete operations (bulk must be before {addressId} to avoid matching "bulk" as an ID)
+		se.Router.DELETE("/projects/{projectId}/addresses/{type}/bulk",
+			handlers.HandleAddressBulkDelete(app))
+		se.Router.GET("/projects/{projectId}/addresses/{type}/{addressId}/delete-info",
+			handlers.HandleAddressDeleteInfo(app))
+		se.Router.DELETE("/projects/{projectId}/addresses/{type}/{addressId}",
+			handlers.HandleAddressDelete(app))
+
+		// ── Project-scoped BOQ routes ───────────────────────────
 		// BOQ creation
-		se.Router.GET("/boq/create", handlers.HandleBOQCreate(app))
-		se.Router.POST("/boq", handlers.HandleBOQSave(app))
+		se.Router.GET("/projects/{projectId}/boq/create", handlers.HandleBOQCreate(app))
+		se.Router.POST("/projects/{projectId}/boq", handlers.HandleBOQSave(app))
 
 		// BOQ edit mode
-		se.Router.GET("/boq/{id}/edit", handlers.HandleBOQEdit(app))
-		se.Router.GET("/boq/{id}/view", handlers.HandleBOQViewMode(app))
-		se.Router.POST("/boq/{id}/save", handlers.HandleBOQUpdate(app))
+		se.Router.GET("/projects/{projectId}/boq/{id}/edit", handlers.HandleBOQEdit(app))
+		se.Router.GET("/projects/{projectId}/boq/{id}/view", handlers.HandleBOQViewMode(app))
+		se.Router.POST("/projects/{projectId}/boq/{id}/save", handlers.HandleBOQUpdate(app))
 
 		// BOQ delete
-		se.Router.DELETE("/boq/{id}", handlers.HandleBOQDelete(app))
+		se.Router.DELETE("/projects/{projectId}/boq/{id}", handlers.HandleBOQDelete(app))
 
 		// BOQ export
-		se.Router.GET("/boq/{id}/export/excel", handlers.HandleBOQExportExcel(app))
-		se.Router.GET("/boq/{id}/export/pdf", handlers.HandleBOQExportPDF(app))
+		se.Router.GET("/projects/{projectId}/boq/{id}/export/excel", handlers.HandleBOQExportExcel(app))
+		se.Router.GET("/projects/{projectId}/boq/{id}/export/pdf", handlers.HandleBOQExportPDF(app))
 
-		// BOQ edit - add items (new REST-style endpoints)
-		se.Router.POST("/boq/{id}/main-items", handlers.HandleAddMainItem(app))
-		se.Router.POST("/boq/{id}/main-item/{mainItemId}/subitems", handlers.HandleAddSubItem(app))
-		se.Router.POST("/boq/{id}/subitem/{subItemId}/subsubitems", handlers.HandleAddSubSubItem(app))
+		// BOQ edit - add items
+		se.Router.POST("/projects/{projectId}/boq/{id}/main-items", handlers.HandleAddMainItem(app))
+		se.Router.POST("/projects/{projectId}/boq/{id}/main-item/{mainItemId}/subitems", handlers.HandleAddSubItem(app))
+		se.Router.POST("/projects/{projectId}/boq/{id}/subitem/{subItemId}/subsubitems", handlers.HandleAddSubSubItem(app))
 
 		// BOQ edit - delete items
-		se.Router.DELETE("/boq/{id}/main-item/{itemId}", handlers.HandleDeleteMainItem(app))
-		se.Router.DELETE("/boq/{id}/subitem/{subItemId}", handlers.HandleDeleteSubItem(app))
-		se.Router.DELETE("/boq/{id}/subsubitem/{subSubItemId}", handlers.HandleDeleteSubSubItem(app))
+		se.Router.DELETE("/projects/{projectId}/boq/{id}/main-item/{itemId}", handlers.HandleDeleteMainItem(app))
+		se.Router.DELETE("/projects/{projectId}/boq/{id}/subitem/{subItemId}", handlers.HandleDeleteSubItem(app))
+		se.Router.DELETE("/projects/{projectId}/boq/{id}/subsubitem/{subSubItemId}", handlers.HandleDeleteSubSubItem(app))
 
 		// BOQ edit - expand/collapse (lazy load sub-items)
-		se.Router.GET("/boq/{id}/main-item/{itemId}/subitems", handlers.HandleExpandMainItem(app))
+		se.Router.GET("/projects/{projectId}/boq/{id}/main-item/{itemId}/subitems", handlers.HandleExpandMainItem(app))
 
 		// BOQ edit - patch individual fields (optional auto-save)
-		se.Router.PATCH("/boq/{id}/main-item/{itemId}", handlers.HandlePatchMainItem(app))
-		se.Router.PATCH("/boq/{id}/subitem/{subItemId}", handlers.HandlePatchSubItem(app))
-		se.Router.PATCH("/boq/{id}/subsubitem/{subSubItemId}", handlers.HandlePatchSubSubItem(app))
+		se.Router.PATCH("/projects/{projectId}/boq/{id}/main-item/{itemId}", handlers.HandlePatchMainItem(app))
+		se.Router.PATCH("/projects/{projectId}/boq/{id}/subitem/{subItemId}", handlers.HandlePatchSubItem(app))
+		se.Router.PATCH("/projects/{projectId}/boq/{id}/subsubitem/{subSubItemId}", handlers.HandlePatchSubSubItem(app))
 
 		// BOQ view (must be after specific /boq/{id}/* routes)
-		se.Router.GET("/boq/{id}", handlers.HandleBOQView(app))
+		se.Router.GET("/projects/{projectId}/boq/{id}", handlers.HandleBOQView(app))
 
 		// BOQ list page
-		se.Router.GET("/boq", handlers.HandleBOQList(app))
+		se.Router.GET("/projects/{projectId}/boq", handlers.HandleBOQList(app))
 
-		// Redirect home to BOQ list
+		// ── Legacy BOQ redirects ─────────────────────────────────
+		se.Router.GET("/boq", func(e *core.RequestEvent) error {
+			activeProject := handlers.GetActiveProject(e.Request)
+			if activeProject != nil {
+				return e.Redirect(http.StatusFound, fmt.Sprintf("/projects/%s/boq", activeProject.ID))
+			}
+			return e.Redirect(http.StatusFound, "/projects")
+		})
+
+		se.Router.GET("/boq/{id}", func(e *core.RequestEvent) error {
+			boqID := e.Request.PathValue("id")
+			boq, err := app.FindRecordById("boqs", boqID)
+			if err != nil {
+				return e.String(http.StatusNotFound, "BOQ not found")
+			}
+			projectID := boq.GetString("project")
+			if projectID == "" {
+				return e.String(http.StatusNotFound, "BOQ has no project")
+			}
+			return e.Redirect(http.StatusFound, fmt.Sprintf("/projects/%s/boq/%s", projectID, boqID))
+		})
+
+		// Redirect home to projects list
 		se.Router.GET("/", func(e *core.RequestEvent) error {
-			return e.Redirect(http.StatusFound, "/boq")
+			return e.Redirect(http.StatusFound, "/projects")
 		})
 
 		return se.Next()

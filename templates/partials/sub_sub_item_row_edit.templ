@@ -4,6 +4,7 @@ import "fmt"
 import "strconv"
 
 type SubSubItemRowEditData struct {
+	ProjectID     string
 	BOQID         string
 	ID            string
 	Type          string // "product" or "service"
@@ -38,17 +39,17 @@ templ SubSubItemRowEdit(data SubSubItemRowEditData) {
 				<option value="product" selected?={ data.Type == "product" }>Product</option>
 				<option value="service" selected?={ data.Type == "service" }>Service</option>
 			</select>
-			<input
-				type="text"
+			<textarea
 				name={ "sub_sub_item_" + data.ID + "_description" }
-				value={ data.Description }
 				placeholder="Description"
-				style="width: 100%; padding: 6px 8px; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+				rows="2"
+				style="width: 100%; padding: 6px 8px; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; resize: vertical;"
 				@change="hasChanges = true"
-			/>
+				@input="{ const lines = $el.value.split('\n'); if (lines.length > 20) { $el.value = lines.slice(0, 20).join('\n'); } }"
+			>{ data.Description }</textarea>
 		</div>
 		<!-- Qty/Unit -->
-		<div style="width: 60px; padding-left: 8px;">
+		<div style="width: 100px; padding-left: 8px;">
 			<input
 				type="number"
 				name={ "sub_sub_item_" + data.ID + "_qty_per_unit" }
@@ -61,7 +62,7 @@ templ SubSubItemRowEdit(data SubSubItemRowEditData) {
 			/>
 		</div>
 		<!-- UOM -->
-		<div style="width: 60px; padding-left: 8px;">
+		<div style="width: 70px; padding-left: 8px;">
 			<select
 				name={ "sub_sub_item_" + data.ID + "_uom" }
 				style="width: 100%; padding: 6px 8px; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-primary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; text-align: center;"
@@ -73,7 +74,7 @@ templ SubSubItemRowEdit(data SubSubItemRowEditData) {
 			</select>
 		</div>
 		<!-- Unit Price -->
-		<div style="width: 100px; padding-left: 8px;">
+		<div style="width: 110px; padding-left: 8px;">
 			<input
 				type="number"
 				name={ "sub_sub_item_" + data.ID + "_unit_price" }
@@ -86,11 +87,11 @@ templ SubSubItemRowEdit(data SubSubItemRowEditData) {
 			/>
 		</div>
 		<!-- Budgeted Price (read-only calculated) -->
-		<div style="width: 100px; padding-left: 8px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right;">
+		<div style="width: 110px; padding-left: 8px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right;">
 			<span x-text={ "pricing.subSubItems['" + data.ID + "'] ? pricing.subSubItems['" + data.ID + "'].budgeted.toFixed(2) : '" + fmt.Sprintf("%.2f", data.BudgetedPrice) + "'" }></span>
 		</div>
 		<!-- GST% -->
-		<div style="width: 55px; padding-left: 8px;">
+		<div style="width: 70px; padding-left: 8px;">
 			<select
 				name={ "sub_sub_item_" + data.ID + "_gst_percent" }
 				style="width: 100%; padding: 6px 8px; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary); background-color: #fff; border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; text-align: center;"
@@ -105,7 +106,7 @@ templ SubSubItemRowEdit(data SubSubItemRowEditData) {
 		<div style="width: 40px; padding-left: 8px; display: flex; align-items: center; justify-content: center;">
 			<button
 				type="button"
-				hx-delete={ "/boq/" + data.BOQID + "/subsubitem/" + data.ID }
+				hx-delete={ fmt.Sprintf("/projects/%s/boq/%s/subsubitem/%s", data.ProjectID, data.BOQID, data.ID) }
 				hx-target="#main-content"
 				hx-confirm="Are you sure you want to delete this sub-sub item?"
 				style="display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; padding: 4px;"

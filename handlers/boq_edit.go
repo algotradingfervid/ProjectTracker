@@ -153,7 +153,9 @@ func renderBOQEdit(e *core.RequestEvent, data templates.BOQEditData) error {
 	if e.Request.Header.Get("HX-Request") == "true" {
 		component = templates.BOQEditContent(data)
 	} else {
-		component = templates.BOQEditPage(data)
+		headerData := GetHeaderData(e.Request)
+		sidebarData := GetSidebarData(e.Request)
+		component = templates.BOQEditPage(data, headerData, sidebarData)
 	}
 	return component.Render(e.Request.Context(), e.Response)
 }
@@ -161,6 +163,7 @@ func renderBOQEdit(e *core.RequestEvent, data templates.BOQEditData) error {
 // HandleBOQEdit returns a handler that renders the BOQ edit form with all data populated.
 func HandleBOQEdit(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		projectID := e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		if boqID == "" {
 			return e.String(400, "Missing BOQ ID")
@@ -171,6 +174,7 @@ func HandleBOQEdit(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 			log.Printf("boq_edit: %v", err)
 			return e.String(500, "Internal error")
 		}
+		data.ProjectID = projectID
 
 		return renderBOQEdit(e, data)
 	}
@@ -187,6 +191,7 @@ func HandleBOQViewMode(app *pocketbase.PocketBase) func(*core.RequestEvent) erro
 // recalculates budgeted prices, and returns the BOQ view content.
 func HandleBOQUpdate(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		projectID := e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		if boqID == "" {
 			return e.String(400, "Missing BOQ ID")
@@ -460,6 +465,7 @@ func HandleBOQUpdate(app *pocketbase.PocketBase) func(*core.RequestEvent) error 
 
 		// Build view data
 		viewData := templates.BOQViewData{
+			ProjectID:        projectID,
 			ID:               boqRecord.Id,
 			Title:            boqRecord.GetString("title"),
 			ReferenceNumber:  boqRecord.GetString("reference_number"),
@@ -473,7 +479,7 @@ func HandleBOQUpdate(app *pocketbase.PocketBase) func(*core.RequestEvent) error 
 		}
 
 		// Set HX-Push-Url so the browser URL updates back to the view URL
-		e.Response.Header().Set("HX-Push-Url", "/boq/"+boqID)
+		e.Response.Header().Set("HX-Push-Url", fmt.Sprintf("/projects/%s/boq/%s", projectID, boqID))
 
 		// Render the view content partial
 		component := templates.BOQViewContent(viewData)
@@ -484,6 +490,7 @@ func HandleBOQUpdate(app *pocketbase.PocketBase) func(*core.RequestEvent) error 
 // HandleAddMainItem creates a new empty main item for a BOQ and re-renders the edit page.
 func HandleAddMainItem(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		projectID := e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		if boqID == "" {
 			return e.String(400, "Missing BOQ ID")
@@ -517,6 +524,7 @@ func HandleAddMainItem(app *pocketbase.PocketBase) func(*core.RequestEvent) erro
 			log.Printf("add_main_item: %v", err)
 			return e.String(500, "Internal error")
 		}
+		data.ProjectID = projectID
 		return renderBOQEdit(e, data)
 	}
 }
@@ -524,6 +532,7 @@ func HandleAddMainItem(app *pocketbase.PocketBase) func(*core.RequestEvent) erro
 // HandleAddSubItem creates a new empty sub item under a main item and re-renders the edit page.
 func HandleAddSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		projectID := e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		mainItemID := e.Request.PathValue("mainItemId")
 		if boqID == "" || mainItemID == "" {
@@ -559,6 +568,7 @@ func HandleAddSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) error
 			log.Printf("add_sub_item: %v", err)
 			return e.String(500, "Internal error")
 		}
+		data.ProjectID = projectID
 		return renderBOQEdit(e, data)
 	}
 }
@@ -566,6 +576,7 @@ func HandleAddSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) error
 // HandleAddSubSubItem creates a new empty sub-sub item under a sub item and re-renders the edit page.
 func HandleAddSubSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		projectID := e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		subItemID := e.Request.PathValue("subItemId")
 		if boqID == "" || subItemID == "" {
@@ -609,6 +620,7 @@ func HandleAddSubSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) er
 			log.Printf("add_sub_sub_item: %v", err)
 			return e.String(500, "Internal error")
 		}
+		data.ProjectID = projectID
 		return renderBOQEdit(e, data)
 	}
 }

@@ -14,13 +14,22 @@ import (
 // HandleBOQList returns a handler that renders the BOQ list page.
 func HandleBOQList(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		projectID := e.Request.PathValue("projectId")
+		if projectID == "" {
+			activeProject := GetActiveProject(e.Request)
+			if activeProject == nil {
+				return e.Redirect(302, "/projects")
+			}
+			projectID = activeProject.ID
+		}
+
 		boqsCol, err := app.FindCollectionByNameOrId("boqs")
 		if err != nil {
 			log.Printf("boq_list: could not find boqs collection: %v", err)
 			return e.String(500, "Internal error")
 		}
 
-		records, err := app.FindAllRecords(boqsCol)
+		records, err := app.FindRecordsByFilter(boqsCol, "project = {:projectId}", "-created", 0, 0, map[string]any{"projectId": projectID})
 		if err != nil {
 			log.Printf("boq_list: could not query boqs: %v", err)
 			return e.String(500, "Internal error")
@@ -80,6 +89,7 @@ func HandleBOQList(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 		margin := grandTotalQuoted - grandTotalBudgeted
 
 		data := templates.BOQListData{
+			ProjectID:        projectID,
 			Items:            items,
 			TotalBOQs:        len(records),
 			SumQuoted:        services.FormatINR(grandTotalQuoted),
@@ -92,7 +102,9 @@ func HandleBOQList(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 		if e.Request.Header.Get("HX-Request") == "true" {
 			component = templates.BOQListContent(data)
 		} else {
-			component = templates.BOQListPage(data)
+			headerData := GetHeaderData(e.Request)
+			sidebarData := GetSidebarData(e.Request)
+			component = templates.BOQListPage(data, headerData, sidebarData)
 		}
 		return component.Render(e.Request.Context(), e.Response)
 	}

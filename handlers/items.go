@@ -16,6 +16,7 @@ import (
 // and re-renders the full edit page to refresh pricing state.
 func HandleDeleteMainItem(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		projectID := e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		itemID := e.Request.PathValue("itemId")
 		if boqID == "" || itemID == "" {
@@ -39,6 +40,7 @@ func HandleDeleteMainItem(app *pocketbase.PocketBase) func(*core.RequestEvent) e
 			log.Printf("delete_main_item: %v", err)
 			return e.String(500, "Internal error")
 		}
+		data.ProjectID = projectID
 		return renderBOQEdit(e, data)
 	}
 }
@@ -47,6 +49,7 @@ func HandleDeleteMainItem(app *pocketbase.PocketBase) func(*core.RequestEvent) e
 // and re-renders the edit page.
 func HandleDeleteSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		projectID := e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		subItemID := e.Request.PathValue("subItemId")
 		if boqID == "" || subItemID == "" {
@@ -74,6 +77,7 @@ func HandleDeleteSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) er
 			log.Printf("delete_sub_item: %v", err)
 			return e.String(500, "Internal error")
 		}
+		data.ProjectID = projectID
 		return renderBOQEdit(e, data)
 	}
 }
@@ -81,6 +85,7 @@ func HandleDeleteSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) er
 // HandleDeleteSubSubItem deletes a sub-sub-item and re-renders the edit page.
 func HandleDeleteSubSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		projectID := e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		subSubItemID := e.Request.PathValue("subSubItemId")
 		if boqID == "" || subSubItemID == "" {
@@ -116,6 +121,7 @@ func HandleDeleteSubSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent)
 			log.Printf("delete_sub_sub_item: %v", err)
 			return e.String(500, "Internal error")
 		}
+		data.ProjectID = projectID
 		return renderBOQEdit(e, data)
 	}
 }
@@ -124,6 +130,7 @@ func HandleDeleteSubSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent)
 // Used for lazy loading when expanding a main item accordion.
 func HandleExpandMainItem(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
+		projectID := e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		mainItemID := e.Request.PathValue("itemId")
 		if boqID == "" || mainItemID == "" {
@@ -183,7 +190,7 @@ func HandleExpandMainItem(app *pocketbase.PocketBase) func(*core.RequestEvent) e
 			})
 		}
 
-		component := templates.EditSubItemsBlock(boqID, subItems, services.UOMOptions, services.GSTOptions, nil)
+		component := templates.EditSubItemsBlock(projectID, boqID, subItems, services.UOMOptions, services.GSTOptions, nil)
 		return component.Render(e.Request.Context(), e.Response)
 	}
 }

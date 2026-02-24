@@ -2,6 +2,7 @@ package templates
 
 import (
 	"encoding/json"
+	"fmt"
 	"projectcreation/templates/partials"
 )
 
@@ -224,6 +225,7 @@ type MainItemEdit struct {
 }
 
 type BOQEditData struct {
+	ProjectID        string
 	ID               string
 	Title            string
 	ReferenceNumber  string
@@ -240,9 +242,10 @@ type BOQEditData struct {
 	OpenSubItemIDs   map[string]bool
 }
 
-templ EditSubSubItemsBlock(boqID string, subSubItems []SubSubItemEdit, uomOptions []string, gstOptions []int) {
+templ EditSubSubItemsBlock(projectID string, boqID string, subSubItems []SubSubItemEdit, uomOptions []string, gstOptions []int) {
 	for _, ss := range subSubItems {
 		@partials.SubSubItemRowEdit(partials.SubSubItemRowEditData{
+			ProjectID:     projectID,
 			BOQID:         boqID,
 			ID:            ss.ID,
 			Type:          ss.Type,
@@ -259,9 +262,10 @@ templ EditSubSubItemsBlock(boqID string, subSubItems []SubSubItemEdit, uomOption
 	}
 }
 
-templ EditSubItemsBlock(boqID string, subItems []SubItemEdit, uomOptions []string, gstOptions []int, openSubItemIDs map[string]bool) {
+templ EditSubItemsBlock(projectID string, boqID string, subItems []SubItemEdit, uomOptions []string, gstOptions []int, openSubItemIDs map[string]bool) {
 	for _, sub := range subItems {
 		@partials.SubItemRowEdit(partials.SubItemRowEditData{
+			ProjectID:       projectID,
 			BOQID:           boqID,
 			ID:              sub.ID,
 			Type:            sub.Type,
@@ -275,7 +279,7 @@ templ EditSubItemsBlock(boqID string, subItems []SubItemEdit, uomOptions []strin
 			UOMOptions:      uomOptions,
 			GSTOptions:      gstOptions,
 			HasSubSubItems:  len(sub.SubSubItems) > 0,
-			SubSubItemsHTML: EditSubSubItemsBlock(boqID, sub.SubSubItems, uomOptions, gstOptions),
+			SubSubItemsHTML: EditSubSubItemsBlock(projectID, boqID, sub.SubSubItems, uomOptions, gstOptions),
 			DefaultOpen:     openSubItemIDs[sub.ID],
 		})
 	}
@@ -290,7 +294,7 @@ templ BOQEditContent(data BOQEditData) {
 		<!-- Breadcrumbs -->
 		<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
 			<a
-				hx-get="/boq"
+				hx-get={ fmt.Sprintf("/projects/%s/boq", data.ProjectID) }
 				hx-target="#main-content"
 				hx-push-url="true"
 				style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-decoration: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;"
@@ -303,7 +307,7 @@ templ BOQEditContent(data BOQEditData) {
 			</span>
 			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
 			<a
-				hx-get={ "/boq/" + data.ID + "/view" }
+				hx-get={ fmt.Sprintf("/projects/%s/boq/%s/view", data.ProjectID, data.ID) }
 				hx-target="#main-content"
 				hx-push-url="true"
 				style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-decoration: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;"
@@ -352,7 +356,7 @@ templ BOQEditContent(data BOQEditData) {
 			<div class="flex items-center" style="gap: 12px;">
 				<!-- Cancel Button -->
 				<a
-					hx-get={ "/boq/" + data.ID + "/view" }
+					hx-get={ fmt.Sprintf("/projects/%s/boq/%s/view", data.ProjectID, data.ID) }
 					hx-target="#main-content"
 					hx-push-url="true"
 					class="flex items-center"
@@ -386,10 +390,10 @@ templ BOQEditContent(data BOQEditData) {
 		<!-- Edit Form -->
 		<form
 			id="boq-edit-form"
-			hx-post={ "/boq/" + data.ID + "/save" }
+			hx-post={ fmt.Sprintf("/projects/%s/boq/%s/save", data.ProjectID, data.ID) }
 			hx-target="#main-content"
-			hx-push-url={ "/boq/" + data.ID }
-			hx-ext="json-enc"
+			hx-push-url={ fmt.Sprintf("/projects/%s/boq/%s", data.ProjectID, data.ID) }
+
 			style="margin-top: 24px;"
 		>
 			<!-- Accordion Table -->
@@ -407,23 +411,23 @@ templ BOQEditContent(data BOQEditData) {
 						DESCRIPTION
 					</div>
 					<!-- Qty -->
-					<div style="width: 60px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;">
+					<div style="width: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;">
 						QTY
 					</div>
 					<!-- UOM -->
-					<div style="width: 60px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;">
+					<div style="width: 80px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;">
 						UOM
 					</div>
 					<!-- Quoted Price -->
-					<div style="width: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;">
+					<div style="width: 110px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;">
 						QUOTED ₹
 					</div>
 					<!-- Budgeted Price -->
-					<div style="width: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;">
+					<div style="width: 110px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;">
 						BUDGETED ₹
 					</div>
 					<!-- GST% -->
-					<div style="width: 55px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;">
+					<div style="width: 70px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;">
 						GST%
 					</div>
 					<!-- Actions -->
@@ -438,6 +442,7 @@ templ BOQEditContent(data BOQEditData) {
 				} else {
 					for _, item := range data.MainItems {
 						@partials.MainItemRowEdit(partials.MainItemRowEditData{
+							ProjectID:     data.ProjectID,
 							BOQID:         data.ID,
 							ID:            item.ID,
 							Index:         item.Index,
@@ -451,7 +456,7 @@ templ BOQEditContent(data BOQEditData) {
 							UOMOptions:    data.UOMOptions,
 							GSTOptions:    data.GSTOptions,
 							HasSubItems:   len(item.SubItems) > 0,
-							SubItemsHTML:  EditSubItemsBlock(data.ID, item.SubItems, data.UOMOptions, data.GSTOptions, data.OpenSubItemIDs),
+							SubItemsHTML:  EditSubItemsBlock(data.ProjectID, data.ID, item.SubItems, data.UOMOptions, data.GSTOptions, data.OpenSubItemIDs),
 							DefaultOpen:   data.OpenMainItemIDs[item.ID],
 						})
 					}
@@ -470,7 +475,7 @@ templ BOQEditContent(data BOQEditData) {
 			<div style="padding: 16px; background-color: var(--bg-card); border-top: 1px solid var(--border-light);">
 				<button
 					type="button"
-					hx-post={ "/boq/" + data.ID + "/main-items" }
+					hx-post={ fmt.Sprintf("/projects/%s/boq/%s/main-items", data.ProjectID, data.ID) }
 					hx-target="#main-content"
 					hx-push-url="false"
 					class="flex items-center"
@@ -519,8 +524,8 @@ templ BOQEditContent(data BOQEditData) {
 	</div>
 }
 
-templ BOQEditPage(data BOQEditData) {
-	@PageShell("Edit BOQ -- Project Creation") {
+templ BOQEditPage(data BOQEditData, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject("Edit BOQ -- Project Creation", headerData, sidebarData) {
 		@BOQEditContent(data)
 	}
 }

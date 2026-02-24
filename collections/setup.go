@@ -8,14 +8,47 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-// Setup programmatically creates/ensures the boqs, main_boq_items,
-// sub_items and sub_sub_items collections exist.
+// Setup programmatically creates/ensures the projects, boqs, main_boq_items,
+// sub_items, sub_sub_items, addresses, and project_address_settings collections.
 func Setup(app *pocketbase.PocketBase) {
+	// ── Projects (top-level container for BOQs and addresses) ────────
+	projects := ensureCollection(app, "projects", func(c *core.Collection) {
+		c.Fields.Add(&core.TextField{Name: "name", Required: true})
+		c.Fields.Add(&core.TextField{Name: "client_name", Required: false})
+		c.Fields.Add(&core.TextField{Name: "reference_number", Required: false})
+		c.Fields.Add(&core.SelectField{
+			Name:      "status",
+			Required:  true,
+			Values:    []string{"active", "completed", "on_hold"},
+			MaxSelect: 1,
+		})
+		c.Fields.Add(&core.BoolField{Name: "ship_to_equals_install_at"})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+
+	// ── BOQs ─────────────────────────────────────────────────────────
 	boqs := ensureCollection(app, "boqs", func(c *core.Collection) {
 		c.Fields.Add(&core.TextField{Name: "title", Required: true})
 		c.Fields.Add(&core.TextField{Name: "reference_number", Required: false})
+		c.Fields.Add(&core.RelationField{
+			Name:          "project",
+			Required:      false,
+			CollectionId:  projects.Id,
+			CascadeDelete: false,
+			MaxSelect:     1,
+		})
 		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
 		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+
+	// Add project relation to existing boqs collection (idempotent)
+	ensureField(app, "boqs", &core.RelationField{
+		Name:          "project",
+		Required:      false,
+		CollectionId:  projects.Id,
+		CascadeDelete: false,
+		MaxSelect:     1,
 	})
 
 	mainBOQItems := ensureCollection(app, "main_boq_items", func(c *core.Collection) {
@@ -83,6 +116,121 @@ func Setup(app *pocketbase.PocketBase) {
 		c.Fields.Add(&core.TextField{Name: "hsn_code", Required: false})
 		c.Fields.Add(&core.NumberField{Name: "gst_percent", Required: true})
 	})
+
+	// ── Addresses ────────────────────────────────────────────────────
+	addresses := ensureCollection(app, "addresses", func(c *core.Collection) {
+		c.Fields.Add(&core.SelectField{
+			Name:      "address_type",
+			Required:  true,
+			Values:    []string{"bill_from", "ship_from", "bill_to", "ship_to", "install_at"},
+			MaxSelect: 1,
+		})
+		c.Fields.Add(&core.RelationField{
+			Name:          "project",
+			Required:      true,
+			CollectionId:  projects.Id,
+			CascadeDelete: true,
+			MaxSelect:     1,
+		})
+
+		// Company & contact fields
+		c.Fields.Add(&core.TextField{Name: "company_name", Required: false})
+		c.Fields.Add(&core.TextField{Name: "contact_person", Required: false})
+
+		// Address fields
+		c.Fields.Add(&core.TextField{Name: "address_line_1", Required: false})
+		c.Fields.Add(&core.TextField{Name: "address_line_2", Required: false})
+		c.Fields.Add(&core.TextField{Name: "city", Required: false})
+		c.Fields.Add(&core.TextField{Name: "state", Required: false})
+		c.Fields.Add(&core.TextField{Name: "pin_code", Required: false})
+		c.Fields.Add(&core.TextField{Name: "country", Required: false})
+		c.Fields.Add(&core.TextField{Name: "landmark", Required: false})
+		c.Fields.Add(&core.TextField{Name: "district", Required: false})
+
+		// Contact fields
+		c.Fields.Add(&core.TextField{Name: "phone", Required: false})
+		c.Fields.Add(&core.EmailField{Name: "email", Required: false})
+		c.Fields.Add(&core.TextField{Name: "fax", Required: false})
+		c.Fields.Add(&core.URLField{Name: "website", Required: false})
+
+		// Tax / registration fields
+		c.Fields.Add(&core.TextField{Name: "gstin", Required: false})
+		c.Fields.Add(&core.TextField{Name: "pan", Required: false})
+		c.Fields.Add(&core.TextField{Name: "cin", Required: false})
+
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+
+	// Add ship_to_parent self-relation (must be after addresses is created)
+	ensureField(app, "addresses", &core.RelationField{
+		Name:          "ship_to_parent",
+		Required:      false,
+		CollectionId:  addresses.Id,
+		CascadeDelete: false,
+		MaxSelect:     1,
+	})
+
+	// ── Project Address Settings ─────────────────────────────────────
+	ensureCollection(app, "project_address_settings", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{
+			Name:          "project",
+			Required:      true,
+			CollectionId:  projects.Id,
+			CascadeDelete: true,
+			MaxSelect:     1,
+		})
+		c.Fields.Add(&core.SelectField{
+			Name:      "address_type",
+			Required:  true,
+			Values:    []string{"bill_from", "ship_from", "bill_to", "ship_to", "install_at"},
+			MaxSelect: 1,
+		})
+
+		// Boolean fields: true = this field is required for this address type
+		c.Fields.Add(&core.BoolField{Name: "req_company_name"})
+		c.Fields.Add(&core.BoolField{Name: "req_contact_person"})
+		c.Fields.Add(&core.BoolField{Name: "req_address_line_1"})
+		c.Fields.Add(&core.BoolField{Name: "req_address_line_2"})
+		c.Fields.Add(&core.BoolField{Name: "req_city"})
+		c.Fields.Add(&core.BoolField{Name: "req_state"})
+		c.Fields.Add(&core.BoolField{Name: "req_pin_code"})
+		c.Fields.Add(&core.BoolField{Name: "req_country"})
+		c.Fields.Add(&core.BoolField{Name: "req_landmark"})
+		c.Fields.Add(&core.BoolField{Name: "req_district"})
+		c.Fields.Add(&core.BoolField{Name: "req_phone"})
+		c.Fields.Add(&core.BoolField{Name: "req_email"})
+		c.Fields.Add(&core.BoolField{Name: "req_fax"})
+		c.Fields.Add(&core.BoolField{Name: "req_website"})
+		c.Fields.Add(&core.BoolField{Name: "req_gstin"})
+		c.Fields.Add(&core.BoolField{Name: "req_pan"})
+		c.Fields.Add(&core.BoolField{Name: "req_cin"})
+
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+}
+
+// ensureField adds a field to an existing collection if it doesn't already exist.
+// It is a no-op if the field is already present.
+func ensureField(app *pocketbase.PocketBase, collectionName string, field core.Field) {
+	col, err := app.FindCollectionByNameOrId(collectionName)
+	if err != nil {
+		log.Printf("ensureField: collection %q not found, skipping field add.\n", collectionName)
+		return
+	}
+
+	existingField := col.Fields.GetByName(field.GetName())
+	if existingField != nil {
+		return
+	}
+
+	col.Fields.Add(field)
+	if err := app.Save(col); err != nil {
+		log.Printf("ensureField: failed to add field %q to %q: %v\n", field.GetName(), collectionName, err)
+	} else {
+		log.Printf("ensureField: added field %q to collection %q\n", field.GetName(), collectionName)
+	}
 }
 
 // ensureCollection checks if a collection already exists by name. If it does,
