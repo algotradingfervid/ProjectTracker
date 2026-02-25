@@ -16,13 +16,13 @@ func HandleProjectEdit(app *pocketbase.PocketBase) func(*core.RequestEvent) erro
 	return func(e *core.RequestEvent) error {
 		projectID := e.Request.PathValue("id")
 		if projectID == "" {
-			return e.String(http.StatusBadRequest, "Missing project ID")
+			return ErrorToast(e, http.StatusBadRequest, "Missing project ID")
 		}
 
 		record, err := app.FindRecordById("projects", projectID)
 		if err != nil {
 			log.Printf("project_edit: could not find project %s: %v", projectID, err)
-			return e.String(http.StatusNotFound, "Project not found")
+			return ErrorToast(e, http.StatusNotFound, "Project not found")
 		}
 
 		boqs, _ := app.FindRecordsByFilter(
@@ -78,17 +78,17 @@ func HandleProjectUpdate(app *pocketbase.PocketBase) func(*core.RequestEvent) er
 	return func(e *core.RequestEvent) error {
 		projectID := e.Request.PathValue("id")
 		if projectID == "" {
-			return e.String(http.StatusBadRequest, "Missing project ID")
+			return ErrorToast(e, http.StatusBadRequest, "Missing project ID")
 		}
 
 		if err := e.Request.ParseForm(); err != nil {
-			return e.String(http.StatusBadRequest, "Invalid form data")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid form data")
 		}
 
 		record, err := app.FindRecordById("projects", projectID)
 		if err != nil {
 			log.Printf("project_update: could not find project %s: %v", projectID, err)
-			return e.String(http.StatusNotFound, "Project not found")
+			return ErrorToast(e, http.StatusNotFound, "Project not found")
 		}
 
 		name := strings.TrimSpace(e.Request.FormValue("name"))
@@ -127,6 +127,7 @@ func HandleProjectUpdate(app *pocketbase.PocketBase) func(*core.RequestEvent) er
 		}
 
 		if len(errors) > 0 {
+			SetToast(e, "warning", "Please fix the errors below")
 			boqs, _ := app.FindRecordsByFilter("boqs", "project = {:projectId}", "", 0, 0, map[string]any{"projectId": projectID})
 			var addressCount int
 			addresses, err := app.FindRecordsByFilter("addresses", "project = {:projectId}", "", 0, 0, map[string]any{"projectId": projectID})
@@ -172,8 +173,10 @@ func HandleProjectUpdate(app *pocketbase.PocketBase) func(*core.RequestEvent) er
 
 		if err := app.Save(record); err != nil {
 			log.Printf("project_update: could not save project %s: %v", projectID, err)
-			return e.String(http.StatusInternalServerError, "Failed to save project")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
+
+		SetToast(e, "success", "Project updated successfully")
 
 		if e.Request.Header.Get("HX-Request") == "true" {
 			e.Response.Header().Set("HX-Redirect", "/projects")

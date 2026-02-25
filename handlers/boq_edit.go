@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 
 	"github.com/a-h/templ"
@@ -166,13 +167,13 @@ func HandleBOQEdit(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 		projectID := e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		if boqID == "" {
-			return e.String(400, "Missing BOQ ID")
+			return ErrorToast(e, http.StatusBadRequest, "Missing BOQ ID")
 		}
 
 		data, err := buildBOQEditData(app, boqID, nil, nil)
 		if err != nil {
 			log.Printf("boq_edit: %v", err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 		data.ProjectID = projectID
 
@@ -194,37 +195,37 @@ func HandleBOQUpdate(app *pocketbase.PocketBase) func(*core.RequestEvent) error 
 		projectID := e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		if boqID == "" {
-			return e.String(400, "Missing BOQ ID")
+			return ErrorToast(e, http.StatusBadRequest, "Missing BOQ ID")
 		}
 
 		if err := e.Request.ParseForm(); err != nil {
-			return e.String(400, "Invalid form data")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid form data")
 		}
 
 		// Fetch collections
 		mainItemsCol, err := app.FindCollectionByNameOrId("main_boq_items")
 		if err != nil {
 			log.Printf("boq_save: could not find main_boq_items collection: %v", err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		subItemsCol, err := app.FindCollectionByNameOrId("sub_items")
 		if err != nil {
 			log.Printf("boq_save: could not find sub_items collection: %v", err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		subSubItemsCol, err := app.FindCollectionByNameOrId("sub_sub_items")
 		if err != nil {
 			log.Printf("boq_save: could not find sub_sub_items collection: %v", err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		// Fetch existing main item records
 		mainItems, err := app.FindRecordsByFilter(mainItemsCol, "boq = {:boqId}", "sort_order", 0, 0, map[string]any{"boqId": boqID})
 		if err != nil {
 			log.Printf("boq_save: could not query main items for BOQ %s: %v", boqID, err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		for _, mi := range mainItems {
@@ -365,7 +366,7 @@ func HandleBOQUpdate(app *pocketbase.PocketBase) func(*core.RequestEvent) error 
 		boqRecord, err := app.FindRecordById("boqs", boqID)
 		if err != nil {
 			log.Printf("boq_save: could not find BOQ %s after save: %v", boqID, err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		// Re-fetch main items with updated data
@@ -478,6 +479,8 @@ func HandleBOQUpdate(app *pocketbase.PocketBase) func(*core.RequestEvent) error 
 			IsPositiveMargin: margin >= 0,
 		}
 
+		SetToast(e, "success", "BOQ updated")
+
 		// Set HX-Push-Url so the browser URL updates back to the view URL
 		e.Response.Header().Set("HX-Push-Url", fmt.Sprintf("/projects/%s/boq/%s", projectID, boqID))
 
@@ -493,12 +496,12 @@ func HandleAddMainItem(app *pocketbase.PocketBase) func(*core.RequestEvent) erro
 		projectID := e.Request.PathValue("projectId")
 		boqID := e.Request.PathValue("id")
 		if boqID == "" {
-			return e.String(400, "Missing BOQ ID")
+			return ErrorToast(e, http.StatusBadRequest, "Missing BOQ ID")
 		}
 
 		mainItemsCol, err := app.FindCollectionByNameOrId("main_boq_items")
 		if err != nil {
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 		existing, _ := app.FindRecordsByFilter(mainItemsCol, "boq = {:boqId}", "sort_order", 0, 0, map[string]any{"boqId": boqID})
 
@@ -515,14 +518,14 @@ func HandleAddMainItem(app *pocketbase.PocketBase) func(*core.RequestEvent) erro
 
 		if err := app.Save(record); err != nil {
 			log.Printf("add_main_item: error creating record: %v", err)
-			return e.String(500, fmt.Sprintf("Failed to create item: %v", err))
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		// Re-render with the new main item's accordion open
 		data, err := buildBOQEditData(app, boqID, map[string]bool{record.Id: true}, nil)
 		if err != nil {
 			log.Printf("add_main_item: %v", err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 		data.ProjectID = projectID
 		return renderBOQEdit(e, data)
@@ -536,12 +539,12 @@ func HandleAddSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) error
 		boqID := e.Request.PathValue("id")
 		mainItemID := e.Request.PathValue("mainItemId")
 		if boqID == "" || mainItemID == "" {
-			return e.String(400, "Missing IDs")
+			return ErrorToast(e, http.StatusBadRequest, "Missing required IDs")
 		}
 
 		subItemsCol, err := app.FindCollectionByNameOrId("sub_items")
 		if err != nil {
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 		existing, _ := app.FindRecordsByFilter(subItemsCol, "main_item = {:mainId}", "sort_order", 0, 0, map[string]any{"mainId": mainItemID})
 
@@ -559,14 +562,14 @@ func HandleAddSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) error
 
 		if err := app.Save(record); err != nil {
 			log.Printf("add_sub_item: error creating record: %v", err)
-			return e.String(500, fmt.Sprintf("Failed to create sub item: %v", err))
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		// Re-render with the parent main item's accordion open
 		data, err := buildBOQEditData(app, boqID, map[string]bool{mainItemID: true}, nil)
 		if err != nil {
 			log.Printf("add_sub_item: %v", err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 		data.ProjectID = projectID
 		return renderBOQEdit(e, data)
@@ -580,12 +583,12 @@ func HandleAddSubSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) er
 		boqID := e.Request.PathValue("id")
 		subItemID := e.Request.PathValue("subItemId")
 		if boqID == "" || subItemID == "" {
-			return e.String(400, "Missing IDs")
+			return ErrorToast(e, http.StatusBadRequest, "Missing required IDs")
 		}
 
 		subSubItemsCol, err := app.FindCollectionByNameOrId("sub_sub_items")
 		if err != nil {
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 		existing, _ := app.FindRecordsByFilter(subSubItemsCol, "sub_item = {:subId}", "sort_order", 0, 0, map[string]any{"subId": subItemID})
 
@@ -603,14 +606,14 @@ func HandleAddSubSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) er
 
 		if err := app.Save(record); err != nil {
 			log.Printf("add_sub_sub_item: error creating record: %v", err)
-			return e.String(500, fmt.Sprintf("Failed to create sub-sub item: %v", err))
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		// Find the parent main item ID for this sub item
 		subItemRecord, err := app.FindRecordById("sub_items", subItemID)
 		if err != nil {
 			log.Printf("add_sub_sub_item: could not find sub item %s: %v", subItemID, err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 		mainItemID := subItemRecord.GetString("main_item")
 
@@ -618,7 +621,7 @@ func HandleAddSubSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) er
 		data, err := buildBOQEditData(app, boqID, map[string]bool{mainItemID: true}, map[string]bool{subItemID: true})
 		if err != nil {
 			log.Printf("add_sub_sub_item: %v", err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 		data.ProjectID = projectID
 		return renderBOQEdit(e, data)

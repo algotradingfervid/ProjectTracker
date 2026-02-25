@@ -167,6 +167,44 @@ func main() {
 		// BOQ list page
 		se.Router.GET("/projects/{projectId}/boq", handlers.HandleBOQList(app))
 
+		// ── Vendor CRUD (global) ─────────────────────────────────
+		se.Router.GET("/vendors", handlers.HandleVendorList(app))
+		se.Router.GET("/vendors/create", handlers.HandleVendorCreate(app))
+		se.Router.POST("/vendors", handlers.HandleVendorSave(app))
+		se.Router.GET("/vendors/{id}/edit", handlers.HandleVendorEdit(app))
+		se.Router.POST("/vendors/{id}/save", handlers.HandleVendorUpdate(app))
+		se.Router.DELETE("/vendors/{id}", handlers.HandleVendorDelete(app))
+
+		// ── Vendor (project-scoped) ──────────────────────────────
+		se.Router.GET("/projects/{projectId}/vendors", handlers.HandleVendorList(app))
+		se.Router.GET("/projects/{projectId}/vendors/create", handlers.HandleVendorCreate(app))
+		se.Router.POST("/projects/{projectId}/vendors", handlers.HandleVendorSave(app))
+		se.Router.POST("/projects/{projectId}/vendors/{id}/link", handlers.HandleVendorLink(app))
+		se.Router.DELETE("/projects/{projectId}/vendors/{id}/link", handlers.HandleVendorUnlink(app))
+
+		// ── Purchase Order CRUD ──────────────────────────────────
+		se.Router.GET("/projects/{projectId}/po/create", handlers.HandlePOCreate(app))
+		se.Router.POST("/projects/{projectId}/po", handlers.HandlePOSave(app))
+		se.Router.GET("/projects/{projectId}/po/{id}/edit", handlers.HandlePOEdit(app))
+		se.Router.POST("/projects/{projectId}/po/{id}/save", handlers.HandlePOUpdate(app))
+
+		// ── PO Line Items ───────────────────────────────────────
+		se.Router.POST("/projects/{projectId}/po/{id}/line-items", handlers.HandlePOAddLineItem(app))
+		se.Router.POST("/projects/{projectId}/po/{id}/line-items/from-boq", handlers.HandlePOAddLineItemFromBOQ(app))
+		se.Router.PATCH("/projects/{projectId}/po/{id}/line-items/{itemId}", handlers.HandlePOUpdateLineItem(app))
+		se.Router.DELETE("/projects/{projectId}/po/{id}/line-items/{itemId}", handlers.HandlePODeleteLineItem(app))
+
+		// ── BOQ Picker ──────────────────────────────────────────
+		se.Router.GET("/projects/{projectId}/po/{id}/boq-picker", handlers.HandlePOBOQPicker(app))
+
+		// ── PO Export ───────────────────────────────────────────
+		se.Router.GET("/projects/{projectId}/po/{id}/export/pdf", handlers.HandlePOExportPDF(app))
+
+		// ── PO List, View, Delete (after specific /po/{id}/* routes) ──
+		se.Router.GET("/projects/{projectId}/po", handlers.HandlePOList(app))
+		se.Router.GET("/projects/{projectId}/po/{id}", handlers.HandlePOView(app))
+		se.Router.DELETE("/projects/{projectId}/po/{id}", handlers.HandlePODelete(app))
+
 		// ── Legacy BOQ redirects ─────────────────────────────────
 		se.Router.GET("/boq", func(e *core.RequestEvent) error {
 			activeProject := handlers.GetActiveProject(e.Request)

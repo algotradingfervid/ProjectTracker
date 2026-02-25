@@ -19,7 +19,7 @@ func HandleAddressEdit(app *pocketbase.PocketBase, addressType AddressType) func
 		projectID := e.Request.PathValue("projectId")
 		addressID := e.Request.PathValue("addressId")
 		if projectID == "" || addressID == "" {
-			return e.String(400, "Missing project ID or address ID")
+			return ErrorToast(e, http.StatusBadRequest, "Missing project ID or address ID")
 		}
 
 		// Set active project cookie
@@ -34,20 +34,20 @@ func HandleAddressEdit(app *pocketbase.PocketBase, addressType AddressType) func
 		projectRecord, err := app.FindRecordById("projects", projectID)
 		if err != nil {
 			log.Printf("address_edit: could not find project %s: %v", projectID, err)
-			return e.String(404, "Project not found")
+			return ErrorToast(e, http.StatusNotFound, "Project not found")
 		}
 
 		// Fetch the address record
 		addressRecord, err := app.FindRecordById("addresses", addressID)
 		if err != nil {
 			log.Printf("address_edit: could not find address %s: %v", addressID, err)
-			return e.String(404, "Address not found")
+			return ErrorToast(e, http.StatusNotFound, "Address not found")
 		}
 
 		// Verify address belongs to this project and address type
 		if addressRecord.GetString("project") != projectID ||
 			addressRecord.GetString("address_type") != string(addressType) {
-			return e.String(403, "Address does not belong to this project/type")
+			return ErrorToast(e, http.StatusForbidden, "Address does not belong to this project")
 		}
 
 		// Fetch required fields
@@ -113,28 +113,28 @@ func HandleAddressUpdate(app *pocketbase.PocketBase, addressType AddressType) fu
 		projectID := e.Request.PathValue("projectId")
 		addressID := e.Request.PathValue("addressId")
 		if projectID == "" || addressID == "" {
-			return e.String(400, "Missing project ID or address ID")
+			return ErrorToast(e, http.StatusBadRequest, "Missing project ID or address ID")
 		}
 
 		if err := e.Request.ParseForm(); err != nil {
-			return e.String(400, "Invalid form data")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid form data")
 		}
 
 		// Verify project exists
 		projectRecord, err := app.FindRecordById("projects", projectID)
 		if err != nil {
-			return e.String(404, "Project not found")
+			return ErrorToast(e, http.StatusNotFound, "Project not found")
 		}
 
 		// Fetch existing address
 		addressRecord, err := app.FindRecordById("addresses", addressID)
 		if err != nil {
-			return e.String(404, "Address not found")
+			return ErrorToast(e, http.StatusNotFound, "Address not found")
 		}
 
 		if addressRecord.GetString("project") != projectID ||
 			addressRecord.GetString("address_type") != string(addressType) {
-			return e.String(403, "Address does not belong to this project/type")
+			return ErrorToast(e, http.StatusForbidden, "Address does not belong to this project")
 		}
 
 		// Extract and validate fields
@@ -146,6 +146,7 @@ func HandleAddressUpdate(app *pocketbase.PocketBase, addressType AddressType) fu
 		}
 
 		if len(errors) > 0 {
+			SetToast(e, "warning", "Please fix the errors below")
 			requiredFields := services.GetRequiredFields(app, projectID, string(addressType))
 
 			var shipToAddresses []templates.ShipToOption
@@ -206,12 +207,13 @@ func HandleAddressUpdate(app *pocketbase.PocketBase, addressType AddressType) fu
 
 		if err := app.Save(addressRecord); err != nil {
 			log.Printf("address_update: could not save address %s: %v", addressID, err)
-			return e.String(500, "Failed to update address")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		// Redirect to address list
 		slugType := addressTypeToSlug(addressType)
 		redirectURL := fmt.Sprintf("/projects/%s/addresses/%s", projectID, slugType)
+		SetToast(e, "success", "Address updated successfully")
 		if e.Request.Header.Get("HX-Request") == "true" {
 			e.Response.Header().Set("HX-Redirect", redirectURL)
 			return e.String(http.StatusOK, "")

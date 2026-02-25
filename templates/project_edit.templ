@@ -57,8 +57,7 @@ templ ProjectEditContent(data ProjectEditData) {
 			</a>
 			<!-- Delete button -->
 			<button
-				hx-delete={ "/projects/" + data.ID }
-				hx-confirm="Are you sure you want to delete this project? Addresses and settings will be permanently deleted."
+				@click={ "confirmAction({ title: 'Delete Project', message: 'Are you sure you want to delete this project? All BOQs, addresses, and settings will be permanently deleted.', confirmText: 'DELETE', onConfirm: () => htmx.ajax('DELETE', '/projects/" + data.ID + "', {target: '#main-content'}) })" }
 				class="flex items-center"
 				style="padding: 10px 16px; gap: 8px; background-color: var(--bg-card); border: none; cursor: pointer;"
 			>
@@ -185,6 +184,9 @@ templ ProjectEditContent(data ProjectEditData) {
 				style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); background-color: var(--bg-card); border: none; text-decoration: none;"
 			>CANCEL</a>
 			<button type="submit" class="flex items-center justify-center"
+				data-confirm-save
+				data-confirm-title="Save Changes"
+				data-confirm-message="Save changes to this project?"
 				style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); background-color: var(--terracotta); border: none; cursor: pointer;"
 			>SAVE CHANGES</button>
 		</div>

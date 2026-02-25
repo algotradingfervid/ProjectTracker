@@ -63,7 +63,8 @@ func Setup(app *pocketbase.PocketBase) {
 		c.Fields.Add(&core.TextField{Name: "description", Required: true})
 		c.Fields.Add(&core.NumberField{Name: "qty", Required: true})
 		c.Fields.Add(&core.TextField{Name: "uom", Required: true})
-		c.Fields.Add(&core.NumberField{Name: "quoted_price", Required: true})
+		c.Fields.Add(&core.NumberField{Name: "unit_price", Required: true})
+		c.Fields.Add(&core.NumberField{Name: "quoted_price", Required: false})
 		c.Fields.Add(&core.NumberField{Name: "budgeted_price", Required: false})
 		c.Fields.Add(&core.TextField{Name: "hsn_code", Required: false})
 		c.Fields.Add(&core.NumberField{Name: "gst_percent", Required: true})
@@ -208,6 +209,102 @@ func Setup(app *pocketbase.PocketBase) {
 
 		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
 		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+
+	// ── Vendors (global vendor directory) ────────────────────────────
+	vendors := ensureCollection(app, "vendors", func(c *core.Collection) {
+		c.Fields.Add(&core.TextField{Name: "name", Required: true})
+		c.Fields.Add(&core.TextField{Name: "address_line_1"})
+		c.Fields.Add(&core.TextField{Name: "address_line_2"})
+		c.Fields.Add(&core.TextField{Name: "city"})
+		c.Fields.Add(&core.TextField{Name: "state"})
+		c.Fields.Add(&core.TextField{Name: "pin_code"})
+		c.Fields.Add(&core.TextField{Name: "country"})
+		c.Fields.Add(&core.TextField{Name: "gstin"})
+		c.Fields.Add(&core.TextField{Name: "pan"})
+		c.Fields.Add(&core.TextField{Name: "contact_name"})
+		c.Fields.Add(&core.TextField{Name: "phone"})
+		c.Fields.Add(&core.EmailField{Name: "email"})
+		c.Fields.Add(&core.URLField{Name: "website"})
+		c.Fields.Add(&core.TextField{Name: "bank_beneficiary_name"})
+		c.Fields.Add(&core.TextField{Name: "bank_name"})
+		c.Fields.Add(&core.TextField{Name: "bank_account_no"})
+		c.Fields.Add(&core.TextField{Name: "bank_ifsc"})
+		c.Fields.Add(&core.TextField{Name: "bank_branch"})
+		c.Fields.Add(&core.TextField{Name: "notes"})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+
+	// ── Project Vendors (linking table) ──────────────────────────────
+	ensureCollection(app, "project_vendors", func(c *core.Collection) {
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+	})
+	ensureField(app, "project_vendors", &core.RelationField{
+		Name: "project", Required: true,
+		CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1,
+	})
+	ensureField(app, "project_vendors", &core.RelationField{
+		Name: "vendor", Required: true,
+		CollectionId: vendors.Id, CascadeDelete: true, MaxSelect: 1,
+	})
+
+	// ── Purchase Orders ──────────────────────────────────────────────
+	purchaseOrders := ensureCollection(app, "purchase_orders", func(c *core.Collection) {
+		c.Fields.Add(&core.TextField{Name: "po_number", Required: true})
+		c.Fields.Add(&core.TextField{Name: "order_date"})
+		c.Fields.Add(&core.TextField{Name: "quotation_ref"})
+		c.Fields.Add(&core.TextField{Name: "ref_date"})
+		c.Fields.Add(&core.TextField{Name: "payment_terms"})
+		c.Fields.Add(&core.TextField{Name: "delivery_terms"})
+		c.Fields.Add(&core.TextField{Name: "warranty_terms"})
+		c.Fields.Add(&core.TextField{Name: "comments"})
+		c.Fields.Add(&core.SelectField{
+			Name: "status", Required: true,
+			Values:    []string{"draft", "sent", "acknowledged", "completed", "cancelled"},
+			MaxSelect: 1,
+		})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+	ensureField(app, "purchase_orders", &core.RelationField{
+		Name: "project", Required: true,
+		CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1,
+	})
+	ensureField(app, "purchase_orders", &core.RelationField{
+		Name: "vendor", Required: true,
+		CollectionId: vendors.Id, CascadeDelete: false, MaxSelect: 1,
+	})
+	ensureField(app, "purchase_orders", &core.RelationField{
+		Name: "bill_to_address", Required: false,
+		CollectionId: addresses.Id, CascadeDelete: false, MaxSelect: 1,
+	})
+	ensureField(app, "purchase_orders", &core.RelationField{
+		Name: "ship_to_address", Required: false,
+		CollectionId: addresses.Id, CascadeDelete: false, MaxSelect: 1,
+	})
+
+	// ── PO Line Items ────────────────────────────────────────────────
+	ensureCollection(app, "po_line_items", func(c *core.Collection) {
+		c.Fields.Add(&core.NumberField{Name: "sort_order", Required: true})
+		c.Fields.Add(&core.TextField{Name: "description", Required: true})
+		c.Fields.Add(&core.TextField{Name: "hsn_code"})
+		c.Fields.Add(&core.NumberField{Name: "qty", Required: true})
+		c.Fields.Add(&core.TextField{Name: "uom", Required: true})
+		c.Fields.Add(&core.NumberField{Name: "rate", Required: true})
+		c.Fields.Add(&core.NumberField{Name: "gst_percent", Required: true})
+		c.Fields.Add(&core.SelectField{
+			Name:      "source_item_type",
+			Values:    []string{"main_item", "sub_item", "sub_sub_item", "manual"},
+			MaxSelect: 1,
+		})
+		c.Fields.Add(&core.TextField{Name: "source_item_id"})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+	ensureField(app, "po_line_items", &core.RelationField{
+		Name: "purchase_order", Required: true,
+		CollectionId: purchaseOrders.Id, CascadeDelete: true, MaxSelect: 1,
 	})
 }
 

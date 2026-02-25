@@ -325,27 +325,36 @@ func AddressListContent(data AddressListData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"flex items-center hover:opacity-90\" style=\"background-color: var(--bg-sidebar); padding: 10px 16px; gap: 8px; text-decoration: none;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-light)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-light);\">ADD ADDRESS</span></a></div></div><!-- Action Bar --><div class=\"flex items-center justify-between\" style=\"margin-top: 20px; padding: 12px 0;\"><div class=\"flex items-center\" style=\"gap: 12px;\"><!-- Bulk Delete (visible when items selected) --><button x-show=\"selectedIds.length > 0\" x-cloak type=\"button\" hx-delete=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"flex items-center hover:opacity-90\" style=\"background-color: var(--bg-sidebar); padding: 10px 16px; gap: 8px; text-decoration: none;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-light)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-light);\">ADD ADDRESS</span></a></div></div><!-- Action Bar --><div class=\"flex items-center justify-between\" style=\"margin-top: 20px; padding: 12px 0;\"><div class=\"flex items-center\" style=\"gap: 12px;\"><!-- Bulk Delete (visible when items selected) --><button x-show=\"selectedIds.length > 0\" x-cloak type=\"button\" @click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s/bulk", data.ProjectID, addressTypeSlug(data.AddressType)))
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(`
+						confirmAction({
+							title: 'Delete Selected Addresses',
+							message: 'Are you sure you want to delete the selected addresses? This cannot be undone.',
+							confirmText: 'DELETE',
+							onConfirm: () => {
+								htmx.ajax('DELETE', '/projects/%s/addresses/%s/bulk', {target: '#main-content', values: {ids: $data.selectedIds}});
+							}
+						})
+					`, data.ProjectID, addressTypeSlug(data.AddressType)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 237, Col: 113}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 246, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" hx-target=\"#main-content\" hx-confirm=\"Are you sure you want to delete the selected addresses?\" :hx-vals=\"JSON.stringify({ids: selectedIds})\" class=\"flex items-center\" style=\"background-color: #FEE2E2; padding: 8px 14px; gap: 6px; border: 1px solid #EF4444; cursor: pointer;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#DC2626\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: #DC2626;\" x-text=\"'DELETE (' + selectedIds.length + ')'\"></span></button></div><div class=\"flex items-center\" style=\"gap: 12px;\"><!-- Download Template --><a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" class=\"flex items-center\" style=\"background-color: #FEE2E2; padding: 8px 14px; gap: 6px; border: 1px solid #EF4444; cursor: pointer;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#DC2626\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: #DC2626;\" x-text=\"'DELETE (' + selectedIds.length + ')'\"></span></button></div><div class=\"flex items-center\" style=\"gap: 12px;\"><!-- Download Template --><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var15 templ.SafeURL
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/template", data.ProjectID, data.AddressType)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 254, Col: 110}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 260, Col: 110}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -358,7 +367,7 @@ func AddressListContent(data AddressListData) templ.Component {
 		var templ_7745c5c3_Var16 templ.SafeURL
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/import", data.ProjectID, data.AddressType)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 263, Col: 108}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 269, Col: 108}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -371,7 +380,7 @@ func AddressListContent(data AddressListData) templ.Component {
 		var templ_7745c5c3_Var17 templ.SafeURL
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/export", data.ProjectID, data.AddressType)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 272, Col: 108}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 278, Col: 108}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -389,7 +398,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("columns.%s", col.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 296, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 302, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
@@ -404,7 +413,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				data.ProjectID, addressTypeSlug(data.AddressType), col.ID,
 				toggleSortOrder(data.SortBy, col.ID, data.SortOrder)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 301, Col: 60}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 307, Col: 60}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
@@ -417,7 +426,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(col.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 306, Col: 18}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 312, Col: 18}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {
@@ -457,7 +466,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(data.AddressLabel)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 327, Col: 34}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 333, Col: 34}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -470,7 +479,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var22 templ.SafeURL
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/new", data.ProjectID, addressTypeSlug(data.AddressType))))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 329, Col: 124}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 335, Col: 124}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -483,7 +492,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s/new", data.ProjectID, addressTypeSlug(data.AddressType)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 330, Col: 111}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 336, Col: 111}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -502,7 +511,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var24 string
 				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("isSelected('%s')", item.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 346, Col: 65}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 352, Col: 65}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 				if templ_7745c5c3_Err != nil {
@@ -515,7 +524,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var25 string
 				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("toggleSelect('%s')", item.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 347, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 353, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 				if templ_7745c5c3_Err != nil {
@@ -528,7 +537,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var26 string
 				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(item.Index))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 353, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 359, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 				if templ_7745c5c3_Err != nil {
@@ -541,7 +550,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var27 string
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(item.CompanyName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 357, Col: 25}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 363, Col: 25}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {
@@ -554,7 +563,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var28 string
 				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(item.ContactPerson)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 360, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 366, Col: 27}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 				if templ_7745c5c3_Err != nil {
@@ -567,7 +576,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var29 string
 				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(item.AddressLine1)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 363, Col: 26}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 369, Col: 26}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 				if templ_7745c5c3_Err != nil {
@@ -580,7 +589,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var30 string
 				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(item.AddressLine2)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 366, Col: 26}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 372, Col: 26}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 				if templ_7745c5c3_Err != nil {
@@ -593,7 +602,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var31 string
 				templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(item.City)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 369, Col: 18}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 375, Col: 18}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 				if templ_7745c5c3_Err != nil {
@@ -606,7 +615,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var32 string
 				templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(item.State)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 372, Col: 19}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 378, Col: 19}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 				if templ_7745c5c3_Err != nil {
@@ -619,7 +628,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var33 string
 				templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(item.PinCode)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 375, Col: 21}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 381, Col: 21}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 				if templ_7745c5c3_Err != nil {
@@ -632,7 +641,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var34 string
 				templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(item.Country)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 378, Col: 21}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 384, Col: 21}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 				if templ_7745c5c3_Err != nil {
@@ -645,7 +654,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var35 string
 				templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(item.Phone)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 381, Col: 19}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 387, Col: 19}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 				if templ_7745c5c3_Err != nil {
@@ -658,7 +667,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(item.Email)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 384, Col: 19}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 390, Col: 19}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
@@ -671,7 +680,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var37 string
 				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(item.GSTIN)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 387, Col: 19}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 393, Col: 19}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 				if templ_7745c5c3_Err != nil {
@@ -684,7 +693,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var38 string
 				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(item.PAN)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 390, Col: 17}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 396, Col: 17}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 				if templ_7745c5c3_Err != nil {
@@ -697,7 +706,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var39 string
 				templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(item.CIN)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 393, Col: 17}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 399, Col: 17}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 				if templ_7745c5c3_Err != nil {
@@ -710,7 +719,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var40 string
 				templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(item.Website)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 396, Col: 21}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 402, Col: 21}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 				if templ_7745c5c3_Err != nil {
@@ -723,7 +732,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var41 string
 				templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(item.Fax)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 399, Col: 17}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 405, Col: 17}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 				if templ_7745c5c3_Err != nil {
@@ -736,7 +745,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var42 string
 				templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(item.Landmark)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 402, Col: 22}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 408, Col: 22}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 				if templ_7745c5c3_Err != nil {
@@ -749,7 +758,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var43 string
 				templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(item.District)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 405, Col: 22}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 411, Col: 22}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 				if templ_7745c5c3_Err != nil {
@@ -762,7 +771,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var44 templ.SafeURL
 				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/%s/edit", data.ProjectID, addressTypeSlug(data.AddressType), item.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 411, Col: 138}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 417, Col: 138}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 				if templ_7745c5c3_Err != nil {
@@ -775,7 +784,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var45 string
 				templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s/%s/edit", data.ProjectID, addressTypeSlug(data.AddressType), item.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 412, Col: 125}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 418, Col: 125}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 				if templ_7745c5c3_Err != nil {
@@ -786,237 +795,237 @@ func AddressListContent(data AddressListData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				if data.AddressType == "ship_to" {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<div x-data=\"{ showDeleteModal: false, linkedCount: 0, companyName: '' }\"><button type=\"button\" @click=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<button type=\"button\" @click=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var46 string
 					templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(`
-											fetch('/projects/%s/addresses/ship-to/%s/delete-info')
-												.then(r => r.json())
-												.then(d => {
-													linkedCount = d.linked_count;
-													companyName = d.company_name;
-													showDeleteModal = true;
-												})
-										`, data.ProjectID, item.ID))
+										fetch('/projects/%s/addresses/ship-to/%s/delete-info')
+											.then(r => r.json())
+											.then(d => {
+												confirmAction({
+													title: 'Delete Address',
+													message: d.linked_count > 0
+														? 'This will also delete ' + d.linked_count + ' linked install-at address(es). Are you sure?'
+														: 'Are you sure you want to delete this address?',
+													confirmText: 'DELETE',
+													onConfirm: () => {
+														htmx.ajax('DELETE', '/projects/%s/addresses/ship-to/%s', {target: '#main-content'});
+													}
+												});
+											})
+									`, data.ProjectID, item.ID, data.ProjectID, item.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 433, Col: 37}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 445, Col: 61}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "\" style=\"background: none; border: none; cursor: pointer; padding: 0; color: var(--text-secondary);\" title=\"Delete\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--error)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button><!-- Ship To Delete Confirmation Modal --><div x-show=\"showDeleteModal\" x-cloak class=\"fixed inset-0 z-50 flex items-center justify-center\" style=\"background: rgba(0,0,0,0.5);\"><div style=\"background-color: var(--bg-page); padding: 32px; max-width: 440px; width: 100%;\" @click.outside=\"showDeleteModal = false\"><h3 style=\"font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0 0 12px 0;\">Delete Ship To Address</h3><p style=\"font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin: 0 0 8px 0;\"><span x-text=\"'Delete \\'' + companyName + '\\'?'\"></span></p><template x-if=\"linkedCount > 0\"><p style=\"font-family: 'Inter', sans-serif; font-size: 13px; color: var(--error); margin: 0 0 16px 0; padding: 10px 12px; background-color: #FEE2E2; border: 1px solid #EF4444;\"><span x-text=\"'Warning: ' + linkedCount + ' Install At address(es) are linked to this Ship To. Their link will be removed.'\"></span></p></template><div class=\"flex justify-end\" style=\"gap: 10px; margin-top: 20px;\"><button type=\"button\" @click=\"showDeleteModal = false\" style=\"padding: 10px 20px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); background-color: var(--bg-card); border: 1px solid var(--border-light); cursor: pointer;\">CANCEL</button> <button type=\"button\" @click=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "\" style=\"background: none; border: none; cursor: pointer; padding: 0; color: var(--text-secondary);\" title=\"Delete\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--error)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				} else {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<button type=\"button\" @click=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var47 string
 					templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(`
-														htmx.ajax('DELETE', '/projects/%s/addresses/ship-to/%s', {target: '#main-content'});
-														showDeleteModal = false;
-													`, data.ProjectID, item.ID))
+										confirmAction({
+											title: 'Delete Address',
+											message: 'Are you sure you want to delete this address?',
+											confirmText: 'DELETE',
+											onConfirm: () => {
+												htmx.ajax('DELETE', '/projects/%s/addresses/%s/%s', {target: '#main-content'});
+											}
+										})
+									`, data.ProjectID, addressTypeSlug(data.AddressType), item.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 466, Col: 40}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 463, Col: 71}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\" style=\"padding: 10px 20px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; color: #FFFFFF; background-color: var(--error); border: none; cursor: pointer;\">DELETE</button></div></div></div></div>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<button type=\"button\" hx-delete=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var48 string
-					templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s/%s", data.ProjectID, addressTypeSlug(data.AddressType), item.ID))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 478, Col: 124}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "\" hx-target=\"#main-content\" hx-confirm=\"Are you sure you want to delete this address?\" style=\"background: none; border: none; cursor: pointer; padding: 0; color: var(--text-secondary);\" title=\"Delete\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--error)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\" style=\"background: none; border: none; cursor: pointer; padding: 0; color: var(--text-secondary);\" title=\"Delete\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--error)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</div><!-- Pagination -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</div><!-- Pagination -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if data.TotalCount > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "<div class=\"flex items-center justify-between\" style=\"margin-top: 16px; padding: 12px 0;\"><!-- Showing X of Y --><div style=\"font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);\">Showing ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<div class=\"flex items-center justify-between\" style=\"margin-top: 16px; padding: 12px 0;\"><!-- Showing X of Y --><div style=\"font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);\">Showing ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var48 string
+			templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(((data.Page - 1) * data.PageSize) + 1))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 480, Col: 66}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, " - ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var49 string
-			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(((data.Page - 1) * data.PageSize) + 1))
+			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(min(data.Page*data.PageSize, data.TotalCount)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 497, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 480, Col: 134}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, " - ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, " of ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var50 string
-			templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(min(data.Page*data.PageSize, data.TotalCount)))
+			templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(data.TotalCount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 497, Col: 134}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 480, Col: 171}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, " of ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var51 string
-			templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(data.TotalCount))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 497, Col: 171}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</div><!-- Page Navigation --><div class=\"flex items-center\" style=\"gap: 4px;\"><!-- Previous -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</div><!-- Page Navigation --><div class=\"flex items-center\" style=\"gap: 4px;\"><!-- Previous -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if data.HasPrev {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "<button type=\"button\" hx-get=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<button type=\"button\" hx-get=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var52 string
-				templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s?page=%d&page_size=%d&search=%s&sort_by=%s&sort_order=%s",
+				var templ_7745c5c3_Var51 string
+				templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s?page=%d&page_size=%d&search=%s&sort_by=%s&sort_order=%s",
 					data.ProjectID, addressTypeSlug(data.AddressType), data.Page-1, data.PageSize, data.Search, data.SortBy, data.SortOrder))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 506, Col: 128}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 489, Col: 128}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "\" hx-target=\"#main-content\" hx-push-url=\"true\" style=\"padding: 8px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; color: var(--text-primary); background-color: var(--bg-card); border: 1px solid var(--border-light); cursor: pointer;\">PREV</button>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "\" hx-target=\"#main-content\" hx-push-url=\"true\" style=\"padding: 8px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; color: var(--text-primary); background-color: var(--bg-card); border: 1px solid var(--border-light); cursor: pointer;\">PREV</button>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "<span style=\"padding: 8px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; color: var(--text-muted); background-color: var(--bg-card); border: 1px solid var(--border-light);\">PREV</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<span style=\"padding: 8px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; color: var(--text-muted); background-color: var(--bg-card); border: 1px solid var(--border-light);\">PREV</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<!-- Page Numbers -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "<!-- Page Numbers -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, pn := range data.PageNumbers {
 				if pn == data.Page {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "<span style=\"padding: 8px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; color: var(--text-light); background-color: var(--terracotta);\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<span style=\"padding: 8px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; color: var(--text-light); background-color: var(--terracotta);\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var52 string
+					templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(pn))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 505, Col: 26}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "</span>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				} else {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "<button type=\"button\" hx-get=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var53 string
-					templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(pn))
+					templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s?page=%d&page_size=%d&search=%s&sort_by=%s&sort_order=%s",
+						data.ProjectID, addressTypeSlug(data.AddressType), pn, data.PageSize, data.Search, data.SortBy, data.SortOrder))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 522, Col: 26}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 511, Col: 120}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</span>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "<button type=\"button\" hx-get=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "\" hx-target=\"#main-content\" hx-push-url=\"true\" style=\"padding: 8px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; color: var(--text-primary); background-color: var(--bg-card); border: 1px solid var(--border-light); cursor: pointer;\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var54 string
-					templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s?page=%d&page_size=%d&search=%s&sort_by=%s&sort_order=%s",
-						data.ProjectID, addressTypeSlug(data.AddressType), pn, data.PageSize, data.Search, data.SortBy, data.SortOrder))
+					templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(pn))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 528, Col: 120}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 516, Col: 26}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "\" hx-target=\"#main-content\" hx-push-url=\"true\" style=\"padding: 8px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; color: var(--text-primary); background-color: var(--bg-card); border: 1px solid var(--border-light); cursor: pointer;\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var55 string
-					templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(pn))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 533, Col: 26}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "</button>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "</button>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<!-- Next -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "<!-- Next -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if data.HasNext {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "<button type=\"button\" hx-get=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<button type=\"button\" hx-get=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var56 string
-				templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s?page=%d&page_size=%d&search=%s&sort_by=%s&sort_order=%s",
+				var templ_7745c5c3_Var55 string
+				templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s?page=%d&page_size=%d&search=%s&sort_by=%s&sort_order=%s",
 					data.ProjectID, addressTypeSlug(data.AddressType), data.Page+1, data.PageSize, data.Search, data.SortBy, data.SortOrder))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 542, Col: 128}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 525, Col: 128}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "\" hx-target=\"#main-content\" hx-push-url=\"true\" style=\"padding: 8px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; color: var(--text-primary); background-color: var(--bg-card); border: 1px solid var(--border-light); cursor: pointer;\">NEXT</button>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "\" hx-target=\"#main-content\" hx-push-url=\"true\" style=\"padding: 8px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; color: var(--text-primary); background-color: var(--bg-card); border: 1px solid var(--border-light); cursor: pointer;\">NEXT</button>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "<span style=\"padding: 8px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; color: var(--text-muted); background-color: var(--bg-card); border: 1px solid var(--border-light);\">NEXT</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "<span style=\"padding: 8px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; color: var(--text-muted); background-color: var(--bg-card); border: 1px solid var(--border-light);\">NEXT</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "</div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "</div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1040,12 +1049,12 @@ func AddressListPage(data AddressListData, headerData HeaderData, sidebarData Si
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var57 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var57 == nil {
-			templ_7745c5c3_Var57 = templ.NopComponent
+		templ_7745c5c3_Var56 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var56 == nil {
+			templ_7745c5c3_Var56 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var58 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var57 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -1063,7 +1072,7 @@ func AddressListPage(data AddressListData, headerData HeaderData, sidebarData Si
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = PageShellWithProject(data.AddressLabel+" Addresses — Project Creation", headerData, sidebarData).Render(templ.WithChildren(ctx, templ_7745c5c3_Var58), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = PageShellWithProject(data.AddressLabel+" Addresses — Project Creation", headerData, sidebarData).Render(templ.WithChildren(ctx, templ_7745c5c3_Var57), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

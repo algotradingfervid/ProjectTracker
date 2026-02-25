@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 
 	"github.com/pocketbase/pocketbase"
@@ -20,25 +21,27 @@ func HandleDeleteMainItem(app *pocketbase.PocketBase) func(*core.RequestEvent) e
 		boqID := e.Request.PathValue("id")
 		itemID := e.Request.PathValue("itemId")
 		if boqID == "" || itemID == "" {
-			return e.String(400, "Missing IDs")
+			return ErrorToast(e, http.StatusBadRequest, "Missing required IDs")
 		}
 
 		record, err := app.FindRecordById("main_boq_items", itemID)
 		if err != nil {
 			log.Printf("delete_main_item: not found %s: %v", itemID, err)
-			return e.String(404, "Item not found")
+			return ErrorToast(e, http.StatusNotFound, "Item not found")
 		}
 
 		if err := app.Delete(record); err != nil {
 			log.Printf("delete_main_item: error deleting %s: %v", itemID, err)
-			return e.String(500, "Failed to delete item")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
+
+		SetToast(e, "success", "Item deleted")
 
 		// Re-render the full edit page so Alpine pricing state is rebuilt
 		data, err := buildBOQEditData(app, boqID, nil, nil)
 		if err != nil {
 			log.Printf("delete_main_item: %v", err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 		data.ProjectID = projectID
 		return renderBOQEdit(e, data)
@@ -53,29 +56,31 @@ func HandleDeleteSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) er
 		boqID := e.Request.PathValue("id")
 		subItemID := e.Request.PathValue("subItemId")
 		if boqID == "" || subItemID == "" {
-			return e.String(400, "Missing IDs")
+			return ErrorToast(e, http.StatusBadRequest, "Missing required IDs")
 		}
 
 		// Find the parent main item before deleting so we can keep its accordion open
 		subItemRecord, err := app.FindRecordById("sub_items", subItemID)
 		if err != nil {
 			log.Printf("delete_sub_item: not found %s: %v", subItemID, err)
-			return e.String(404, "Sub-item not found")
+			return ErrorToast(e, http.StatusNotFound, "Sub-item not found")
 		}
 		mainItemID := subItemRecord.GetString("main_item")
 
 		if err := app.Delete(subItemRecord); err != nil {
 			log.Printf("delete_sub_item: error deleting %s: %v", subItemID, err)
-			return e.String(500, "Failed to delete sub-item")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		// Recalculate parent main item budgeted price
 		recalcMainItemBudgeted(app, mainItemID)
 
+		SetToast(e, "success", "Sub-item deleted")
+
 		data, err := buildBOQEditData(app, boqID, map[string]bool{mainItemID: true}, nil)
 		if err != nil {
 			log.Printf("delete_sub_item: %v", err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 		data.ProjectID = projectID
 		return renderBOQEdit(e, data)
@@ -89,19 +94,19 @@ func HandleDeleteSubSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent)
 		boqID := e.Request.PathValue("id")
 		subSubItemID := e.Request.PathValue("subSubItemId")
 		if boqID == "" || subSubItemID == "" {
-			return e.String(400, "Missing IDs")
+			return ErrorToast(e, http.StatusBadRequest, "Missing required IDs")
 		}
 
 		record, err := app.FindRecordById("sub_sub_items", subSubItemID)
 		if err != nil {
 			log.Printf("delete_sub_sub_item: not found %s: %v", subSubItemID, err)
-			return e.String(404, "Sub-sub-item not found")
+			return ErrorToast(e, http.StatusNotFound, "Sub-sub-item not found")
 		}
 		subItemID := record.GetString("sub_item")
 
 		if err := app.Delete(record); err != nil {
 			log.Printf("delete_sub_sub_item: error deleting %s: %v", subSubItemID, err)
-			return e.String(500, "Failed to delete sub-sub-item")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		// Recalculate parent chain
@@ -111,15 +116,17 @@ func HandleDeleteSubSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent)
 		subItemRecord, err := app.FindRecordById("sub_items", subItemID)
 		if err != nil {
 			log.Printf("delete_sub_sub_item: could not find parent sub item %s: %v", subItemID, err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 		mainItemID := subItemRecord.GetString("main_item")
 		recalcMainItemBudgeted(app, mainItemID)
 
+		SetToast(e, "success", "Sub-sub-item deleted")
+
 		data, err := buildBOQEditData(app, boqID, map[string]bool{mainItemID: true}, map[string]bool{subItemID: true})
 		if err != nil {
 			log.Printf("delete_sub_sub_item: %v", err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 		data.ProjectID = projectID
 		return renderBOQEdit(e, data)
@@ -134,17 +141,17 @@ func HandleExpandMainItem(app *pocketbase.PocketBase) func(*core.RequestEvent) e
 		boqID := e.Request.PathValue("id")
 		mainItemID := e.Request.PathValue("itemId")
 		if boqID == "" || mainItemID == "" {
-			return e.String(400, "Missing IDs")
+			return ErrorToast(e, http.StatusBadRequest, "Missing required IDs")
 		}
 
 		subItemsCol, err := app.FindCollectionByNameOrId("sub_items")
 		if err != nil {
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		subSubItemsCol, err := app.FindCollectionByNameOrId("sub_sub_items")
 		if err != nil {
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		subItemRecords, err := app.FindRecordsByFilter(subItemsCol, "main_item = {:mainId}", "sort_order", 0, 0, map[string]any{"mainId": mainItemID})
@@ -201,16 +208,16 @@ func HandlePatchMainItem(app *pocketbase.PocketBase) func(*core.RequestEvent) er
 		boqID := e.Request.PathValue("id")
 		itemID := e.Request.PathValue("itemId")
 		if boqID == "" || itemID == "" {
-			return e.String(400, "Missing IDs")
+			return ErrorToast(e, http.StatusBadRequest, "Missing required IDs")
 		}
 
 		record, err := app.FindRecordById("main_boq_items", itemID)
 		if err != nil {
-			return e.String(404, "Item not found")
+			return ErrorToast(e, http.StatusNotFound, "Item not found")
 		}
 
 		if err := e.Request.ParseForm(); err != nil {
-			return e.String(400, "Invalid form data")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid form data")
 		}
 
 		updated := false
@@ -255,11 +262,12 @@ func HandlePatchMainItem(app *pocketbase.PocketBase) func(*core.RequestEvent) er
 		if updated {
 			if err := app.Save(record); err != nil {
 				log.Printf("patch_main_item: error saving %s: %v", itemID, err)
-				return e.String(500, "Failed to save")
+				return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 			}
 		}
 
 		// Return updated budgeted price info as JSON
+		SetToast(e, "info", "Item saved")
 		e.Response.Header().Set("Content-Type", "application/json")
 		return e.String(200, fmt.Sprintf(`{"budgeted_price": %.2f}`, record.GetFloat("budgeted_price")))
 	}
@@ -271,16 +279,16 @@ func HandlePatchSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) err
 		boqID := e.Request.PathValue("id")
 		subItemID := e.Request.PathValue("subItemId")
 		if boqID == "" || subItemID == "" {
-			return e.String(400, "Missing IDs")
+			return ErrorToast(e, http.StatusBadRequest, "Missing required IDs")
 		}
 
 		record, err := app.FindRecordById("sub_items", subItemID)
 		if err != nil {
-			return e.String(404, "Sub-item not found")
+			return ErrorToast(e, http.StatusNotFound, "Sub-item not found")
 		}
 
 		if err := e.Request.ParseForm(); err != nil {
-			return e.String(400, "Invalid form data")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid form data")
 		}
 
 		updated := false
@@ -329,6 +337,7 @@ func HandlePatchSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) err
 			recalcMainItemBudgeted(app, record.GetString("main_item"))
 		}
 
+		SetToast(e, "info", "Item saved")
 		e.Response.Header().Set("Content-Type", "application/json")
 		return e.String(200, fmt.Sprintf(`{"budgeted_price": %.2f}`, record.GetFloat("budgeted_price")))
 	}
@@ -340,16 +349,16 @@ func HandlePatchSubSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) 
 		boqID := e.Request.PathValue("id")
 		subSubItemID := e.Request.PathValue("subSubItemId")
 		if boqID == "" || subSubItemID == "" {
-			return e.String(400, "Missing IDs")
+			return ErrorToast(e, http.StatusBadRequest, "Missing required IDs")
 		}
 
 		record, err := app.FindRecordById("sub_sub_items", subSubItemID)
 		if err != nil {
-			return e.String(404, "Sub-sub-item not found")
+			return ErrorToast(e, http.StatusNotFound, "Sub-sub-item not found")
 		}
 
 		if err := e.Request.ParseForm(); err != nil {
-			return e.String(400, "Invalid form data")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid form data")
 		}
 
 		updated := false
@@ -395,7 +404,7 @@ func HandlePatchSubSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) 
 			record.Set("budgeted_price", budgeted)
 			if err := app.Save(record); err != nil {
 				log.Printf("patch_sub_sub_item: error saving %s: %v", subSubItemID, err)
-				return e.String(500, "Failed to save")
+				return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 			}
 
 			// Recalculate parent chain
@@ -407,6 +416,7 @@ func HandlePatchSubSubItem(app *pocketbase.PocketBase) func(*core.RequestEvent) 
 			}
 		}
 
+		SetToast(e, "info", "Item saved")
 		e.Response.Header().Set("Content-Type", "application/json")
 		return e.String(200, fmt.Sprintf(`{"budgeted_price": %.2f}`, record.GetFloat("budgeted_price")))
 	}

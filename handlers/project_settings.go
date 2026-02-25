@@ -51,19 +51,19 @@ func HandleProjectSettings(app *pocketbase.PocketBase) func(*core.RequestEvent) 
 	return func(e *core.RequestEvent) error {
 		projectID := e.Request.PathValue("id")
 		if projectID == "" {
-			return e.String(http.StatusBadRequest, "Missing project ID")
+			return ErrorToast(e, http.StatusBadRequest, "Missing project ID")
 		}
 
 		project, err := app.FindRecordById("projects", projectID)
 		if err != nil {
 			log.Printf("project_settings: could not find project %s: %v", projectID, err)
-			return e.String(http.StatusNotFound, "Project not found")
+			return ErrorToast(e, http.StatusNotFound, "Project not found")
 		}
 
 		settingsCol, err := app.FindCollectionByNameOrId("project_address_settings")
 		if err != nil {
 			log.Printf("project_settings: could not find project_address_settings collection: %v", err)
-			return e.String(http.StatusInternalServerError, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		shipToEqualsInstallAt := project.GetBool("ship_to_equals_install_at")
@@ -119,17 +119,17 @@ func HandleProjectSettingsSave(app *pocketbase.PocketBase) func(*core.RequestEve
 	return func(e *core.RequestEvent) error {
 		projectID := e.Request.PathValue("id")
 		if projectID == "" {
-			return e.String(http.StatusBadRequest, "Missing project ID")
+			return ErrorToast(e, http.StatusBadRequest, "Missing project ID")
 		}
 
 		if err := e.Request.ParseForm(); err != nil {
-			return e.String(http.StatusBadRequest, "Invalid form data")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid form data")
 		}
 
 		project, err := app.FindRecordById("projects", projectID)
 		if err != nil {
 			log.Printf("project_settings_save: could not find project %s: %v", projectID, err)
-			return e.String(http.StatusNotFound, "Project not found")
+			return ErrorToast(e, http.StatusNotFound, "Project not found")
 		}
 		shipToEqualsInstallAt := e.Request.FormValue("ship_to_equals_install_at") == "on" ||
 			e.Request.FormValue("ship_to_equals_install_at") == "true"
@@ -141,7 +141,7 @@ func HandleProjectSettingsSave(app *pocketbase.PocketBase) func(*core.RequestEve
 		settingsCol, err := app.FindCollectionByNameOrId("project_address_settings")
 		if err != nil {
 			log.Printf("project_settings_save: could not find project_address_settings collection: %v", err)
-			return e.String(http.StatusInternalServerError, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		for _, addrType := range addressTypeOrder {
@@ -169,9 +169,11 @@ func HandleProjectSettingsSave(app *pocketbase.PocketBase) func(*core.RequestEve
 
 			if err := app.Save(record); err != nil {
 				log.Printf("project_settings_save: failed to save settings for %s/%s: %v", projectID, addrType, err)
-				return e.String(http.StatusInternalServerError, "Failed to save settings")
+				return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 			}
 		}
+
+		SetToast(e, "success", "Settings saved")
 
 		if e.Request.Header.Get("HX-Request") == "true" {
 			e.Response.Header().Set("HX-Trigger", "settings-saved")

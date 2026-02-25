@@ -18,6 +18,8 @@ type SidebarData struct {
 	ActivePath        string
 	AddressCounts     AddressTypeCounts
 	BOQCount          int
+	VendorCount       int
+	POCount           int
 	ShipToIsInstallAt bool
 }
 
@@ -52,7 +54,47 @@ templ SidebarWithProject(data SidebarData) {
 				if data.ActiveProject != nil {
 					<!-- PROJECT DETAILS (Active project selected) -->
 					@SidebarProjectSection(data)
+					<!-- ALL VENDORS (global link when project is active) -->
+					<a
+						href="/vendors"
+						hx-get="/vendors"
+						hx-target="#main-content"
+						hx-push-url="true"
+						class="flex items-center"
+						style={ sidebarLinkStyle(isVendorGlobalPath(data.ActivePath)) + " gap: 12px; padding: 14px 0; border-top: 1px solid var(--border-dark);" }
+					>
+						<svg style={ sidebarIconStyle(isVendorGlobalPath(data.ActivePath)) + " width: 20px; height: 20px;" } xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path>
+							<path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path>
+							<path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path>
+							<path d="M10 6h4"></path>
+							<path d="M10 10h4"></path>
+							<path d="M10 14h4"></path>
+							<path d="M10 18h4"></path>
+						</svg>
+						<span style={ sidebarLabelStyle(isVendorGlobalPath(data.ActivePath)) }>ALL VENDORS</span>
+					</a>
 				} else {
+					<!-- Vendors link (global, no project context) -->
+					<a
+						href="/vendors"
+						hx-get="/vendors"
+						hx-target="#main-content"
+						hx-push-url="true"
+						class="flex items-center"
+						style={ sidebarLinkStyle(isVendorGlobalPath(data.ActivePath)) + " gap: 12px; padding: 14px 0;" }
+					>
+						<svg style={ sidebarIconStyle(isVendorGlobalPath(data.ActivePath)) + " width: 20px; height: 20px;" } xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path>
+							<path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path>
+							<path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path>
+							<path d="M10 6h4"></path>
+							<path d="M10 10h4"></path>
+							<path d="M10 14h4"></path>
+							<path d="M10 18h4"></path>
+						</svg>
+						<span style={ sidebarLabelStyle(isVendorGlobalPath(data.ActivePath)) }>VENDORS</span>
+					</a>
 					<!-- Projects link (no project selected) -->
 					@SidebarProjectsLink(data)
 				}
@@ -136,6 +178,20 @@ templ SidebarProjectSection(data SidebarData) {
 				"BOQ",
 				isPathActive(data.ActivePath, fmt.Sprintf("/projects/%s/boq", data.ActiveProject.ID)),
 				data.BOQCount,
+			)
+			<!-- Purchase Orders Link -->
+			@SidebarSubLink(
+				fmt.Sprintf("/projects/%s/po", data.ActiveProject.ID),
+				"PURCHASE ORDERS",
+				isPathActive(data.ActivePath, fmt.Sprintf("/projects/%s/po", data.ActiveProject.ID)),
+				data.POCount,
+			)
+			<!-- Vendors Link (project-scoped) -->
+			@SidebarSubLink(
+				fmt.Sprintf("/projects/%s/vendors", data.ActiveProject.ID),
+				"VENDORS",
+				isPathActive(data.ActivePath, fmt.Sprintf("/projects/%s/vendors", data.ActiveProject.ID)),
+				data.VendorCount,
 			)
 
 			<!-- Addresses Accordion (Alpine.js) -->
@@ -335,4 +391,8 @@ func isAddressPath(currentPath, projectID string) bool {
 
 func isAnyAddressActive(currentPath, projectID string) bool {
 	return isAddressPath(currentPath, projectID)
+}
+
+func isVendorGlobalPath(currentPath string) bool {
+	return currentPath == "/vendors" || strings.HasPrefix(currentPath, "/vendors/")
 }

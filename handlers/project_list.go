@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/a-h/templ"
 	"github.com/pocketbase/pocketbase"
@@ -28,19 +29,19 @@ func HandleProjectList(app *pocketbase.PocketBase) func(*core.RequestEvent) erro
 		projectsCol, err := app.FindCollectionByNameOrId("projects")
 		if err != nil {
 			log.Printf("project_list: could not find projects collection: %v", err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		records, err := app.FindAllRecords(projectsCol)
 		if err != nil {
 			log.Printf("project_list: could not query projects: %v", err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		boqsCol, err := app.FindCollectionByNameOrId("boqs")
 		if err != nil {
 			log.Printf("project_list: could not find boqs collection: %v", err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		addressesCol, _ := app.FindCollectionByNameOrId("addresses")

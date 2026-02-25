@@ -20,43 +20,44 @@ func HandleAddressDelete(app *pocketbase.PocketBase) func(*core.RequestEvent) er
 		addressID := e.Request.PathValue("addressId")
 
 		if projectID == "" || addrTypeSlug == "" || addressID == "" {
-			return e.String(http.StatusBadRequest, "Missing required parameters")
+			return ErrorToast(e, http.StatusBadRequest, "Missing required parameters")
 		}
 
 		// Convert URL slug to DB type
 		addrType := AddressType(strings.ReplaceAll(addrTypeSlug, "-", "_"))
 
 		if _, ok := AddressTypeDisplayLabels[addrType]; !ok {
-			return e.String(http.StatusBadRequest, "Invalid address type")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid address type")
 		}
 
 		// Find the address record
 		record, err := app.FindRecordById("addresses", addressID)
 		if err != nil {
 			log.Printf("address_delete: not found %s: %v", addressID, err)
-			return e.String(http.StatusNotFound, "Address not found")
+			return ErrorToast(e, http.StatusNotFound, "Address not found")
 		}
 
 		// Verify the address belongs to this project
 		if record.GetString("project") != projectID {
-			return e.String(http.StatusForbidden, "Address does not belong to this project")
+			return ErrorToast(e, http.StatusForbidden, "Address does not belong to this project")
 		}
 
 		// If deleting a Ship To address, nullify linked Install At addresses
 		if addrType == AddressTypeShipTo {
 			if err := nullifyLinkedInstallAtAddresses(app, addressID); err != nil {
 				log.Printf("address_delete: failed to nullify linked install_at: %v", err)
-				return e.String(http.StatusInternalServerError, "Failed to update linked addresses")
+				return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 			}
 		}
 
 		// Delete the address
 		if err := app.Delete(record); err != nil {
 			log.Printf("address_delete: failed to delete %s: %v", addressID, err)
-			return e.String(http.StatusInternalServerError, "Failed to delete address")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		// HTMX response: redirect to refresh the address list
+		SetToast(e, "success", "Address deleted successfully")
 		if e.Request.Header.Get("HX-Request") == "true" {
 			listURL := fmt.Sprintf("/projects/%s/addresses/%s", projectID, addrTypeSlug)
 			e.Response.Header().Set("HX-Redirect", listURL)
@@ -114,23 +115,23 @@ func HandleAddressBulkDelete(app *pocketbase.PocketBase) func(*core.RequestEvent
 		addrTypeSlug := e.Request.PathValue("type")
 
 		if projectID == "" || addrTypeSlug == "" {
-			return e.String(http.StatusBadRequest, "Missing required parameters")
+			return ErrorToast(e, http.StatusBadRequest, "Missing required parameters")
 		}
 
 		addrType := AddressType(strings.ReplaceAll(addrTypeSlug, "-", "_"))
 
 		if _, ok := AddressTypeDisplayLabels[addrType]; !ok {
-			return e.String(http.StatusBadRequest, "Invalid address type")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid address type")
 		}
 
 		// Parse request body
 		var req BulkDeleteRequest
 		if err := e.BindBody(&req); err != nil {
-			return e.String(http.StatusBadRequest, "Invalid request body")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid request body")
 		}
 
 		if len(req.IDs) == 0 {
-			return e.String(http.StatusBadRequest, "No IDs provided")
+			return ErrorToast(e, http.StatusBadRequest, "No addresses selected for deletion")
 		}
 
 		// Delete each address
@@ -166,6 +167,8 @@ func HandleAddressBulkDelete(app *pocketbase.PocketBase) func(*core.RequestEvent
 		}
 
 		// HTMX response: refresh address list
+		deletedCount := len(req.IDs) - len(deleteErrors)
+		SetToast(e, "success", fmt.Sprintf("%d addresses deleted successfully", deletedCount))
 		if e.Request.Header.Get("HX-Request") == "true" {
 			listURL := fmt.Sprintf("/projects/%s/addresses/%s", projectID, addrTypeSlug)
 			e.Response.Header().Set("HX-Redirect", listURL)

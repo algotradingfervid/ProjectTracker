@@ -24,12 +24,12 @@ func HandleAddressImportPage(app *pocketbase.PocketBase) func(*core.RequestEvent
 		// Normalize slug to db type: "ship-to" -> "ship_to", "install-at" -> "install_at"
 		dbType := slugToDBType(addressType)
 		if dbType != "ship_to" && dbType != "install_at" {
-			return e.String(http.StatusBadRequest, "Import is only available for Ship To and Install At addresses")
+			return ErrorToast(e, http.StatusBadRequest, "Import is only available for Ship To and Install At addresses")
 		}
 
 		project, err := app.FindRecordById("projects", projectID)
 		if err != nil {
-			return e.String(http.StatusNotFound, "Project not found")
+			return ErrorToast(e, http.StatusNotFound, "Project not found")
 		}
 
 		data := templates.AddressImportData{
@@ -61,17 +61,17 @@ func HandleAddressValidate(app *pocketbase.PocketBase) func(*core.RequestEvent) 
 
 		dbType := slugToDBType(addressType)
 		if dbType != "ship_to" && dbType != "install_at" {
-			return e.String(http.StatusBadRequest, "Invalid address type for import")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid address type for import")
 		}
 
 		// Parse multipart form (max 10MB)
 		if err := e.Request.ParseMultipartForm(10 << 20); err != nil {
-			return e.String(http.StatusBadRequest, "File too large or invalid form data")
+			return ErrorToast(e, http.StatusBadRequest, "File too large or invalid form data")
 		}
 
 		file, header, err := e.Request.FormFile("file")
 		if err != nil {
-			return e.String(http.StatusBadRequest, "No file provided")
+			return ErrorToast(e, http.StatusBadRequest, "Please select a file to upload")
 		}
 		defer file.Close()
 
@@ -79,7 +79,7 @@ func HandleAddressValidate(app *pocketbase.PocketBase) func(*core.RequestEvent) 
 		result, err := services.ValidateAddressFile(app, file, header.Filename, projectID, dbType)
 		if err != nil {
 			log.Printf("address_validate: %v", err)
-			return e.String(http.StatusBadRequest, err.Error())
+			return ErrorToast(e, http.StatusBadRequest, err.Error())
 		}
 
 		// Serialize parsed rows for the commit form
@@ -116,13 +116,13 @@ func HandleAddressErrorReport(app *pocketbase.PocketBase) func(*core.RequestEven
 		var errors []services.ValidationError
 		decoder := json.NewDecoder(e.Request.Body)
 		if err := decoder.Decode(&errors); err != nil {
-			return e.String(http.StatusBadRequest, "Invalid error data")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid error data")
 		}
 
 		xlsxBytes, err := services.GenerateErrorReport(errors)
 		if err != nil {
 			log.Printf("error_report: %v", err)
-			return e.String(http.StatusInternalServerError, "Failed to generate error report")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		typeName := "ShipTo"
@@ -150,35 +150,35 @@ func HandleAddressImportCommit(app *pocketbase.PocketBase) func(*core.RequestEve
 
 		dbType := slugToDBType(addressType)
 		if dbType != "ship_to" && dbType != "install_at" {
-			return e.String(http.StatusBadRequest, "Invalid address type")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid address type")
 		}
 
 		// Verify project exists
 		if _, err := app.FindRecordById("projects", projectID); err != nil {
-			return e.String(http.StatusNotFound, "Project not found")
+			return ErrorToast(e, http.StatusNotFound, "Project not found")
 		}
 
 		if err := e.Request.ParseForm(); err != nil {
-			return e.String(http.StatusBadRequest, "Invalid form data")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid form data")
 		}
 
 		// Parse the serialized rows from the hidden form field
 		parsedJSON := e.Request.FormValue("parsed_rows_json")
 		if parsedJSON == "" {
-			return e.String(http.StatusBadRequest,
+			return ErrorToast(e, http.StatusBadRequest,
 				"File data missing. Please re-upload and try again.")
 		}
 
 		var parsedRows []map[string]string
 		if err := json.Unmarshal([]byte(parsedJSON), &parsedRows); err != nil {
-			return e.String(http.StatusBadRequest, "Invalid parsed data")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid parsed data")
 		}
 
 		// Commit the import
 		importResult, err := services.CommitAddressImport(app, projectID, dbType, parsedRows)
 		if err != nil {
 			log.Printf("address_import_commit: %v", err)
-			return e.String(http.StatusInternalServerError, "Import failed: "+err.Error())
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		// Render result
@@ -190,6 +190,7 @@ func HandleAddressImportCommit(app *pocketbase.PocketBase) func(*core.RequestEve
 		}
 
 		// Success
+		SetToast(e, "success", fmt.Sprintf("%d addresses imported successfully", importResult.Imported))
 		component := templates.AddressImportSuccess(
 			projectID, addressType, importResult.Imported,
 		)

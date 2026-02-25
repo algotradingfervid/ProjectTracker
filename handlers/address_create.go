@@ -19,7 +19,7 @@ func HandleAddressCreate(app *pocketbase.PocketBase, addressType AddressType) fu
 	return func(e *core.RequestEvent) error {
 		projectID := e.Request.PathValue("projectId")
 		if projectID == "" {
-			return e.String(400, "Missing project ID")
+			return ErrorToast(e, http.StatusBadRequest, "Missing project ID")
 		}
 
 		// Set active project cookie
@@ -34,7 +34,7 @@ func HandleAddressCreate(app *pocketbase.PocketBase, addressType AddressType) fu
 		projectRecord, err := app.FindRecordById("projects", projectID)
 		if err != nil {
 			log.Printf("address_create: could not find project %s: %v", projectID, err)
-			return e.String(404, "Project not found")
+			return ErrorToast(e, http.StatusNotFound, "Project not found")
 		}
 
 		// Fetch required fields from project_address_settings
@@ -81,18 +81,18 @@ func HandleAddressSave(app *pocketbase.PocketBase, addressType AddressType) func
 	return func(e *core.RequestEvent) error {
 		projectID := e.Request.PathValue("projectId")
 		if projectID == "" {
-			return e.String(400, "Missing project ID")
+			return ErrorToast(e, http.StatusBadRequest, "Missing project ID")
 		}
 
 		if err := e.Request.ParseForm(); err != nil {
-			return e.String(400, "Invalid form data")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid form data")
 		}
 
 		// Verify project exists
 		projectRecord, err := app.FindRecordById("projects", projectID)
 		if err != nil {
 			log.Printf("address_save: could not find project %s: %v", projectID, err)
-			return e.String(404, "Project not found")
+			return ErrorToast(e, http.StatusNotFound, "Project not found")
 		}
 
 		// Extract form fields
@@ -106,6 +106,7 @@ func HandleAddressSave(app *pocketbase.PocketBase, addressType AddressType) func
 		}
 
 		if len(errors) > 0 {
+			SetToast(e, "warning", "Please fix the errors below")
 			// Fetch required fields for re-rendering
 			requiredFields := services.GetRequiredFields(app, projectID, string(addressType))
 
@@ -157,7 +158,7 @@ func HandleAddressSave(app *pocketbase.PocketBase, addressType AddressType) func
 		addressesCol, err := app.FindCollectionByNameOrId("addresses")
 		if err != nil {
 			log.Printf("address_save: could not find addresses collection: %v", err)
-			return e.String(500, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		record := core.NewRecord(addressesCol)
@@ -174,12 +175,13 @@ func HandleAddressSave(app *pocketbase.PocketBase, addressType AddressType) func
 
 		if err := app.Save(record); err != nil {
 			log.Printf("address_save: could not save address: %v", err)
-			return e.String(500, "Failed to save address")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		// Redirect to address list
 		slugType := addressTypeToSlug(addressType)
 		redirectURL := fmt.Sprintf("/projects/%s/addresses/%s", projectID, slugType)
+		SetToast(e, "success", "Address added successfully")
 		if e.Request.Header.Get("HX-Request") == "true" {
 			e.Response.Header().Set("HX-Redirect", redirectURL)
 			return e.String(http.StatusOK, "")

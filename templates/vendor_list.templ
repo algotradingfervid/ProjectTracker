@@ -1,0 +1,219 @@
+package templates
+
+import "strconv"
+
+type VendorListItem struct {
+	ID          string
+	Name        string
+	City        string
+	GSTIN       string
+	ContactName string
+	Phone       string
+	Email       string
+	IsLinked    bool // for project context
+}
+
+type VendorListData struct {
+	Vendors     []VendorListItem
+	SearchQuery string
+	ProjectID   string // empty for global
+	TotalCount  int
+}
+
+templ VendorListContent(data VendorListData) {
+	// Breadcrumbs
+	<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+		if data.ProjectID != "" {
+			<a href={ templ.SafeURL("/projects/" + data.ProjectID) }
+				hx-get={ "/projects/" + data.ProjectID }
+				hx-target="#main-content" hx-push-url="true"
+				style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;">
+				PROJECT
+			</a>
+		} else {
+			<a href="/projects" hx-get="/projects" hx-target="#main-content" hx-push-url="true"
+				style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;">
+				HOME
+			</a>
+		}
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+			VENDORS
+		</span>
+	</div>
+
+	// Page header with title + add button
+	<div class="flex justify-between items-center">
+		<div>
+			<h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; color: var(--text-primary); margin: 0;">
+				Vendors
+			</h1>
+			<p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-top: 8px;">
+				if data.ProjectID != "" {
+					Manage vendors for this project
+				} else {
+					Manage your vendor directory
+				}
+			</p>
+		</div>
+		<a
+			href={ templ.SafeURL(vendorCreateURL(data.ProjectID)) }
+			hx-get={ vendorCreateURL(data.ProjectID) }
+			hx-target="#main-content"
+			hx-push-url="true"
+			class="flex items-center hover:opacity-90"
+			style="background-color: var(--bg-sidebar); padding: 10px 16px; gap: 8px; text-decoration: none;">
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-light);">ADD VENDOR</span>
+		</a>
+	</div>
+
+	// Stats bar
+	<div class="flex" style="gap: 20px; margin-top: 32px;">
+		<div class="flex-1" style="background-color: var(--bg-card); padding: 24px;">
+			<div style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+				TOTAL VENDORS
+			</div>
+			<div style="font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--text-primary); margin-top: 12px;">
+				{ strconv.Itoa(data.TotalCount) }
+			</div>
+		</div>
+	</div>
+
+	// Search bar
+	<div style="margin-top: 24px;">
+		<input
+			type="text"
+			name="q"
+			value={ data.SearchQuery }
+			placeholder="Search vendors by name, city, or GSTIN..."
+			hx-get={ vendorListURL(data.ProjectID) }
+			hx-target="#vendor-table-body"
+			hx-trigger="keyup changed delay:300ms"
+			hx-include="this"
+			style="width: 100%; max-width: 480px; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-card); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+		/>
+	</div>
+
+	// Table
+	<div style="margin-top: 24px;">
+		if len(data.Vendors) == 0 {
+			<div class="flex flex-col items-center justify-center" style="padding: 64px 0; color: var(--text-muted);">
+				<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+				<p style="font-family: 'Inter', sans-serif; font-size: 14px; margin-top: 16px;">No vendors yet</p>
+				<a
+					href={ templ.SafeURL(vendorCreateURL(data.ProjectID)) }
+					hx-get={ vendorCreateURL(data.ProjectID) }
+					hx-target="#main-content" hx-push-url="true"
+					style="font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--terracotta); margin-top: 8px; text-decoration: none;">
+					Add your first vendor
+				</a>
+			</div>
+		} else {
+			<div style="background-color: var(--bg-card); overflow-x: auto;">
+				<table style="width: 100%; border-collapse: collapse;">
+					<thead>
+						<tr style="background-color: #E2DED6;">
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-align: left; padding: 12px 16px;">NAME</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-align: left; padding: 12px 16px;">CITY</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-align: left; padding: 12px 16px;">GSTIN</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-align: left; padding: 12px 16px;">CONTACT</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-align: left; padding: 12px 16px;">PHONE</th>
+							if data.ProjectID != "" {
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-align: center; padding: 12px 16px;">STATUS</th>
+						}
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-align: right; padding: 12px 16px;">ACTIONS</th>
+						</tr>
+					</thead>
+					<tbody id="vendor-table-body">
+						for _, v := range data.Vendors {
+							<tr style="border-top: 1px solid var(--border-light);">
+								<td style="font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-primary); padding: 14px 16px;">
+									{ v.Name }
+								</td>
+								<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); padding: 14px 16px;">
+									{ v.City }
+								</td>
+								<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); padding: 14px 16px;">
+									{ v.GSTIN }
+								</td>
+								<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); padding: 14px 16px;">
+									{ v.ContactName }
+								</td>
+								<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); padding: 14px 16px;">
+									{ v.Phone }
+								</td>
+								if data.ProjectID != "" {
+								<td style="padding: 14px 16px; text-align: center;">
+									@VendorLinkToggle(data.ProjectID, v.ID, v.IsLinked)
+								</td>
+							}
+							<td style="padding: 14px 16px; text-align: right;">
+									<div class="flex items-center justify-end" style="gap: 8px;">
+										<a
+											href={ templ.SafeURL("/vendors/" + v.ID + "/edit") }
+											hx-get={ "/vendors/" + v.ID + "/edit" }
+											hx-target="#main-content" hx-push-url="true"
+											style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; color: var(--terracotta); text-decoration: none;">
+											EDIT
+										</a>
+										<button
+											@click={ "confirmAction({ title: 'Delete Vendor', message: 'Are you sure you want to delete this vendor?', confirmText: 'DELETE', onConfirm: () => htmx.ajax('DELETE', '/vendors/" + v.ID + "', {target: '#main-content'}) })" }
+											style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; color: var(--error); background: none; border: none; cursor: pointer; padding: 0;">
+											DELETE
+										</button>
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}
+
+templ VendorListPage(data VendorListData, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject("Vendors — Project Creation", headerData, sidebarData) {
+		@VendorListContent(data)
+	}
+}
+
+templ VendorLinkToggle(projectID string, vendorID string, isLinked bool) {
+	if isLinked {
+		<div id={ "vendor-link-" + vendorID }>
+			<button
+				@click={ "confirmAction({ title: 'Unlink Vendor', message: 'Remove this vendor from the current project?', confirmText: 'UNLINK', confirmStyle: 'background-color: var(--terracotta);', onConfirm: () => htmx.ajax('DELETE', '/projects/" + projectID + "/vendors/" + vendorID + "/link', {target: '#vendor-link-" + vendorID + "', swap: 'outerHTML'}) })" }
+				class="flex items-center justify-center"
+				style="padding: 4px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); background-color: var(--success); border: none; cursor: pointer;">
+				LINKED
+			</button>
+		</div>
+	} else {
+		<div id={ "vendor-link-" + vendorID }>
+			<button
+				hx-post={ "/projects/" + projectID + "/vendors/" + vendorID + "/link" }
+				hx-target={ "#vendor-link-" + vendorID }
+				hx-swap="outerHTML"
+				class="flex items-center justify-center"
+				style="padding: 4px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-secondary); background-color: transparent; border: 1px solid var(--border-light); cursor: pointer;">
+				LINK
+			</button>
+		</div>
+	}
+}
+
+// Helper functions
+func vendorCreateURL(projectID string) string {
+	if projectID != "" {
+		return "/projects/" + projectID + "/vendors/create"
+	}
+	return "/vendors/create"
+}
+
+func vendorListURL(projectID string) string {
+	if projectID != "" {
+		return "/projects/" + projectID + "/vendors"
+	}
+	return "/vendors"
+}

@@ -1,0 +1,304 @@
+package templates
+
+type VendorSelectItem struct {
+	ID   string
+	Name string
+}
+
+type AddressSelectItem struct {
+	ID           string
+	CompanyName  string
+	AddressLine1 string
+	City         string
+	State        string
+}
+
+type POCreateData struct {
+	ProjectID       string
+	Vendors         []VendorSelectItem
+	BillToAddresses []AddressSelectItem
+	ShipToAddresses []AddressSelectItem
+	VendorID        string
+	OrderDate       string
+	QuotationRef    string
+	RefDate         string
+	BillToAddressID string
+	ShipToAddressID string
+	PaymentTerms    string
+	DeliveryTerms   string
+	WarrantyTerms   string
+	Comments        string
+	Errors          map[string]string
+}
+
+templ POCreateContent(data POCreateData) {
+	// Breadcrumbs
+	<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+		<a
+			href={ templ.SafeURL("/projects/" + data.ProjectID) }
+			hx-get={ "/projects/" + data.ProjectID }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;"
+		>
+			PROJECT
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<a
+			href={ templ.SafeURL("/projects/" + data.ProjectID + "/po") }
+			hx-get={ "/projects/" + data.ProjectID + "/po" }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;"
+		>
+			PURCHASE ORDERS
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+			NEW PO
+		</span>
+	</div>
+
+	// Page header
+	<div>
+		<h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--text-primary); margin: 0;">
+			Create Purchase Order
+		</h1>
+		<p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-top: 8px;">
+			Create a new purchase order for this project
+		</p>
+	</div>
+
+	// Form
+	<form method="POST" action={ templ.SafeURL("/projects/" + data.ProjectID + "/po") } style="margin-top: 32px;">
+		// Error banner
+		if len(data.Errors) > 0 {
+			<div style="background-color: #FEE2E2; border: 1px solid #EF4444; padding: 12px 16px; margin-bottom: 24px;">
+				for _, msg := range data.Errors {
+					<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: #DC2626;">
+						{ msg }
+					</div>
+				}
+			</div>
+		}
+
+		// Section: Vendor & Dates
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					VENDOR &amp; DATES
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				// Vendor dropdown
+				<div style="margin-bottom: 16px;">
+					<label for="vendor_id" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						VENDOR <span style="color: var(--terracotta);">*</span>
+					</label>
+					if len(data.Vendors) == 0 {
+						<div style="padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-muted); background-color: var(--bg-page); border: 1px solid var(--border-light); box-sizing: border-box;">
+							No vendors linked to this project.
+							<a
+								href={ templ.SafeURL("/projects/" + data.ProjectID + "/vendors") }
+								hx-get={ "/projects/" + data.ProjectID + "/vendors" }
+								hx-target="#main-content"
+								hx-push-url="true"
+								style="color: var(--terracotta); text-decoration: none; font-weight: 600;"
+							>
+								Link vendors
+							</a>
+							to continue.
+						</div>
+					} else {
+						<select id="vendor_id" name="vendor_id" required
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none;">
+							<option value="">— Select —</option>
+							for _, v := range data.Vendors {
+								if v.ID == data.VendorID {
+									<option value={ v.ID } selected>{ v.Name }</option>
+								} else {
+									<option value={ v.ID }>{ v.Name }</option>
+								}
+							}
+						</select>
+					}
+				</div>
+
+				// Order Date
+				<div style="margin-bottom: 16px;">
+					<label for="order_date" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						ORDER DATE
+					</label>
+					<input
+						type="date"
+						id="order_date"
+						name="order_date"
+						value={ data.OrderDate }
+						style="width: 100%; max-width: 240px; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+					/>
+				</div>
+
+				// Quotation Ref + Ref Date in a row
+				<div class="flex" style="gap: 24px;">
+					<div class="flex-1">
+						<label for="quotation_ref" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+							QUOTATION REF
+						</label>
+						<input
+							type="text"
+							id="quotation_ref"
+							name="quotation_ref"
+							value={ data.QuotationRef }
+							placeholder="Quotation reference number"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+						/>
+					</div>
+					<div style="width: 240px;">
+						<label for="ref_date" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+							REF DATE
+						</label>
+						<input
+							type="date"
+							id="ref_date"
+							name="ref_date"
+							value={ data.RefDate }
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+						/>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		// Section: Addresses
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					ADDRESSES
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				// Bill To dropdown
+				<div style="margin-bottom: 16px;">
+					<label for="bill_to_address_id" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						BILL TO
+					</label>
+					if len(data.BillToAddresses) == 0 {
+						<div style="padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-muted); background-color: var(--bg-page); border: 1px solid var(--border-light); box-sizing: border-box;">
+							No Bill From addresses configured for this project.
+						</div>
+					} else {
+						<select id="bill_to_address_id" name="bill_to_address_id"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none;">
+							<option value="">— Select —</option>
+							for _, a := range data.BillToAddresses {
+								if a.ID == data.BillToAddressID {
+									<option value={ a.ID } selected>{ a.CompanyName } — { a.AddressLine1 }, { a.City }</option>
+								} else {
+									<option value={ a.ID }>{ a.CompanyName } — { a.AddressLine1 }, { a.City }</option>
+								}
+							}
+						</select>
+					}
+				</div>
+
+				// Ship To dropdown
+				<div>
+					<label for="ship_to_address_id" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						SHIP TO
+					</label>
+					if len(data.ShipToAddresses) == 0 {
+						<div style="padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-muted); background-color: var(--bg-page); border: 1px solid var(--border-light); box-sizing: border-box;">
+							No Ship From addresses configured for this project.
+						</div>
+					} else {
+						<select id="ship_to_address_id" name="ship_to_address_id"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none;">
+							<option value="">— Select —</option>
+							for _, a := range data.ShipToAddresses {
+								if a.ID == data.ShipToAddressID {
+									<option value={ a.ID } selected>{ a.CompanyName } — { a.AddressLine1 }, { a.City }</option>
+								} else {
+									<option value={ a.ID }>{ a.CompanyName } — { a.AddressLine1 }, { a.City }</option>
+								}
+							}
+						</select>
+					}
+				</div>
+			</div>
+		</div>
+
+		// Section: Terms
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					TERMS
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				// Payment Terms
+				<div style="margin-bottom: 16px;">
+					<label for="payment_terms" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						PAYMENT TERMS
+					</label>
+					<textarea id="payment_terms" name="payment_terms" rows="3" placeholder="e.g. 50% advance, 50% on delivery..."
+						style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; resize: vertical;">{ data.PaymentTerms }</textarea>
+				</div>
+
+				// Delivery Terms
+				<div style="margin-bottom: 16px;">
+					<label for="delivery_terms" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						DELIVERY TERMS
+					</label>
+					<textarea id="delivery_terms" name="delivery_terms" rows="3" placeholder="e.g. Ex-works, FOB, CIF..."
+						style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; resize: vertical;">{ data.DeliveryTerms }</textarea>
+				</div>
+
+				// Warranty Terms
+				<div>
+					<label for="warranty_terms" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						WARRANTY TERMS
+					</label>
+					<textarea id="warranty_terms" name="warranty_terms" rows="3" placeholder="e.g. 12 months from date of installation..."
+						style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; resize: vertical;">{ data.WarrantyTerms }</textarea>
+				</div>
+			</div>
+		</div>
+
+		// Section: Comments
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					COMMENTS
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				<textarea id="comments" name="comments" rows="4" placeholder="Additional comments or instructions for this purchase order..."
+					style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; resize: vertical;">{ data.Comments }</textarea>
+			</div>
+		</div>
+
+		// Action buttons
+		<div class="flex justify-end" style="gap: 12px; margin-top: 24px;">
+			<a
+				href={ templ.SafeURL("/projects/" + data.ProjectID) }
+				hx-get={ "/projects/" + data.ProjectID }
+				hx-target="#main-content"
+				hx-push-url="true"
+				class="flex items-center justify-center"
+				style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); background-color: var(--bg-card); border: none; text-decoration: none;"
+			>
+				CANCEL
+			</a>
+			<button type="submit" class="flex items-center justify-center"
+				style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); background-color: var(--terracotta); border: none; cursor: pointer;">
+				CREATE PURCHASE ORDER
+			</button>
+		</div>
+	</form>
+}
+
+templ POCreatePage(data POCreateData, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject("Create Purchase Order — Project Creation", headerData, sidebarData) {
+		@POCreateContent(data)
+	}
+}

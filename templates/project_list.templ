@@ -79,7 +79,7 @@ templ ProjectListContent(data ProjectListData) {
 				for _, item := range data.Items {
 					<div
 						style="background-color: var(--bg-card); padding: 24px; cursor: pointer; transition: transform 0.15s;"
-						hx-get={ "/projects/" + item.ID + "/edit" }
+						hx-get={ "/projects/" + item.ID }
 						hx-target="#main-content"
 						hx-push-url="true"
 					>

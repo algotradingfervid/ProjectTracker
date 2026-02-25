@@ -393,7 +393,9 @@ templ BOQEditContent(data BOQEditData) {
 			hx-post={ fmt.Sprintf("/projects/%s/boq/%s/save", data.ProjectID, data.ID) }
 			hx-target="#main-content"
 			hx-push-url={ fmt.Sprintf("/projects/%s/boq/%s", data.ProjectID, data.ID) }
-
+			data-confirm-save
+			data-confirm-title="Save BOQ"
+			data-confirm-message="Save changes to this BOQ?"
 			style="margin-top: 24px;"
 		>
 			<!-- Accordion Table -->

@@ -266,7 +266,7 @@ func loadShipToCompanyNames(app *pocketbase.PocketBase, projectID string) (map[s
 	}
 
 	records, err := app.FindRecordsByFilter(col,
-		"project = {:projectId} && type = 'ship_to'", "", 0, 0,
+		"project = {:projectId} && address_type = 'ship_to'", "", 0, 0,
 		map[string]any{"projectId": projectID},
 	)
 	if err != nil {

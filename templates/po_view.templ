@@ -1,0 +1,707 @@
+package templates
+
+import "fmt"
+
+type POViewVendor struct {
+	Name                string
+	AddressLine1        string
+	AddressLine2        string
+	City                string
+	State               string
+	PinCode             string
+	GSTIN               string
+	ContactName         string
+	Phone               string
+	Email               string
+	BankBeneficiaryName string
+	BankName            string
+	BankAccountNo       string
+	BankIFSC            string
+	BankBranch          string
+}
+
+type POViewAddress struct {
+	CompanyName  string
+	AddressLine1 string
+	AddressLine2 string
+	City         string
+	State        string
+	PinCode      string
+	GSTIN        string
+	ContactName  string
+	Phone        string
+}
+
+type POViewLineItem struct {
+	SortOrder   int
+	Description string
+	HSNCode     string
+	Qty         string // pre-formatted
+	UoM         string
+	Rate        string // pre-formatted INR
+	BeforeGST   string // pre-formatted INR
+	GSTPercent  string // formatted
+	GSTAmount   string // pre-formatted INR
+	Total       string // pre-formatted INR
+}
+
+type POViewData struct {
+	ProjectID      string
+	POID           string
+	PONumber       string
+	Status         string
+	OrderDate      string
+	QuotationRef   string
+	RefDate        string
+	PaymentTerms   string
+	DeliveryTerms  string
+	WarrantyTerms  string
+	Comments       string
+	Vendor         POViewVendor
+	BillTo         *POViewAddress // nil if not set
+	ShipTo         *POViewAddress // nil if not set
+	LineItems      []POViewLineItem
+	TotalBeforeTax string
+	IGSTPercent    string
+	IGSTAmount     string
+	RoundOff       string
+	GrandTotal     string
+	AmountInWords  string
+}
+
+// poViewStatusBadge returns inline CSS for a PO status badge in the view page.
+func poViewStatusBadge(status string) string {
+	switch status {
+	case "sent":
+		return "display: inline-block; padding: 4px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: #DBEAFE; color: #1D4ED8;"
+	case "acknowledged":
+		return "display: inline-block; padding: 4px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: #FEF3C7; color: #92400E;"
+	case "completed":
+		return "display: inline-block; padding: 4px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: #D1FAE5; color: #065F46;"
+	case "cancelled":
+		return "display: inline-block; padding: 4px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: #FEE2E2; color: #DC2626;"
+	default: // draft
+		return "display: inline-block; padding: 4px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: #F3F4F6; color: #6B7280;"
+	}
+}
+
+templ POViewContent(data POViewData) {
+	<!-- Breadcrumbs -->
+	<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+		<a
+			hx-get={ fmt.Sprintf("/projects/%s", data.ProjectID) }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none; cursor: pointer;"
+		>
+			PROJECT
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<a
+			hx-get={ fmt.Sprintf("/projects/%s/po", data.ProjectID) }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none; cursor: pointer;"
+		>
+			PURCHASE ORDERS
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+			{ data.PONumber }
+		</span>
+	</div>
+
+	<!-- Action Bar -->
+	<div class="flex items-center justify-between" style="margin-bottom: 24px;">
+		<a
+			hx-get={ fmt.Sprintf("/projects/%s/po", data.ProjectID) }
+			hx-target="#main-content"
+			hx-push-url="true"
+			class="flex items-center"
+			style="gap: 6px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-decoration: none; cursor: pointer;"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
+			BACK TO LIST
+		</a>
+		<div class="flex items-center" style="gap: 12px;">
+			<!-- Status Badge -->
+			<span style={ poViewStatusBadge(data.Status) }>
+				{ poStatusLabel(data.Status) }
+			</span>
+			<!-- Edit button — only for draft -->
+			if data.Status == "draft" {
+				<a
+					hx-get={ fmt.Sprintf("/projects/%s/po/%s/edit", data.ProjectID, data.POID) }
+					hx-target="#main-content"
+					hx-push-url="true"
+					class="flex items-center"
+					style="gap: 6px; padding: 10px 18px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); background-color: var(--terracotta); text-transform: uppercase; text-decoration: none; cursor: pointer; border: none;"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+					EDIT
+				</a>
+			}
+		</div>
+	</div>
+
+	<!-- Document Container -->
+	<div style="max-width: 900px; margin: 0 auto; background-color: #FFFFFF; padding: 48px; border: 1px solid #D1CCC4; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+
+		<!-- 1. Document Header -->
+		<div class="flex justify-between items-start" style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid #D1CCC4;">
+			<!-- Left: Company Name -->
+			<div>
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.5px;">
+					FSS ENGINEERING
+				</div>
+			</div>
+			<!-- Right: PO Title + Number -->
+			<div style="text-align: right;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 1px;">
+					PURCHASE ORDER
+				</div>
+				<div style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-top: 4px;">
+					{ data.PONumber }
+				</div>
+			</div>
+		</div>
+
+		<!-- 2. Vendor Block -->
+		<div style="border: 1px solid #D1CCC4; margin-bottom: 20px;">
+			<div style="background-color: #F0EDE7; padding: 8px 16px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+					VENDOR
+				</span>
+			</div>
+			<div style="padding: 12px 16px;">
+				if data.Vendor.Name != "" {
+					<div style="font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">
+						{ data.Vendor.Name }
+					</div>
+				}
+				if data.Vendor.AddressLine1 != "" {
+					<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);">
+						{ data.Vendor.AddressLine1 }
+					</div>
+				}
+				if data.Vendor.AddressLine2 != "" {
+					<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);">
+						{ data.Vendor.AddressLine2 }
+					</div>
+				}
+				if data.Vendor.City != "" || data.Vendor.State != "" || data.Vendor.PinCode != "" {
+					<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);">
+						if data.Vendor.City != "" {
+							{ data.Vendor.City }
+						}
+						if data.Vendor.City != "" && data.Vendor.State != "" {
+							{ ", " }
+						}
+						if data.Vendor.State != "" {
+							{ data.Vendor.State }
+						}
+						if data.Vendor.PinCode != "" {
+							{ " — " }{ data.Vendor.PinCode }
+						}
+					</div>
+				}
+				if data.Vendor.GSTIN != "" {
+					<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+						<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">GSTIN: </span>{ data.Vendor.GSTIN }
+					</div>
+				}
+				if data.Vendor.ContactName != "" || data.Vendor.Phone != "" || data.Vendor.Email != "" {
+					<div style="margin-top: 6px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);">
+						if data.Vendor.ContactName != "" {
+							{ data.Vendor.ContactName }
+						}
+						if data.Vendor.Phone != "" {
+							if data.Vendor.ContactName != "" {
+								{ " · " }
+							}
+							{ data.Vendor.Phone }
+						}
+						if data.Vendor.Email != "" {
+							if data.Vendor.ContactName != "" || data.Vendor.Phone != "" {
+								{ " · " }
+							}
+							{ data.Vendor.Email }
+						}
+					</div>
+				}
+			</div>
+		</div>
+
+		<!-- 3. Date Block -->
+		<div class="flex" style="gap: 0; margin-bottom: 20px; border: 1px solid #D1CCC4;">
+			<!-- Order Date -->
+			<div style="flex: 1; padding: 12px 16px; border-right: 1px solid #D1CCC4;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
+					ORDER DATE
+				</div>
+				<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+					if data.OrderDate != "" {
+						{ data.OrderDate }
+					} else {
+						<span style="color: var(--text-muted);">—</span>
+					}
+				</div>
+			</div>
+			<!-- Quotation Ref -->
+			<div style="flex: 1; padding: 12px 16px; border-right: 1px solid #D1CCC4;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
+					QUOTATION REF
+				</div>
+				<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+					if data.QuotationRef != "" {
+						{ data.QuotationRef }
+					} else {
+						<span style="color: var(--text-muted);">—</span>
+					}
+				</div>
+			</div>
+			<!-- Ref Date -->
+			<div style="flex: 1; padding: 12px 16px;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
+					REF DATE
+				</div>
+				<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+					if data.RefDate != "" {
+						{ data.RefDate }
+					} else {
+						<span style="color: var(--text-muted);">—</span>
+					}
+				</div>
+			</div>
+		</div>
+
+		<!-- 4. Bill To / Ship To -->
+		<div class="flex" style="gap: 0; margin-bottom: 20px; border: 1px solid #D1CCC4;">
+			<!-- Bill To -->
+			<div style="flex: 1; border-right: 1px solid #D1CCC4;">
+				<div style="background-color: #F0EDE7; padding: 8px 16px;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+						BILL TO
+					</span>
+				</div>
+				<div style="padding: 12px 16px;">
+					if data.BillTo != nil {
+						if data.BillTo.CompanyName != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">
+								{ data.BillTo.CompanyName }
+							</div>
+						}
+						if data.BillTo.AddressLine1 != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);">
+								{ data.BillTo.AddressLine1 }
+							</div>
+						}
+						if data.BillTo.AddressLine2 != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);">
+								{ data.BillTo.AddressLine2 }
+							</div>
+						}
+						if data.BillTo.City != "" || data.BillTo.State != "" || data.BillTo.PinCode != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);">
+								if data.BillTo.City != "" {
+									{ data.BillTo.City }
+								}
+								if data.BillTo.City != "" && data.BillTo.State != "" {
+									{ ", " }
+								}
+								if data.BillTo.State != "" {
+									{ data.BillTo.State }
+								}
+								if data.BillTo.PinCode != "" {
+									{ " — " }{ data.BillTo.PinCode }
+								}
+							</div>
+						}
+						if data.BillTo.GSTIN != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+								<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">GSTIN: </span>{ data.BillTo.GSTIN }
+							</div>
+						}
+						if data.BillTo.ContactName != "" || data.BillTo.Phone != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+								if data.BillTo.ContactName != "" {
+									{ data.BillTo.ContactName }
+								}
+								if data.BillTo.Phone != "" {
+									if data.BillTo.ContactName != "" {
+										{ " · " }
+									}
+									{ data.BillTo.Phone }
+								}
+							</div>
+						}
+					} else {
+						<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted); font-style: italic;">
+							Not specified
+						</span>
+					}
+				</div>
+			</div>
+			<!-- Ship To -->
+			<div style="flex: 1;">
+				<div style="background-color: #F0EDE7; padding: 8px 16px;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+						SHIP TO
+					</span>
+				</div>
+				<div style="padding: 12px 16px;">
+					if data.ShipTo != nil {
+						if data.ShipTo.CompanyName != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">
+								{ data.ShipTo.CompanyName }
+							</div>
+						}
+						if data.ShipTo.AddressLine1 != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);">
+								{ data.ShipTo.AddressLine1 }
+							</div>
+						}
+						if data.ShipTo.AddressLine2 != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);">
+								{ data.ShipTo.AddressLine2 }
+							</div>
+						}
+						if data.ShipTo.City != "" || data.ShipTo.State != "" || data.ShipTo.PinCode != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);">
+								if data.ShipTo.City != "" {
+									{ data.ShipTo.City }
+								}
+								if data.ShipTo.City != "" && data.ShipTo.State != "" {
+									{ ", " }
+								}
+								if data.ShipTo.State != "" {
+									{ data.ShipTo.State }
+								}
+								if data.ShipTo.PinCode != "" {
+									{ " — " }{ data.ShipTo.PinCode }
+								}
+							</div>
+						}
+						if data.ShipTo.GSTIN != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+								<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">GSTIN: </span>{ data.ShipTo.GSTIN }
+							</div>
+						}
+						if data.ShipTo.ContactName != "" || data.ShipTo.Phone != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+								if data.ShipTo.ContactName != "" {
+									{ data.ShipTo.ContactName }
+								}
+								if data.ShipTo.Phone != "" {
+									if data.ShipTo.ContactName != "" {
+										{ " · " }
+									}
+									{ data.ShipTo.Phone }
+								}
+							</div>
+						}
+					} else {
+						<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted); font-style: italic;">
+							Not specified
+						</span>
+					}
+				</div>
+			</div>
+		</div>
+
+		<!-- 5. Line Items Table -->
+		<div style="border: 1px solid #D1CCC4; margin-bottom: 0; overflow-x: auto;">
+			<div style="background-color: #F0EDE7; padding: 8px 16px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+					LINE ITEMS
+				</span>
+			</div>
+			<table style="width: 100%; border-collapse: collapse; min-width: 780px;">
+				<thead>
+					<tr style="background-color: var(--bg-sidebar);">
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+							SI NO.
+						</th>
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: left; padding: 10px 10px; border-right: 1px solid rgba(255,255,255,0.1);">
+							PRODUCT DESCRIPTION
+						</th>
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+							HSN CODE
+						</th>
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+							QTY
+						</th>
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+							UOM
+						</th>
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+							RATE (₹)
+						</th>
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+							BEFORE GST (₹)
+						</th>
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+							GST %
+						</th>
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+							GST AMT (₹)
+						</th>
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: right; padding: 10px 10px; white-space: nowrap;">
+							TOTAL AMT (₹)
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+					if len(data.LineItems) == 0 {
+						<tr>
+							<td colspan="10" style="text-align: center; padding: 24px 16px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted); font-style: italic;">
+								No line items.
+							</td>
+						</tr>
+					} else {
+						for i, item := range data.LineItems {
+							if i % 2 == 0 {
+								<tr style="border-top: 1px solid #D1CCC4; background-color: #FFFFFF;">
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ fmtInt(item.SortOrder) }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); padding: 10px 10px; border-right: 1px solid #E8E4DC;">
+										{ item.Description }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.HSNCode }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.Qty }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.UoM }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.Rate }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.BeforeGST }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.GSTPercent }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.GSTAmount }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-primary); text-align: right; padding: 10px 10px; white-space: nowrap;">
+										{ item.Total }
+									</td>
+								</tr>
+							} else {
+								<tr style="border-top: 1px solid #D1CCC4; background-color: #F7F5F2;">
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ fmtInt(item.SortOrder) }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); padding: 10px 10px; border-right: 1px solid #E8E4DC;">
+										{ item.Description }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.HSNCode }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.Qty }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.UoM }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.Rate }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.BeforeGST }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.GSTPercent }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.GSTAmount }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-primary); text-align: right; padding: 10px 10px; white-space: nowrap;">
+										{ item.Total }
+									</td>
+								</tr>
+							}
+						}
+					}
+				</tbody>
+			</table>
+		</div>
+
+		<!-- 6. Totals Section -->
+		<div class="flex justify-end" style="margin-bottom: 20px; border: 1px solid #D1CCC4; border-top: none;">
+			<div style="width: 340px; padding: 16px 20px; border-left: 1px solid #D1CCC4;">
+				<!-- Total Before Tax -->
+				<div class="flex justify-between items-center" style="padding: 6px 0; border-bottom: 1px solid #E8E4DC;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+						TOTAL BEFORE TAX
+					</span>
+					<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+						{ data.TotalBeforeTax }
+					</span>
+				</div>
+				<!-- IGST -->
+				<div class="flex justify-between items-center" style="padding: 6px 0; border-bottom: 1px solid #E8E4DC;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+						IGST ({ data.IGSTPercent }%)
+					</span>
+					<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+						{ data.IGSTAmount }
+					</span>
+				</div>
+				<!-- Round Off -->
+				<div class="flex justify-between items-center" style="padding: 6px 0; border-bottom: 1px solid #D1CCC4;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+						ROUND OFF
+					</span>
+					<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+						{ data.RoundOff }
+					</span>
+				</div>
+				<!-- Grand Total -->
+				<div class="flex justify-between items-center" style="padding: 10px 0 0 0;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: var(--text-primary); text-transform: uppercase;">
+						GRAND TOTAL
+					</span>
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--text-primary);">
+						{ data.GrandTotal }
+					</span>
+				</div>
+			</div>
+		</div>
+
+		<!-- 7. Amount in Words -->
+		if data.AmountInWords != "" {
+			<div style="border: 1px solid #D1CCC4; margin-bottom: 20px; padding: 12px 16px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+					AMOUNT IN WORDS:
+				</span>
+				<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); font-style: italic; margin-left: 8px;">
+					{ data.AmountInWords }
+				</span>
+			</div>
+		}
+
+		<!-- 8. Terms & Conditions -->
+		if data.PaymentTerms != "" || data.DeliveryTerms != "" || data.WarrantyTerms != "" {
+			<div style="border: 1px solid #D1CCC4; margin-bottom: 20px;">
+				<div style="background-color: #F0EDE7; padding: 8px 16px;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+						TERMS &amp; CONDITIONS
+					</span>
+				</div>
+				<div style="padding: 12px 16px;">
+					if data.PaymentTerms != "" {
+						<div style="margin-bottom: 12px;">
+							<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
+								PAYMENT TERMS
+							</div>
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); line-height: 1.5;">
+								{ data.PaymentTerms }
+							</div>
+						</div>
+					}
+					if data.DeliveryTerms != "" {
+						<div style="margin-bottom: 12px;">
+							<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
+								DELIVERY TERMS
+							</div>
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); line-height: 1.5;">
+								{ data.DeliveryTerms }
+							</div>
+						</div>
+					}
+					if data.WarrantyTerms != "" {
+						<div>
+							<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
+								WARRANTY TERMS
+							</div>
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); line-height: 1.5;">
+								{ data.WarrantyTerms }
+							</div>
+						</div>
+					}
+				</div>
+			</div>
+		}
+
+		<!-- 9. Bank Details -->
+		if data.Vendor.BankName != "" || data.Vendor.BankAccountNo != "" || data.Vendor.BankIFSC != "" {
+			<div style="border: 1px solid #D1CCC4;">
+				<div style="background-color: #F0EDE7; padding: 8px 16px;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+						BANK DETAILS
+					</span>
+				</div>
+				<div style="padding: 12px 16px;">
+					<div class="flex" style="flex-wrap: wrap; gap: 0;">
+						if data.Vendor.BankBeneficiaryName != "" {
+							<div style="width: 50%; padding: 6px 0; border-bottom: 1px solid #E8E4DC; box-sizing: border-box; padding-right: 16px;">
+								<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
+									BENEFICIARY NAME
+								</div>
+								<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+									{ data.Vendor.BankBeneficiaryName }
+								</div>
+							</div>
+						}
+						if data.Vendor.BankName != "" {
+							<div style="width: 50%; padding: 6px 0; border-bottom: 1px solid #E8E4DC; box-sizing: border-box; padding-left: 16px;">
+								<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
+									BANK NAME
+								</div>
+								<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+									{ data.Vendor.BankName }
+								</div>
+							</div>
+						}
+						if data.Vendor.BankAccountNo != "" {
+							<div style="width: 50%; padding: 6px 0; border-bottom: 1px solid #E8E4DC; box-sizing: border-box; padding-right: 16px; margin-top: 8px;">
+								<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
+									ACCOUNT NO.
+								</div>
+								<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+									{ data.Vendor.BankAccountNo }
+								</div>
+							</div>
+						}
+						if data.Vendor.BankIFSC != "" {
+							<div style="width: 50%; padding: 6px 0; border-bottom: 1px solid #E8E4DC; box-sizing: border-box; padding-left: 16px; margin-top: 8px;">
+								<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
+									IFSC CODE
+								</div>
+								<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+									{ data.Vendor.BankIFSC }
+								</div>
+							</div>
+						}
+						if data.Vendor.BankBranch != "" {
+							<div style="width: 50%; padding: 6px 0; box-sizing: border-box; padding-right: 16px; margin-top: 8px;">
+								<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
+									BRANCH
+								</div>
+								<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+									{ data.Vendor.BankBranch }
+								</div>
+							</div>
+						}
+					</div>
+				</div>
+			</div>
+		}
+
+	</div>
+	<!-- Bottom spacing -->
+	<div style="height: 48px;"></div>
+}
+
+templ POViewPage(data POViewData, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject("PO View — Project Creation", headerData, sidebarData) {
+		@POViewContent(data)
+	}
+}

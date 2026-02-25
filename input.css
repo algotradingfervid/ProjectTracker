@@ -28,3 +28,73 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Space Grotesk', sans-serif;
 }
+
+/* Toast notifications */
+.toast-item {
+  border-left: 4px solid;
+  backdrop-filter: blur(8px);
+}
+
+.toast-success {
+  background-color: #f0fdf4;
+  border-left-color: var(--success);
+  color: #166534;
+}
+
+.toast-error {
+  background-color: #fef2f2;
+  border-left-color: var(--error);
+  color: #991b1b;
+}
+
+.toast-info {
+  background-color: #fdf6f3;
+  border-left-color: var(--terracotta);
+  color: #7c2d12;
+}
+
+.toast-warning {
+  background-color: #fffbeb;
+  border-left-color: #d97706;
+  color: #92400e;
+}
+
+/* Confirmation modal */
+.confirm-modal-backdrop {
+  backdrop-filter: blur(2px);
+}
+
+#confirm-modal [role="dialog"] > div {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Settings tabs: selected tab = terracotta bg with dark text */
+.tabs-box > .tab:checked {
+  background-color: var(--terracotta) !important;
+  color: var(--text-primary) !important;
+  --tab-bg: var(--terracotta) !important;
+}
+
+/* Checkboxes: white background when unchecked, terracotta when checked */
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: white;
+  border: 2px solid var(--border-light);
+  border-radius: 2px;
+  display: grid;
+  place-content: center;
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--terracotta);
+  border-color: var(--terracotta);
+}
+
+input[type="checkbox"]:checked::after {
+  content: "✓";
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}

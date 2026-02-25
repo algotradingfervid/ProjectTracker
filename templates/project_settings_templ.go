@@ -131,7 +131,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " style=\"width: 18px; height: 18px; accent-color: var(--terracotta); cursor: pointer;\" value=\"true\"><div><span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: var(--text-primary);\">Ship To = Install At</span><p style=\"font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary); margin-top: 2px;\">When enabled, the Ship To address is automatically used as the Install At address</p></div></label></div><div class=\"tabs tabs-box\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " style=\"width: 18px; height: 18px; accent-color: var(--terracotta); cursor: pointer;\" value=\"true\"><div><span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: var(--text-primary);\">Ship To = Install At</span><p style=\"font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary); margin-top: 2px;\">When enabled, the Ship To address is automatically used as the Install At address</p></div></label></div><div class=\"tabs tabs-box\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: var(--bg-card); --tab-bg: var(--bg-card);\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -150,7 +150,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\" checked=\"checked\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\" checked=\"checked\" style=\"color: var(--text-primary); --tab-border-color: transparent;\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -168,12 +168,12 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" style=\"color: var(--text-primary); --tab-border-color: transparent;\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, " <div class=\"tab-content\" style=\"padding: 24px 24px 16px;\"><div style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 4px 40px;\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, " <div class=\"tab-content\" style=\"padding: 24px 24px 16px; background-color: var(--bg-card); color: var(--text-primary);\"><div style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 4px 40px;\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -255,7 +255,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"flex items-center justify-center\" style=\"padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); background-color: var(--bg-card); border: none; text-decoration: none; cursor: pointer;\">CANCEL</a> <button type=\"submit\" class=\"flex items-center justify-center\" style=\"padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); background-color: var(--terracotta); border: none; cursor: pointer;\">SAVE SETTINGS</button></div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"flex items-center justify-center\" style=\"padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); background-color: var(--bg-card); border: none; text-decoration: none; cursor: pointer;\">CANCEL</a> <button type=\"submit\" class=\"flex items-center justify-center\" data-confirm-save data-confirm-title=\"Save Settings\" data-confirm-message=\"Save address requirement settings?\" style=\"padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); background-color: var(--terracotta); border: none; cursor: pointer;\">SAVE SETTINGS</button></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

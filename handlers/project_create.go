@@ -32,7 +32,7 @@ func HandleProjectCreate(app *pocketbase.PocketBase) func(*core.RequestEvent) er
 func HandleProjectSave(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
 		if err := e.Request.ParseForm(); err != nil {
-			return e.String(http.StatusBadRequest, "Invalid form data")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid form data")
 		}
 
 		name := strings.TrimSpace(e.Request.FormValue("name"))
@@ -71,6 +71,7 @@ func HandleProjectSave(app *pocketbase.PocketBase) func(*core.RequestEvent) erro
 		}
 
 		if len(errors) > 0 {
+			SetToast(e, "warning", "Please fix the errors below")
 			data := templates.ProjectCreateData{
 				Name:                  name,
 				ClientName:            clientName,
@@ -89,7 +90,7 @@ func HandleProjectSave(app *pocketbase.PocketBase) func(*core.RequestEvent) erro
 		projectsCol, err := app.FindCollectionByNameOrId("projects")
 		if err != nil {
 			log.Printf("project_create: could not find projects collection: %v", err)
-			return e.String(http.StatusInternalServerError, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		record := core.NewRecord(projectsCol)
@@ -101,12 +102,14 @@ func HandleProjectSave(app *pocketbase.PocketBase) func(*core.RequestEvent) erro
 
 		if err := app.Save(record); err != nil {
 			log.Printf("project_create: could not save project: %v", err)
-			return e.String(http.StatusInternalServerError, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		if err := collections.MigrateDefaultAddressSettings(app); err != nil {
 			log.Printf("project_create: failed to create default address settings: %v", err)
 		}
+
+		SetToast(e, "success", "Project created successfully")
 
 		if e.Request.Header.Get("HX-Request") == "true" {
 			e.Response.Header().Set("HX-Redirect", "/projects")

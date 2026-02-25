@@ -179,6 +179,9 @@ templ AddressFormContent(data AddressFormData) {
 		if data.IsEdit {
 			method="POST"
 			action={ templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/%s/edit", data.ProjectID, addressTypeSlug(data.AddressType), data.AddressID)) }
+			data-confirm-save
+			data-confirm-title="Save Address"
+			data-confirm-message="Save changes to this address?"
 		} else {
 			method="POST"
 			action={ templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/new", data.ProjectID, addressTypeSlug(data.AddressType))) }

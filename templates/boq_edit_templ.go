@@ -508,7 +508,7 @@ func BOQEditContent(data BOQEditData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" style=\"margin-top: 24px;\"><!-- Accordion Table --><div style=\"background-color: var(--bg-card);\"><!-- Table Header --><div class=\"flex items-center\" style=\"padding: 12px 20px; background-color: #E2DED6; border-bottom: 1px solid var(--border-light);\"><!-- Spacer for chevron --><div style=\"width: 24px; margin-right: 8px;\"></div><!-- # --><div style=\"width: 40px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\">#</div><!-- Description --><div class=\"flex-1\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\">DESCRIPTION</div><!-- Qty --><div style=\"width: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">QTY</div><!-- UOM --><div style=\"width: 80px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\">UOM</div><!-- Quoted Price --><div style=\"width: 110px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">QUOTED ₹</div><!-- Budgeted Price --><div style=\"width: 110px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">BUDGETED ₹</div><!-- GST% --><div style=\"width: 70px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\">GST%</div><!-- Actions --><div style=\"width: 40px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\"></div></div><!-- Main Item Rows -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" data-confirm-save data-confirm-title=\"Save BOQ\" data-confirm-message=\"Save changes to this BOQ?\" style=\"margin-top: 24px;\"><!-- Accordion Table --><div style=\"background-color: var(--bg-card);\"><!-- Table Header --><div class=\"flex items-center\" style=\"padding: 12px 20px; background-color: #E2DED6; border-bottom: 1px solid var(--border-light);\"><!-- Spacer for chevron --><div style=\"width: 24px; margin-right: 8px;\"></div><!-- # --><div style=\"width: 40px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\">#</div><!-- Description --><div class=\"flex-1\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\">DESCRIPTION</div><!-- Qty --><div style=\"width: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">QTY</div><!-- UOM --><div style=\"width: 80px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\">UOM</div><!-- Quoted Price --><div style=\"width: 110px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">QUOTED ₹</div><!-- Budgeted Price --><div style=\"width: 110px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">BUDGETED ₹</div><!-- GST% --><div style=\"width: 70px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\">GST%</div><!-- Actions --><div style=\"width: 40px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\"></div></div><!-- Main Item Rows -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -549,7 +549,7 @@ func BOQEditContent(data BOQEditData) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/boq/%s/main-items", data.ProjectID, data.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 478, Col: 85}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 480, Col: 85}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -562,7 +562,7 @@ func BOQEditContent(data BOQEditData) templ.Component {
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(data.TotalQuoted)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 498, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 500, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -575,7 +575,7 @@ func BOQEditContent(data BOQEditData) templ.Component {
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(data.TotalBudgeted)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 509, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 511, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -588,7 +588,7 @@ func BOQEditContent(data BOQEditData) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(data.Margin)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 520, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_edit.templ`, Line: 522, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {

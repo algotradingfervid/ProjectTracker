@@ -1,0 +1,304 @@
+package templates
+
+type VendorFormData struct {
+	ID                  string
+	Name                string
+	ContactName         string
+	Phone               string
+	Email               string
+	AddressLine1        string
+	AddressLine2        string
+	City                string
+	State               string
+	PinCode             string
+	Country             string
+	GSTIN               string
+	PAN                 string
+	Website             string
+	BankBeneficiaryName string
+	BankName            string
+	BankAccountNo       string
+	BankIFSC            string
+	BankBranch          string
+	Notes               string
+	IsEdit              bool
+	ProjectID           string // non-empty if created from project context
+	Errors              map[string]string
+}
+
+templ VendorFormContent(data VendorFormData) {
+	// Breadcrumbs
+	<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+		<a href={ templ.SafeURL(vendorListURL(data.ProjectID)) }
+			hx-get={ vendorListURL(data.ProjectID) }
+			hx-target="#main-content" hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;">
+			VENDORS
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+			if data.IsEdit {
+				EDIT VENDOR
+			} else {
+				NEW VENDOR
+			}
+		</span>
+	</div>
+
+	// Page header
+	<div>
+		<h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--text-primary); margin: 0;">
+			if data.IsEdit {
+				Edit Vendor
+			} else {
+				Add New Vendor
+			}
+		</h1>
+		<p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-top: 8px;">
+			if data.IsEdit {
+				Update vendor information
+			} else {
+				Add a new vendor to your directory
+			}
+		</p>
+	</div>
+
+	// Form
+	<form
+		method="POST"
+		action={ templ.SafeURL(vendorFormAction(data)) }
+		style="margin-top: 32px;"
+		if data.IsEdit {
+			data-confirm-save
+			data-confirm-title="Save Vendor"
+			data-confirm-message="Save changes to this vendor?"
+		}
+	>
+		// Error banner
+		if len(data.Errors) > 0 {
+			<div style="background-color: #FEE2E2; border: 1px solid #EF4444; padding: 12px 16px; margin-bottom: 24px;">
+				for _, msg := range data.Errors {
+					<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: #DC2626;">
+						{ msg }
+					</div>
+				}
+			</div>
+		}
+
+		// Section: Basic Information
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					BASIC INFORMATION
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				// Name (required)
+				<div style="margin-bottom: 16px;">
+					<label for="name" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						VENDOR NAME <span style="color: var(--terracotta);">*</span>
+					</label>
+					<input type="text" id="name" name="name" value={ data.Name }
+						placeholder="Enter vendor name" required
+						style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+				</div>
+				// Contact Name + Phone
+				<div class="flex" style="gap: 24px; margin-bottom: 16px;">
+					<div class="flex-1">
+						<label for="contact_name" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+							CONTACT NAME
+						</label>
+						<input type="text" id="contact_name" name="contact_name" value={ data.ContactName }
+							placeholder="Contact person name"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+					</div>
+					<div class="flex-1">
+						<label for="phone" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+							PHONE
+						</label>
+						<input type="text" id="phone" name="phone" value={ data.Phone }
+							placeholder="Phone number"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+					</div>
+				</div>
+				// Email
+				<div style="margin-bottom: 0;">
+					<label for="email" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						EMAIL
+					</label>
+					<input type="email" id="email" name="email" value={ data.Email }
+						placeholder="vendor@example.com"
+						style="width: 100%; max-width: 480px; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+				</div>
+			</div>
+		</div>
+
+		// Section: Address
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					ADDRESS
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				<div style="margin-bottom: 16px;">
+					<label for="address_line_1" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">ADDRESS LINE 1</label>
+					<input type="text" id="address_line_1" name="address_line_1" value={ data.AddressLine1 } placeholder="Street address"
+						style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+				</div>
+				<div style="margin-bottom: 16px;">
+					<label for="address_line_2" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">ADDRESS LINE 2</label>
+					<input type="text" id="address_line_2" name="address_line_2" value={ data.AddressLine2 } placeholder="Apt, suite, etc."
+						style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+				</div>
+				<div class="flex" style="gap: 24px; margin-bottom: 16px;">
+					<div class="flex-1">
+						<label for="city" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">CITY</label>
+						<input type="text" id="city" name="city" value={ data.City } placeholder="City"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+					</div>
+					<div class="flex-1">
+						<label for="state" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">STATE</label>
+						<input type="text" id="state" name="state" value={ data.State } placeholder="State"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+					</div>
+				</div>
+				<div class="flex" style="gap: 24px;">
+					<div style="width: 200px;">
+						<label for="pin_code" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">PIN CODE</label>
+						<input type="text" id="pin_code" name="pin_code" value={ data.PinCode } placeholder="Pin code"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+					</div>
+					<div class="flex-1">
+						<label for="country" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">COUNTRY</label>
+						<input type="text" id="country" name="country" value={ data.Country } placeholder="Country"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		// Section: Tax & Registration
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					TAX &amp; REGISTRATION
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				<div class="flex" style="gap: 24px; margin-bottom: 16px;">
+					<div class="flex-1">
+						<label for="gstin" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">GSTIN</label>
+						<input type="text" id="gstin" name="gstin" value={ data.GSTIN } placeholder="GST Identification Number"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+					</div>
+					<div class="flex-1">
+						<label for="pan" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">PAN</label>
+						<input type="text" id="pan" name="pan" value={ data.PAN } placeholder="PAN Number"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+					</div>
+				</div>
+				<div>
+					<label for="website" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">WEBSITE</label>
+					<input type="url" id="website" name="website" value={ data.Website } placeholder="https://example.com"
+						style="width: 100%; max-width: 480px; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+				</div>
+			</div>
+		</div>
+
+		// Section: Bank Details
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					BANK DETAILS
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				<div style="margin-bottom: 16px;">
+					<label for="bank_beneficiary_name" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">BENEFICIARY NAME</label>
+					<input type="text" id="bank_beneficiary_name" name="bank_beneficiary_name" value={ data.BankBeneficiaryName } placeholder="Account holder name"
+						style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+				</div>
+				<div class="flex" style="gap: 24px; margin-bottom: 16px;">
+					<div class="flex-1">
+						<label for="bank_name" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">BANK NAME</label>
+						<input type="text" id="bank_name" name="bank_name" value={ data.BankName } placeholder="Bank name"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+					</div>
+					<div class="flex-1">
+						<label for="bank_account_no" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">ACCOUNT NUMBER</label>
+						<input type="text" id="bank_account_no" name="bank_account_no" value={ data.BankAccountNo } placeholder="Account number"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+					</div>
+				</div>
+				<div class="flex" style="gap: 24px;">
+					<div style="width: 240px;">
+						<label for="bank_ifsc" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">IFSC CODE</label>
+						<input type="text" id="bank_ifsc" name="bank_ifsc" value={ data.BankIFSC } placeholder="IFSC code"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+					</div>
+					<div class="flex-1">
+						<label for="bank_branch" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">BRANCH</label>
+						<input type="text" id="bank_branch" name="bank_branch" value={ data.BankBranch } placeholder="Branch name"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"/>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		// Section: Notes
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					NOTES
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				<textarea id="notes" name="notes" rows="4" placeholder="Additional notes about this vendor..."
+					style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; resize: vertical;">{ data.Notes }</textarea>
+			</div>
+		</div>
+
+		// Action buttons
+		<div class="flex justify-end" style="gap: 12px; margin-top: 24px;">
+			<a href={ templ.SafeURL(vendorListURL(data.ProjectID)) }
+				hx-get={ vendorListURL(data.ProjectID) }
+				hx-target="#main-content" hx-push-url="true"
+				class="flex items-center justify-center"
+				style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); background-color: var(--bg-card); border: none; text-decoration: none;">
+				CANCEL
+			</a>
+			<button type="submit" class="flex items-center justify-center"
+				style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); background-color: var(--terracotta); border: none; cursor: pointer;">
+				if data.IsEdit {
+					SAVE CHANGES
+				} else {
+					ADD VENDOR
+				}
+			</button>
+		</div>
+	</form>
+}
+
+templ VendorFormPage(data VendorFormData, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject(vendorFormTitle(data), headerData, sidebarData) {
+		@VendorFormContent(data)
+	}
+}
+
+func vendorFormAction(data VendorFormData) string {
+	if data.IsEdit {
+		return "/vendors/" + data.ID + "/save"
+	}
+	if data.ProjectID != "" {
+		return "/projects/" + data.ProjectID + "/vendors"
+	}
+	return "/vendors"
+}
+
+func vendorFormTitle(data VendorFormData) string {
+	if data.IsEdit {
+		return "Edit Vendor — Project Creation"
+	}
+	return "Add Vendor — Project Creation"
+}

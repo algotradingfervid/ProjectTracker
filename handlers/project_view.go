@@ -15,13 +15,33 @@ func HandleProjectView(app *pocketbase.PocketBase) func(*core.RequestEvent) erro
 	return func(e *core.RequestEvent) error {
 		projectID := e.Request.PathValue("id")
 		if projectID == "" {
-			return e.String(http.StatusBadRequest, "Missing project ID")
+			return ErrorToast(e, http.StatusBadRequest, "Missing project ID")
 		}
 
 		record, err := app.FindRecordById("projects", projectID)
 		if err != nil {
 			log.Printf("project_view: could not find project %s: %v", projectID, err)
-			return e.String(http.StatusNotFound, "Project not found")
+			return ErrorToast(e, http.StatusNotFound, "Project not found")
+		}
+
+		// Auto-activate this project so sidebar links point to the correct project
+		http.SetCookie(e.Response, &http.Cookie{
+			Name:     "active_project",
+			Value:    projectID,
+			Path:     "/",
+			MaxAge:   60 * 60 * 24 * 30,
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
+
+		// If HTMX request and active project differs, force full page reload
+		// so the sidebar re-renders with the correct project context
+		if e.Request.Header.Get("HX-Request") == "true" {
+			activeProject := GetActiveProject(e.Request)
+			if activeProject == nil || activeProject.ID != projectID {
+				e.Response.Header().Set("HX-Redirect", "/projects/"+projectID)
+				return e.String(http.StatusOK, "")
+			}
 		}
 
 		boqs, _ := app.FindRecordsByFilter(

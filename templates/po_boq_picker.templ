@@ -1,0 +1,439 @@
+package templates
+
+import "fmt"
+
+// fmtFloat formats a float64 to 2 decimal places.
+func fmtFloat(f float64) string {
+	return fmt.Sprintf("%.2f", f)
+}
+
+type BOQPickerSubSubItem struct {
+	ID          string
+	Description string
+	HSNCode     string
+	Qty         float64
+	UoM         string
+	Rate        float64
+	GSTPercent  float64
+}
+
+type BOQPickerSubItem struct {
+	ID          string
+	Description string
+	HSNCode     string
+	Qty         float64
+	UoM         string
+	Rate        float64
+	GSTPercent  float64
+	SubSubItems []BOQPickerSubSubItem
+}
+
+type BOQPickerMainItem struct {
+	ID          string
+	Description string
+	HSNCode     string
+	Qty         float64
+	UoM         string
+	Rate        float64
+	GSTPercent  float64
+	SubItems    []BOQPickerSubItem
+}
+
+type BOQPickerBOQ struct {
+	ID        string
+	Title     string
+	MainItems []BOQPickerMainItem
+}
+
+type BOQPickerData struct {
+	ProjectID string
+	POID      string
+	BOQs      []BOQPickerBOQ
+}
+
+// boqPickerAddURL builds the HTMX POST URL for adding a line item from a BOQ item.
+func boqPickerAddURL(projectID, poID string) string {
+	return fmt.Sprintf("/projects/%s/po/%s/line-items/from-boq", projectID, poID)
+}
+
+templ boqPickerSubSubItemRow(data BOQPickerData, item BOQPickerSubSubItem) {
+	<div
+		id={ "boq-item-" + item.ID }
+		class="flex items-center"
+		style="padding: 8px 20px; padding-left: 68px; background-color: var(--bg-page); border-bottom: 1px solid var(--border-light);"
+	>
+		<!-- Description -->
+		<div class="flex-1" style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); padding-right: 12px;">
+			{ item.Description }
+		</div>
+		<!-- HSN -->
+		<div style="width: 72px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center;">
+			{ item.HSNCode }
+		</div>
+		<!-- Qty -->
+		<div style="width: 64px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right;">
+			{ fmtFloat(item.Qty) }
+		</div>
+		<!-- UoM -->
+		<div style="width: 56px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center;">
+			{ item.UoM }
+		</div>
+		<!-- Rate -->
+		<div style="width: 88px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right;">
+			{ fmtFloat(item.Rate) }
+		</div>
+		<!-- GST% -->
+		<div style="width: 56px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center;">
+			{ fmtFloat(item.GSTPercent) }
+		</div>
+		<!-- ADD button -->
+		<div style="width: 72px; display: flex; justify-content: flex-end;">
+			<button
+				type="button"
+				hx-post={ boqPickerAddURL(data.ProjectID, data.POID) }
+				hx-target="#po-line-items"
+				hx-swap="outerHTML"
+				hx-vals={ fmt.Sprintf(`{"source_item_type": "sub_sub_item", "source_item_id": "%s"}`, item.ID) }
+				hx-on--after-request={ fmt.Sprintf(`document.getElementById('boq-item-%s').querySelector('[data-add-btn]').outerHTML = '<span style=\"background-color: var(--success); color: white; padding: 4px 12px; font-size: 10px;\">ADDED</span>'`, item.ID) }
+				data-add-btn
+				style="background-color: var(--terracotta); color: var(--text-light); padding: 4px 12px; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; border: none; cursor: pointer;"
+			>
+				ADD
+			</button>
+		</div>
+	</div>
+}
+
+templ boqPickerSubItemRow(data BOQPickerData, item BOQPickerSubItem) {
+	<div x-data="{ open: true }" id={ "boq-item-" + item.ID }>
+		<!-- Sub item row header -->
+		<div
+			class="flex items-center"
+			style="padding: 9px 20px; padding-left: 44px; background-color: #FAFAF8; border-bottom: 1px solid var(--border-light); cursor: default;"
+		>
+			<!-- Expand chevron (only when sub-sub-items exist) -->
+			if len(item.SubSubItems) > 0 {
+				<div
+					@click="open = !open"
+					style="width: 16px; margin-right: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="11"
+						height="11"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="var(--text-secondary)"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						:style="open ? 'transform: rotate(90deg); transition: transform 0.15s ease;' : 'transition: transform 0.15s ease;'"
+					>
+						<path d="m9 18 6-6-6-6"></path>
+					</svg>
+				</div>
+			} else {
+				<div style="width: 16px; margin-right: 8px; flex-shrink: 0;"></div>
+			}
+			<!-- Description -->
+			<div class="flex-1" style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); padding-right: 12px;">
+				{ item.Description }
+			</div>
+			<!-- HSN -->
+			<div style="width: 72px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center;">
+				{ item.HSNCode }
+			</div>
+			<!-- Qty -->
+			<div style="width: 64px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right;">
+				{ fmtFloat(item.Qty) }
+			</div>
+			<!-- UoM -->
+			<div style="width: 56px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: center;">
+				{ item.UoM }
+			</div>
+			<!-- Rate -->
+			<div style="width: 88px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right;">
+				{ fmtFloat(item.Rate) }
+			</div>
+			<!-- GST% -->
+			<div style="width: 56px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center;">
+				{ fmtFloat(item.GSTPercent) }
+			</div>
+			<!-- ADD button -->
+			<div style="width: 72px; display: flex; justify-content: flex-end;">
+				<button
+					type="button"
+					hx-post={ boqPickerAddURL(data.ProjectID, data.POID) }
+					hx-target="#po-line-items"
+					hx-vals={ fmt.Sprintf(`{"source_item_type": "sub_item", "source_item_id": "%s"}`, item.ID) }
+					hx-on--after-request={ fmt.Sprintf(`document.getElementById('boq-item-%s').querySelector('[data-add-btn]').outerHTML = '<span style=\"background-color: var(--success); color: white; padding: 4px 12px; font-size: 10px;\">ADDED</span>'`, item.ID) }
+					data-add-btn
+					style="background-color: var(--terracotta); color: var(--text-light); padding: 4px 12px; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; border: none; cursor: pointer;"
+				>
+					ADD
+				</button>
+			</div>
+		</div>
+		<!-- Sub-sub-items (collapsible) -->
+		if len(item.SubSubItems) > 0 {
+			<div x-show="open">
+				for _, ssi := range item.SubSubItems {
+					@boqPickerSubSubItemRow(data, ssi)
+				}
+			</div>
+		}
+	</div>
+}
+
+templ boqPickerMainItemRow(data BOQPickerData, item BOQPickerMainItem) {
+	<div x-data="{ open: true }" id={ "boq-item-" + item.ID }>
+		<!-- Main item row header -->
+		<div
+			class="flex items-center"
+			style="padding: 10px 20px; background-color: #F0EDE7; border-bottom: 1px solid var(--border-light); cursor: default;"
+		>
+			<!-- Expand chevron (only when sub-items exist) -->
+			if len(item.SubItems) > 0 {
+				<div
+					@click="open = !open"
+					style="width: 20px; margin-right: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="13"
+						height="13"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="var(--text-primary)"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						:style="open ? 'transform: rotate(90deg); transition: transform 0.15s ease;' : 'transition: transform 0.15s ease;'"
+					>
+						<path d="m9 18 6-6-6-6"></path>
+					</svg>
+				</div>
+			} else {
+				<div style="width: 20px; margin-right: 8px; flex-shrink: 0;"></div>
+			}
+			<!-- Description -->
+			<div class="flex-1" style="font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary); padding-right: 12px;">
+				{ item.Description }
+			</div>
+			<!-- HSN -->
+			<div style="width: 72px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center;">
+				{ item.HSNCode }
+			</div>
+			<!-- Qty -->
+			<div style="width: 64px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary); text-align: right;">
+				{ fmtFloat(item.Qty) }
+			</div>
+			<!-- UoM -->
+			<div style="width: 56px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary); text-align: center;">
+				{ item.UoM }
+			</div>
+			<!-- Rate -->
+			<div style="width: 88px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary); text-align: right;">
+				{ fmtFloat(item.Rate) }
+			</div>
+			<!-- GST% -->
+			<div style="width: 56px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center;">
+				{ fmtFloat(item.GSTPercent) }
+			</div>
+			<!-- ADD button -->
+			<div style="width: 72px; display: flex; justify-content: flex-end;">
+				<button
+					type="button"
+					hx-post={ boqPickerAddURL(data.ProjectID, data.POID) }
+					hx-target="#po-line-items"
+					hx-vals={ fmt.Sprintf(`{"source_item_type": "main_item", "source_item_id": "%s"}`, item.ID) }
+					hx-on--after-request={ fmt.Sprintf(`document.getElementById('boq-item-%s').querySelector('[data-add-btn]').outerHTML = '<span style=\"background-color: var(--success); color: white; padding: 4px 12px; font-size: 10px;\">ADDED</span>'`, item.ID) }
+					data-add-btn
+					style="background-color: var(--terracotta); color: var(--text-light); padding: 4px 12px; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; border: none; cursor: pointer;"
+				>
+					ADD
+				</button>
+			</div>
+		</div>
+		<!-- Sub-items (collapsible) -->
+		if len(item.SubItems) > 0 {
+			<div x-show="open">
+				for _, si := range item.SubItems {
+					@boqPickerSubItemRow(data, si)
+				}
+			</div>
+		}
+	</div>
+}
+
+templ BOQPickerContent(data BOQPickerData) {
+	<!-- Modal overlay -->
+	<div
+		id="boq-picker-modal"
+		x-data="{ open: true }"
+		x-show="open"
+		@keydown.escape.window="open = false"
+		style="position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center;"
+	>
+		<!-- Backdrop -->
+		<div
+			@click="open = false"
+			style="position: absolute; inset: 0; background-color: rgba(0, 0, 0, 0.55);"
+		></div>
+
+		<!-- Modal container -->
+		<div
+			@click.stop
+			style="position: relative; z-index: 1; background-color: var(--bg-page); width: 100%; max-width: 900px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);"
+		>
+			<!-- Modal header -->
+			<div
+				class="flex items-center justify-between"
+				style="padding: 18px 24px; background-color: var(--bg-card); border-bottom: 1px solid var(--border-light); flex-shrink: 0;"
+			>
+				<div>
+					<h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
+						Pick from BOQ
+					</h2>
+					<p style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary); margin: 4px 0 0 0;">
+						Select items to add as purchase order line items
+					</p>
+				</div>
+				<!-- Close button -->
+				<button
+					type="button"
+					@click="open = false"
+					style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: none; border: none; cursor: pointer; color: var(--text-secondary);"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<line x1="18" x2="6" y1="6" y2="18"></line>
+						<line x1="6" x2="18" y1="6" y2="18"></line>
+					</svg>
+				</button>
+			</div>
+
+			<!-- Modal body (scrollable) -->
+			<div style="overflow-y: auto; flex: 1;">
+				if len(data.BOQs) == 0 {
+					<!-- Empty state -->
+					<div class="flex items-center justify-center" style="padding: 48px 24px;">
+						<div style="text-align: center;">
+							<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px;">
+								<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+								<rect width="6" height="4" x="9" y="3" rx="1"></rect>
+							</svg>
+							<p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin: 0;">
+								No BOQ items found for this project
+							</p>
+							<p style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-muted); margin: 8px 0 0 0;">
+								Add items to a BOQ first, then return here to pick them
+							</p>
+						</div>
+					</div>
+				} else {
+					for _, boq := range data.BOQs {
+						<!-- BOQ section (collapsible) -->
+						<div x-data="{ open: true }" style="margin-bottom: 2px;">
+							<!-- BOQ section header -->
+							<div
+								@click="open = !open"
+								class="flex items-center justify-between"
+								style="padding: 12px 20px; background-color: #E2DED6; cursor: pointer; user-select: none;"
+							>
+								<div class="flex items-center" style="gap: 10px;">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="13"
+										height="13"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="var(--text-primary)"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										:style="open ? 'transform: rotate(90deg); transition: transform 0.15s ease;' : 'transition: transform 0.15s ease;'"
+									>
+										<path d="m9 18 6-6-6-6"></path>
+									</svg>
+									<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase;">
+										{ boq.Title }
+									</span>
+								</div>
+								<span style="font-family: 'Inter', sans-serif; font-size: 11px; color: var(--text-secondary);">
+									{ fmt.Sprintf("%d items", len(boq.MainItems)) }
+								</span>
+							</div>
+
+							<!-- BOQ items (collapsible) -->
+							<div x-show="open">
+								if len(boq.MainItems) == 0 {
+									<div class="flex items-center justify-center" style="padding: 24px; background-color: var(--bg-card);">
+										<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted);">
+											No items in this BOQ
+										</span>
+									</div>
+								} else {
+									<!-- Column header -->
+									<div
+										class="flex items-center"
+										style="padding: 9px 20px; background-color: #E2DED6; border-bottom: 1px solid var(--border-light);"
+									>
+										<!-- Spacer for chevron area -->
+										<div style="width: 28px; flex-shrink: 0;"></div>
+										<!-- Description -->
+										<div class="flex-1" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; padding-right: 12px;">
+											DESCRIPTION
+										</div>
+										<!-- HSN -->
+										<div style="width: 72px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;">
+											HSN
+										</div>
+										<!-- Qty -->
+										<div style="width: 64px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;">
+											QTY
+										</div>
+										<!-- UoM -->
+										<div style="width: 56px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;">
+											UOM
+										</div>
+										<!-- Rate -->
+										<div style="width: 88px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;">
+											RATE
+										</div>
+										<!-- GST% -->
+										<div style="width: 56px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;">
+											GST%
+										</div>
+										<!-- Action -->
+										<div style="width: 72px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;">
+											ACTION
+										</div>
+									</div>
+
+									<!-- Main item rows -->
+									for _, mi := range boq.MainItems {
+										@boqPickerMainItemRow(data, mi)
+									}
+								}
+							</div>
+						</div>
+					}
+				}
+			</div>
+
+			<!-- Modal footer -->
+			<div
+				class="flex items-center justify-end"
+				style="padding: 14px 24px; background-color: var(--bg-card); border-top: 1px solid var(--border-light); flex-shrink: 0;"
+			>
+				<button
+					type="button"
+					@click="open = false"
+					style="padding: 9px 20px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); background-color: var(--bg-page); border: none; cursor: pointer; text-transform: uppercase;"
+				>
+					CLOSE
+				</button>
+			</div>
+		</div>
+	</div>
+}

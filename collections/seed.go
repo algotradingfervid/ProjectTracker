@@ -181,6 +181,7 @@ func Seed(app *pocketbase.PocketBase) error {
 		r.Set("description", d.description)
 		r.Set("qty", d.qty)
 		r.Set("uom", d.uom)
+		r.Set("unit_price", perUnitTotal)
 		r.Set("quoted_price", d.quotedPrice)
 		r.Set("budgeted_price", budgeted)
 		r.Set("gst_percent", d.gstPercent)

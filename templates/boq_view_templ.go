@@ -313,20 +313,33 @@ func BOQViewContent(data BOQViewData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" style=\"display: block; padding: 10px 16px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-decoration: none; border-top: 1px solid var(--border-light);\">Export as Excel</a></div></div><!-- Delete BOQ Button --><button type=\"button\" @click=\"$dispatch('open-delete-modal')\" class=\"flex items-center\" style=\"padding: 10px 16px; gap: 8px; background-color: var(--bg-card); border: none; cursor: pointer;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#DC2626\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: #DC2626; text-transform: uppercase;\">DELETE</span></button><!-- Edit BOQ Button --><a hx-get=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" style=\"display: block; padding: 10px 16px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-decoration: none; border-top: 1px solid var(--border-light);\">Export as Excel</a></div></div><!-- Delete BOQ Button --><button type=\"button\" @click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/boq/%s/edit", data.ProjectID, data.ID))
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("confirmAction({title:'Delete BOQ',message:'Are you sure? All items in this BOQ will be permanently deleted.',confirmText:'DELETE',onConfirm:()=>{htmx.ajax('DELETE','%s',{target:'body'})}})", fmt.Sprintf("/projects/%s/boq/%s", data.ProjectID, data.ID)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_view.templ`, Line: 211, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_view.templ`, Line: 202, Col: 277}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"flex items-center\" style=\"padding: 10px 16px; gap: 8px; background-color: var(--bg-sidebar); text-decoration: none; cursor: pointer;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-light)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z\"></path><path d=\"m15 5 4 4\"></path></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); text-transform: uppercase;\">EDIT BOQ</span></a></div></div><!-- Filter Data Initialization --><div id=\"boq-filter-init\" style=\"display:none;\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" class=\"flex items-center\" style=\"padding: 10px 16px; gap: 8px; background-color: var(--bg-card); border: none; cursor: pointer;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#DC2626\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: #DC2626; text-transform: uppercase;\">DELETE</span></button><!-- Edit BOQ Button --><a hx-get=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var13 string
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/boq/%s/edit", data.ProjectID, data.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_view.templ`, Line: 211, Col: 77}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"flex items-center\" style=\"padding: 10px 16px; gap: 8px; background-color: var(--bg-sidebar); text-decoration: none; cursor: pointer;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-light)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z\"></path><path d=\"m15 5 4 4\"></path></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); text-transform: uppercase;\">EDIT BOQ</span></a></div></div><!-- Filter Data Initialization --><div id=\"boq-filter-init\" style=\"display:none;\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -334,12 +347,12 @@ func BOQViewContent(data BOQViewData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</div><!-- Filter + Table Container --><div x-data=\"{\n\t\t\tsearchQuery: '',\n\t\t\tactiveFilter: 'all',\n\t\t\tfilterOpen: false,\n\t\t\tallExpanded: false,\n\t\t\tdebounceTimer: null,\n\t\t\titems: JSON.parse(document.getElementById('boq-filter-init').textContent.trim()),\n\n\t\t\tmatchesSearch(desc) {\n\t\t\t\tif (!this.searchQuery) return true;\n\t\t\t\treturn desc.toLowerCase().includes(this.searchQuery.toLowerCase());\n\t\t\t},\n\n\t\t\tmatchesType(type) {\n\t\t\t\tif (this.activeFilter === 'all') return true;\n\t\t\t\treturn type === this.activeFilter;\n\t\t\t},\n\n\t\t\tisSubSubItemVisible(id) {\n\t\t\t\tif (!this.searchQuery && this.activeFilter === 'all') return true;\n\t\t\t\tconst item = this.items[id];\n\t\t\t\tif (!item) return true;\n\t\t\t\treturn this.matchesSearch(item.desc) && this.matchesType(item.type);\n\t\t\t},\n\n\t\t\tisSubItemVisible(id) {\n\t\t\t\tif (!this.searchQuery && this.activeFilter === 'all') return true;\n\t\t\t\tconst item = this.items[id];\n\t\t\t\tif (!item) return true;\n\t\t\t\tif (this.matchesSearch(item.desc) && this.matchesType(item.type)) return true;\n\t\t\t\tif (item.children) {\n\t\t\t\t\treturn item.children.some(childId => this.isSubSubItemVisible(childId));\n\t\t\t\t}\n\t\t\t\treturn false;\n\t\t\t},\n\n\t\t\tisMainItemVisible(id) {\n\t\t\t\tif (!this.searchQuery && this.activeFilter === 'all') return true;\n\t\t\t\tconst item = this.items[id];\n\t\t\t\tif (!item) return true;\n\t\t\t\tif (this.matchesSearch(item.desc)) return true;\n\t\t\t\tif (item.children) {\n\t\t\t\t\treturn item.children.some(childId => this.isSubItemVisible(childId));\n\t\t\t\t}\n\t\t\t\treturn false;\n\t\t\t},\n\n\t\t\tget matchCount() {\n\t\t\t\tif (!this.searchQuery && this.activeFilter === 'all') return this.totalCount;\n\t\t\t\tlet count = 0;\n\t\t\t\tfor (const [id, item] of Object.entries(this.items)) {\n\t\t\t\t\tif (item.children && item.children.length > 0 && !item.type) continue;\n\t\t\t\t\tif (this.matchesSearch(item.desc) && (this.activeFilter === 'all' || this.matchesType(item.type))) {\n\t\t\t\t\t\tcount++;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\treturn count;\n\t\t\t},\n\n\t\t\tget totalCount() {\n\t\t\t\tlet count = 0;\n\t\t\t\tfor (const [id, item] of Object.entries(this.items)) {\n\t\t\t\t\tif (item.children && item.children.length > 0 && !item.type) continue;\n\t\t\t\t\tif (item.type) count++;\n\t\t\t\t}\n\t\t\t\treturn count || Object.keys(this.items).length;\n\t\t\t},\n\n\t\t\tget filterLabel() {\n\t\t\t\tif (this.activeFilter === 'all') return 'ALL TYPES';\n\t\t\t\treturn this.activeFilter.toUpperCase();\n\t\t\t},\n\n\t\t\tclearFilters() {\n\t\t\t\tthis.searchQuery = '';\n\t\t\t\tthis.activeFilter = 'all';\n\t\t\t},\n\n\t\t\tdebouncedSearch(val) {\n\t\t\t\tclearTimeout(this.debounceTimer);\n\t\t\t\tthis.debounceTimer = setTimeout(() => { this.searchQuery = val; }, 300);\n\t\t\t},\n\n\t\t\ttoggleExpandAll() {\n\t\t\t\tthis.allExpanded = !this.allExpanded;\n\t\t\t\tdocument.querySelectorAll('[data-accordion-row]').forEach(el => {\n\t\t\t\t\tif (el._x_dataStack && el._x_dataStack[0] && 'open' in el._x_dataStack[0]) {\n\t\t\t\t\t\tel._x_dataStack[0].open = this.allExpanded;\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\t\t}\"><!-- Filter Bar --><div class=\"flex items-center\" style=\"gap: 12px; margin-top: 24px;\"><!-- Search Input --><div class=\"flex items-center\" style=\"background-color: var(--bg-card); padding: 8px 12px; gap: 8px; width: 260px; position: relative;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-muted)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input type=\"text\" placeholder=\"Search items...\" @input=\"debouncedSearch($event.target.value)\" x-ref=\"searchInput\" style=\"border: none; outline: none; background: transparent; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); width: 100%;\"> <button type=\"button\" x-show=\"searchQuery\" @click=\"clearFilters(); $refs.searchInput.value = ''\" style=\"position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; cursor: pointer; padding: 2px; display: flex; align-items: center; justify-content: center;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-muted)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"18\" x2=\"6\" y1=\"6\" y2=\"18\"></line><line x1=\"6\" x2=\"18\" y1=\"6\" y2=\"18\"></line></svg></button></div><!-- Type Filter Dropdown --><div style=\"position: relative;\"><button type=\"button\" @click=\"filterOpen = !filterOpen\" class=\"flex items-center\" style=\"padding: 8px 12px; gap: 8px; background-color: var(--bg-card); border: none; cursor: pointer;\"><!-- sliders-horizontal icon --><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-secondary)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"21\" x2=\"14\" y1=\"4\" y2=\"4\"></line><line x1=\"10\" x2=\"3\" y1=\"4\" y2=\"4\"></line><line x1=\"21\" x2=\"12\" y1=\"12\" y2=\"12\"></line><line x1=\"8\" x2=\"3\" y1=\"12\" y2=\"12\"></line><line x1=\"21\" x2=\"16\" y1=\"20\" y2=\"20\"></line><line x1=\"12\" x2=\"3\" y1=\"20\" y2=\"20\"></line><line x1=\"14\" x2=\"14\" y1=\"2\" y2=\"6\"></line><line x1=\"8\" x2=\"8\" y1=\"10\" y2=\"14\"></line><line x1=\"16\" x2=\"16\" y1=\"18\" y2=\"22\"></line></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\" x-text=\"filterLabel\">ALL TYPES</span> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-secondary)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"></path></svg></button><div x-show=\"filterOpen\" @click.away=\"filterOpen = false\" style=\"position: absolute; left: 0; top: 100%; margin-top: 4px; background-color: var(--bg-card); border: 1px solid var(--border-light); min-width: 140px; z-index: 10;\"><button type=\"button\" @click=\"activeFilter = 'all'; filterOpen = false\" style=\"display: block; width: 100%; padding: 10px 16px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase; background: none; border: none; text-align: left; cursor: pointer;\">ALL TYPES</button> <button type=\"button\" @click=\"activeFilter = 'product'; filterOpen = false\" style=\"display: block; width: 100%; padding: 10px 16px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase; background: none; border: none; text-align: left; cursor: pointer; border-top: 1px solid var(--border-light);\">PRODUCT</button> <button type=\"button\" @click=\"activeFilter = 'service'; filterOpen = false\" style=\"display: block; width: 100%; padding: 10px 16px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase; background: none; border: none; text-align: left; cursor: pointer; border-top: 1px solid var(--border-light);\">SERVICE</button></div></div><!-- Expand All Button --><button type=\"button\" @click=\"toggleExpandAll()\" class=\"flex items-center\" style=\"padding: 8px 12px; gap: 8px; background-color: var(--bg-card); border: none; cursor: pointer;\"><span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\" x-text=\"allExpanded ? 'COLLAPSE ALL' : 'EXPAND ALL'\">EXPAND ALL</span></button><!-- Results count --><span x-show=\"searchQuery || activeFilter !== 'all'\" style=\"font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary); margin-left: auto;\" x-text=\"'Showing ' + matchCount + ' of ' + totalCount + ' items'\"></span></div><!-- Accordion Table --><div style=\"background-color: var(--bg-card); margin-top: 2px;\"><!-- Table Header --><div class=\"flex items-center\" style=\"padding: 12px 20px; background-color: #E2DED6; border-bottom: 1px solid var(--border-light);\"><!-- Spacer for chevron --><div style=\"width: 24px; margin-right: 8px;\"></div><!-- # --><div style=\"width: 40px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\">#</div><!-- Description --><div class=\"flex-1\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\">DESCRIPTION</div><!-- Qty --><div style=\"width: 60px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">QTY</div><!-- UOM --><div style=\"width: 60px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\">UOM</div><!-- Quoted Price --><div style=\"width: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">QUOTED ₹</div><!-- Budgeted Price --><div style=\"width: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">BUDGETED ₹</div><!-- HSN --><div style=\"width: 60px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\">HSN</div><!-- GST% --><div style=\"width: 55px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\">GST%</div></div><!-- Main Item Rows -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div><!-- Filter + Table Container --><div x-data=\"{\n\t\t\tsearchQuery: '',\n\t\t\tactiveFilter: 'all',\n\t\t\tfilterOpen: false,\n\t\t\tallExpanded: false,\n\t\t\tdebounceTimer: null,\n\t\t\titems: JSON.parse(document.getElementById('boq-filter-init').textContent.trim()),\n\n\t\t\tmatchesSearch(desc) {\n\t\t\t\tif (!this.searchQuery) return true;\n\t\t\t\treturn desc.toLowerCase().includes(this.searchQuery.toLowerCase());\n\t\t\t},\n\n\t\t\tmatchesType(type) {\n\t\t\t\tif (this.activeFilter === 'all') return true;\n\t\t\t\treturn type === this.activeFilter;\n\t\t\t},\n\n\t\t\tisSubSubItemVisible(id) {\n\t\t\t\tif (!this.searchQuery && this.activeFilter === 'all') return true;\n\t\t\t\tconst item = this.items[id];\n\t\t\t\tif (!item) return true;\n\t\t\t\treturn this.matchesSearch(item.desc) && this.matchesType(item.type);\n\t\t\t},\n\n\t\t\tisSubItemVisible(id) {\n\t\t\t\tif (!this.searchQuery && this.activeFilter === 'all') return true;\n\t\t\t\tconst item = this.items[id];\n\t\t\t\tif (!item) return true;\n\t\t\t\tif (this.matchesSearch(item.desc) && this.matchesType(item.type)) return true;\n\t\t\t\tif (item.children) {\n\t\t\t\t\treturn item.children.some(childId => this.isSubSubItemVisible(childId));\n\t\t\t\t}\n\t\t\t\treturn false;\n\t\t\t},\n\n\t\t\tisMainItemVisible(id) {\n\t\t\t\tif (!this.searchQuery && this.activeFilter === 'all') return true;\n\t\t\t\tconst item = this.items[id];\n\t\t\t\tif (!item) return true;\n\t\t\t\tif (this.matchesSearch(item.desc)) return true;\n\t\t\t\tif (item.children) {\n\t\t\t\t\treturn item.children.some(childId => this.isSubItemVisible(childId));\n\t\t\t\t}\n\t\t\t\treturn false;\n\t\t\t},\n\n\t\t\tget matchCount() {\n\t\t\t\tif (!this.searchQuery && this.activeFilter === 'all') return this.totalCount;\n\t\t\t\tlet count = 0;\n\t\t\t\tfor (const [id, item] of Object.entries(this.items)) {\n\t\t\t\t\tif (item.children && item.children.length > 0 && !item.type) continue;\n\t\t\t\t\tif (this.matchesSearch(item.desc) && (this.activeFilter === 'all' || this.matchesType(item.type))) {\n\t\t\t\t\t\tcount++;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\treturn count;\n\t\t\t},\n\n\t\t\tget totalCount() {\n\t\t\t\tlet count = 0;\n\t\t\t\tfor (const [id, item] of Object.entries(this.items)) {\n\t\t\t\t\tif (item.children && item.children.length > 0 && !item.type) continue;\n\t\t\t\t\tif (item.type) count++;\n\t\t\t\t}\n\t\t\t\treturn count || Object.keys(this.items).length;\n\t\t\t},\n\n\t\t\tget filterLabel() {\n\t\t\t\tif (this.activeFilter === 'all') return 'ALL TYPES';\n\t\t\t\treturn this.activeFilter.toUpperCase();\n\t\t\t},\n\n\t\t\tclearFilters() {\n\t\t\t\tthis.searchQuery = '';\n\t\t\t\tthis.activeFilter = 'all';\n\t\t\t},\n\n\t\t\tdebouncedSearch(val) {\n\t\t\t\tclearTimeout(this.debounceTimer);\n\t\t\t\tthis.debounceTimer = setTimeout(() => { this.searchQuery = val; }, 300);\n\t\t\t},\n\n\t\t\ttoggleExpandAll() {\n\t\t\t\tthis.allExpanded = !this.allExpanded;\n\t\t\t\tdocument.querySelectorAll('[data-accordion-row]').forEach(el => {\n\t\t\t\t\tif (el._x_dataStack && el._x_dataStack[0] && 'open' in el._x_dataStack[0]) {\n\t\t\t\t\t\tel._x_dataStack[0].open = this.allExpanded;\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\t\t}\"><!-- Filter Bar --><div class=\"flex items-center\" style=\"gap: 12px; margin-top: 24px;\"><!-- Search Input --><div class=\"flex items-center\" style=\"background-color: var(--bg-card); padding: 8px 12px; gap: 8px; width: 260px; position: relative;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-muted)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input type=\"text\" placeholder=\"Search items...\" @input=\"debouncedSearch($event.target.value)\" x-ref=\"searchInput\" style=\"border: none; outline: none; background: transparent; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); width: 100%;\"> <button type=\"button\" x-show=\"searchQuery\" @click=\"clearFilters(); $refs.searchInput.value = ''\" style=\"position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; cursor: pointer; padding: 2px; display: flex; align-items: center; justify-content: center;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-muted)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"18\" x2=\"6\" y1=\"6\" y2=\"18\"></line><line x1=\"6\" x2=\"18\" y1=\"6\" y2=\"18\"></line></svg></button></div><!-- Type Filter Dropdown --><div style=\"position: relative;\"><button type=\"button\" @click=\"filterOpen = !filterOpen\" class=\"flex items-center\" style=\"padding: 8px 12px; gap: 8px; background-color: var(--bg-card); border: none; cursor: pointer;\"><!-- sliders-horizontal icon --><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-secondary)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"21\" x2=\"14\" y1=\"4\" y2=\"4\"></line><line x1=\"10\" x2=\"3\" y1=\"4\" y2=\"4\"></line><line x1=\"21\" x2=\"12\" y1=\"12\" y2=\"12\"></line><line x1=\"8\" x2=\"3\" y1=\"12\" y2=\"12\"></line><line x1=\"21\" x2=\"16\" y1=\"20\" y2=\"20\"></line><line x1=\"12\" x2=\"3\" y1=\"20\" y2=\"20\"></line><line x1=\"14\" x2=\"14\" y1=\"2\" y2=\"6\"></line><line x1=\"8\" x2=\"8\" y1=\"10\" y2=\"14\"></line><line x1=\"16\" x2=\"16\" y1=\"18\" y2=\"22\"></line></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\" x-text=\"filterLabel\">ALL TYPES</span> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--text-secondary)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"></path></svg></button><div x-show=\"filterOpen\" @click.away=\"filterOpen = false\" style=\"position: absolute; left: 0; top: 100%; margin-top: 4px; background-color: var(--bg-card); border: 1px solid var(--border-light); min-width: 140px; z-index: 10;\"><button type=\"button\" @click=\"activeFilter = 'all'; filterOpen = false\" style=\"display: block; width: 100%; padding: 10px 16px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase; background: none; border: none; text-align: left; cursor: pointer;\">ALL TYPES</button> <button type=\"button\" @click=\"activeFilter = 'product'; filterOpen = false\" style=\"display: block; width: 100%; padding: 10px 16px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase; background: none; border: none; text-align: left; cursor: pointer; border-top: 1px solid var(--border-light);\">PRODUCT</button> <button type=\"button\" @click=\"activeFilter = 'service'; filterOpen = false\" style=\"display: block; width: 100%; padding: 10px 16px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase; background: none; border: none; text-align: left; cursor: pointer; border-top: 1px solid var(--border-light);\">SERVICE</button></div></div><!-- Expand All Button --><button type=\"button\" @click=\"toggleExpandAll()\" class=\"flex items-center\" style=\"padding: 8px 12px; gap: 8px; background-color: var(--bg-card); border: none; cursor: pointer;\"><span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\" x-text=\"allExpanded ? 'COLLAPSE ALL' : 'EXPAND ALL'\">EXPAND ALL</span></button><!-- Results count --><span x-show=\"searchQuery || activeFilter !== 'all'\" style=\"font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary); margin-left: auto;\" x-text=\"'Showing ' + matchCount + ' of ' + totalCount + ' items'\"></span></div><!-- Accordion Table --><div style=\"background-color: var(--bg-card); margin-top: 2px;\"><!-- Table Header --><div class=\"flex items-center\" style=\"padding: 12px 20px; background-color: #E2DED6; border-bottom: 1px solid var(--border-light);\"><!-- Spacer for chevron --><div style=\"width: 24px; margin-right: 8px;\"></div><!-- # --><div style=\"width: 40px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\">#</div><!-- Description --><div class=\"flex-1\" style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;\">DESCRIPTION</div><!-- Qty --><div style=\"width: 60px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">QTY</div><!-- UOM --><div style=\"width: 60px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\">UOM</div><!-- Quoted Price --><div style=\"width: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">QUOTED ₹</div><!-- Budgeted Price --><div style=\"width: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: right;\">BUDGETED ₹</div><!-- HSN --><div style=\"width: 60px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\">HSN</div><!-- GST% --><div style=\"width: 55px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-align: center;\">GST%</div></div><!-- Main Item Rows -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(data.MainItems) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div class=\"flex justify-center items-center\" style=\"padding: 32px 0; color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 14px;\">No items found</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"flex justify-center items-center\" style=\"padding: 32px 0; color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 14px;\">No items found</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -363,100 +376,74 @@ func BOQViewContent(data BOQViewData) templ.Component {
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div></div><!-- Summary Section --><div class=\"flex\" style=\"gap: 24px; margin-top: 24px; justify-content: flex-end;\"><!-- Total Quoted --><div style=\"width: 220px; background-color: var(--bg-card); padding: 20px;\"><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);\">TOTAL QUOTED</div><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 8px;\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var13 string
-		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(data.TotalQuoted)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_view.templ`, Line: 470, Col: 22}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</div></div><!-- Total Budgeted --><div style=\"width: 220px; background-color: var(--bg-card); padding: 20px;\"><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);\">TOTAL BUDGETED</div><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--success); margin-top: 8px;\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</div></div><!-- Summary Section --><div class=\"flex\" style=\"gap: 24px; margin-top: 24px; justify-content: flex-end;\"><!-- Total Quoted --><div style=\"width: 220px; background-color: var(--bg-card); padding: 20px;\"><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);\">TOTAL QUOTED</div><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 8px;\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(data.TotalBudgeted)
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(data.TotalQuoted)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_view.templ`, Line: 479, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_view.templ`, Line: 470, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div></div><!-- Margin --><div style=\"width: 220px; background-color: var(--bg-card); padding: 20px;\"><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);\">MARGIN</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div></div><!-- Total Budgeted --><div style=\"width: 220px; background-color: var(--bg-card); padding: 20px;\"><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);\">TOTAL BUDGETED</div><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--success); margin-top: 8px;\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var15 string
+		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(data.TotalBudgeted)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_view.templ`, Line: 479, Col: 24}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div></div><!-- Margin --><div style=\"width: 220px; background-color: var(--bg-card); padding: 20px;\"><div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);\">MARGIN</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if data.IsPositiveMargin {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--success); margin-top: 8px;\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(data.Margin)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_view.templ`, Line: 489, Col: 18}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--terracotta); margin-top: 8px;\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--success); margin-top: 8px;\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(data.Margin)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_view.templ`, Line: 493, Col: 18}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_view.templ`, Line: 489, Col: 18}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div style=\"font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--terracotta); margin-top: 8px;\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var17 string
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(data.Margin)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_view.templ`, Line: 493, Col: 18}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div></div><!-- Delete BOQ Confirmation Modal --><div x-data=\"{ open: false }\" @open-delete-modal.window=\"open = true\" @keydown.escape.window=\"open = false\"><div id=\"delete-boq-modal\" x-show=\"open\" x-cloak style=\"position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center;\"><!-- Backdrop --><div @click=\"open = false\" style=\"position: absolute; inset: 0; background-color: rgba(0, 0, 0, 0.5);\"></div><!-- Modal Content --><div @click.stop style=\"position: relative; z-index: 1; background-color: var(--bg-card); max-width: 480px; width: 100%; padding: 28px 32px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);\"><h3 style=\"font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0;\">Delete BOQ</h3><div style=\"margin-top: 16px;\"><p style=\"font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin: 0; line-height: 1.5;\">Are you sure you want to delete <strong style=\"color: var(--text-primary);\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var17 string
-		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(data.Title)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_view.templ`, Line: 518, Col: 93}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</strong>?</p><div style=\"margin-top: 12px; padding: 12px 16px; background-color: #FEF2F2; border-left: 3px solid #DC2626;\"><p style=\"font-family: 'Inter', sans-serif; font-size: 13px; color: #991B1B; margin: 0; line-height: 1.5;\">This action is permanent and cannot be undone. All main items, sub-items, and sub-sub-items within this BOQ will be permanently deleted.</p></div></div><div class=\"flex items-center\" style=\"margin-top: 24px; gap: 12px; justify-content: flex-end;\"><button type=\"button\" @click=\"open = false\" class=\"flex items-center\" style=\"padding: 10px 20px; gap: 8px; background-color: var(--bg-page); border: none; cursor: pointer;\"><span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase;\">CANCEL</span></button> <button type=\"button\" hx-delete=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/boq/%s", data.ProjectID, data.ID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/boq_view.templ`, Line: 537, Col: 76}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" class=\"flex items-center\" style=\"padding: 10px 20px; gap: 8px; background-color: #DC2626; border: none; cursor: pointer;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> <span style=\"font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: white; text-transform: uppercase;\">DELETE BOQ</span></button></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -480,12 +467,12 @@ func BOQViewPage(data BOQViewData, headerData HeaderData, sidebarData SidebarDat
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var19 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var19 == nil {
-			templ_7745c5c3_Var19 = templ.NopComponent
+		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var18 == nil {
+			templ_7745c5c3_Var18 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var20 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var19 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -503,7 +490,7 @@ func BOQViewPage(data BOQViewData, headerData HeaderData, sidebarData SidebarDat
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = PageShellWithProject("BOQ View — Project Creation", headerData, sidebarData).Render(templ.WithChildren(ctx, templ_7745c5c3_Var20), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = PageShellWithProject("BOQ View — Project Creation", headerData, sidebarData).Render(templ.WithChildren(ctx, templ_7745c5c3_Var19), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

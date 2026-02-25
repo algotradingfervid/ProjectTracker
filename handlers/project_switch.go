@@ -16,7 +16,7 @@ func HandleProjectActivate(app *pocketbase.PocketBase) func(*core.RequestEvent) 
 		// Verify project exists
 		_, err := app.FindRecordById("projects", projectID)
 		if err != nil {
-			return e.String(404, "Project not found")
+			return ErrorToast(e, http.StatusNotFound, "Project not found")
 		}
 
 		// Set cookie (30-day expiry, HttpOnly)
@@ -28,6 +28,8 @@ func HandleProjectActivate(app *pocketbase.PocketBase) func(*core.RequestEvent) 
 			HttpOnly: true,
 			SameSite: http.SameSiteLaxMode,
 		})
+
+		SetToast(e, "success", "Project activated")
 
 		// Tell HTMX to do a full page redirect so header + sidebar re-render
 		e.Response.Header().Set("HX-Redirect", "/projects/"+projectID)
@@ -44,6 +46,8 @@ func HandleProjectDeactivate(app *pocketbase.PocketBase) func(*core.RequestEvent
 			Path:   "/",
 			MaxAge: -1,
 		})
+
+		SetToast(e, "success", "Project deactivated")
 
 		e.Response.Header().Set("HX-Redirect", "/projects")
 		return e.String(200, "OK")

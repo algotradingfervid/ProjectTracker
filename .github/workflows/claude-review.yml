@@ -1,0 +1,32 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this PR for consistency with the project's established patterns:
+
+            1. **Handler pattern**: Closure over `*pocketbase.PocketBase`, returns `func(*core.RequestEvent) error`
+            2. **HTMX detection**: GET handlers must check `HX-Request` header for partial vs full rendering
+            3. **Template pattern**: Each page needs data struct + Content component + Page component
+            4. **Validation**: `errors := make(map[string]string)` pattern, re-render form on error
+            5. **POST success**: HX-Redirect header for HTMX, 302 redirect for non-HTMX
+            6. **Input handling**: `strings.TrimSpace()` on all text inputs
+            7. **PocketBase access**: Parameterized filters, proper error handling
+            8. **Styling**: CSS custom properties, Space Grotesk headings, flat/square design
+
+            Focus on correctness and pattern consistency. Be concise.

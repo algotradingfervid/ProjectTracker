@@ -39,7 +39,7 @@ func HandleBOQSave(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 		projectID := e.Request.PathValue("projectId")
 		if err := e.Request.ParseForm(); err != nil {
 			log.Printf("boq_create: could not parse form: %v", err)
-			return e.String(http.StatusBadRequest, "Invalid form data")
+			return ErrorToast(e, http.StatusBadRequest, "Invalid form data")
 		}
 
 		title := strings.TrimSpace(e.Request.FormValue("title"))
@@ -68,6 +68,7 @@ func HandleBOQSave(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 		}
 
 		if len(errors) > 0 {
+			SetToast(e, "warning", "Please fix the errors below")
 			data := templates.BOQCreateData{
 				ProjectID:       projectID,
 				Title:           title,
@@ -87,7 +88,7 @@ func HandleBOQSave(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 		boqsCol, err := app.FindCollectionByNameOrId("boqs")
 		if err != nil {
 			log.Printf("boq_create: could not find boqs collection: %v", err)
-			return e.String(http.StatusInternalServerError, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		boqRecord := core.NewRecord(boqsCol)
@@ -97,7 +98,7 @@ func HandleBOQSave(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 
 		if err := app.Save(boqRecord); err != nil {
 			log.Printf("boq_create: could not save BOQ: %v", err)
-			return e.String(http.StatusInternalServerError, "Internal error")
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		boqID := boqRecord.Id
@@ -292,6 +293,7 @@ func HandleBOQSave(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 			}
 		}
 
+		SetToast(e, "success", "BOQ created successfully")
 		return e.Redirect(http.StatusFound, fmt.Sprintf("/projects/%s/boq/%s", projectID, boqID))
 	}
 }

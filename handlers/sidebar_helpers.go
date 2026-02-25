@@ -36,6 +36,14 @@ func BuildSidebarData(r *http.Request, app *pocketbase.PocketBase) templates.Sid
 		data.BOQCount = len(boqs)
 	}
 
+	// Count POs for this project
+	poRecords, _ := app.FindRecordsByFilter("purchase_orders", "project = {:pid}", "", 0, 0, map[string]any{"pid": activeProj.ID})
+	data.POCount = len(poRecords)
+
+	// Count linked vendors for this project
+	vendorLinks, _ := app.FindRecordsByFilter("project_vendors", "project = {:pid}", "", 0, 0, map[string]any{"pid": activeProj.ID})
+	data.VendorCount = len(vendorLinks)
+
 	// Count addresses by type
 	addrCol, _ := app.FindCollectionByNameOrId("addresses")
 	if addrCol != nil {

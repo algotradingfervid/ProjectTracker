@@ -94,14 +94,14 @@ templ ProjectSettingsContent(data ProjectSettingsData) {
 				</div>
 			</label>
 		</div>
-		<div class="tabs tabs-box" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">
+		<div class="tabs tabs-box" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: var(--bg-card); --tab-bg: var(--bg-card);">
 			for i, addrType := range data.AddressTypes {
 				if i == 0 {
-					<input type="radio" name="settings_tabs" class="tab" aria-label={ addrType.Label } checked="checked"/>
+					<input type="radio" name="settings_tabs" class="tab" aria-label={ addrType.Label } checked="checked" style="color: var(--text-primary); --tab-border-color: transparent;"/>
 				} else {
-					<input type="radio" name="settings_tabs" class="tab" aria-label={ addrType.Label }/>
+					<input type="radio" name="settings_tabs" class="tab" aria-label={ addrType.Label } style="color: var(--text-primary); --tab-border-color: transparent;"/>
 				}
-				<div class="tab-content" style="padding: 24px 24px 16px;">
+				<div class="tab-content" style="padding: 24px 24px 16px; background-color: var(--bg-card); color: var(--text-primary);">
 				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 40px;">
 					for _, field := range addrType.Fields {
 						<label class="flex items-center cursor-pointer" style="padding: 10px 0; gap: 12px;">
@@ -140,6 +140,9 @@ templ ProjectSettingsContent(data ProjectSettingsData) {
 				style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); background-color: var(--bg-card); border: none; text-decoration: none; cursor: pointer;"
 			>CANCEL</a>
 			<button type="submit" class="flex items-center justify-center"
+				data-confirm-save
+				data-confirm-title="Save Settings"
+				data-confirm-message="Save address requirement settings?"
 				style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); background-color: var(--terracotta); border: none; cursor: pointer;"
 			>SAVE SETTINGS</button>
 		</div>

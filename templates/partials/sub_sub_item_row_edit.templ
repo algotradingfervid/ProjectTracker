@@ -106,9 +106,7 @@ templ SubSubItemRowEdit(data SubSubItemRowEditData) {
 		<div style="width: 40px; padding-left: 8px; display: flex; align-items: center; justify-content: center;">
 			<button
 				type="button"
-				hx-delete={ fmt.Sprintf("/projects/%s/boq/%s/subsubitem/%s", data.ProjectID, data.BOQID, data.ID) }
-				hx-target="#main-content"
-				hx-confirm="Are you sure you want to delete this sub-sub item?"
+				@click={ fmt.Sprintf("confirmAction({ title: 'Delete Item', message: 'Delete this item?', confirmText: 'DELETE', onConfirm: () => htmx.ajax('DELETE', '/projects/%s/boq/%s/subsubitem/%s', {target: '#main-content'}) })", data.ProjectID, data.BOQID, data.ID) }
 				style="display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; padding: 4px;"
 				title="Delete sub-sub item"
 			>
