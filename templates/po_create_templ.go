@@ -636,9 +636,9 @@ func POCreateContent(data POCreateData) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var37 templ.SafeURL
-		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/projects/" + data.ProjectID))
+		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/projects/" + data.ProjectID + "/po"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/po_create.templ`, Line: 283, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/po_create.templ`, Line: 283, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 		if templ_7745c5c3_Err != nil {
@@ -649,9 +649,9 @@ func POCreateContent(data POCreateData) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var38 string
-		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs("/projects/" + data.ProjectID)
+		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs("/projects/" + data.ProjectID + "/po")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/po_create.templ`, Line: 284, Col: 42}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/po_create.templ`, Line: 284, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 		if templ_7745c5c3_Err != nil {

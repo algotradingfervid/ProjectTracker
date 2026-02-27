@@ -26,12 +26,13 @@ func GetFiscalYear(t time.Time) string {
 }
 
 // formatPONumber constructs the PO number string from components.
+// Uses "-" as separator to avoid conflicts with reference numbers that contain "/".
 func formatPONumber(projectRef, fiscalYear string, sequence int) string {
-	return fmt.Sprintf("FSS-PO-%s/%s/%03d", projectRef, fiscalYear, sequence)
+	return fmt.Sprintf("FSS-PO-%s-%s-%03d", projectRef, fiscalYear, sequence)
 }
 
 // GeneratePONumber creates the next PO number for a project.
-// Format: FSS-PO-{project_ref}/{fiscal_year}/{sequence}
+// Format: FSS-PO-{project_ref}-{fiscal_year}-{sequence}
 // - project_ref: project's reference_number (falls back to project ID if empty)
 // - fiscal_year: Indian fiscal year (Apr-Mar), e.g., "25-26"
 // - sequence: 3-digit zero-padded, per project per fiscal year
@@ -50,7 +51,7 @@ func GeneratePONumber(app *pocketbase.PocketBase, projectId string, now time.Tim
 	fiscalYear := GetFiscalYear(now)
 
 	// Count existing POs for this project with matching fiscal year prefix
-	prefix := fmt.Sprintf("FSS-PO-%s/%s/", projectRef, fiscalYear)
+	prefix := fmt.Sprintf("FSS-PO-%s-%s-", projectRef, fiscalYear)
 
 	existingPOs, err := app.FindRecordsByFilter(
 		"purchase_orders",

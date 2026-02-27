@@ -37,7 +37,7 @@ func TestPONumberFormat(t *testing.T) {
 		ref := "G10X-4"
 		fy := "25-26"
 		seq := 1
-		expected := "FSS-PO-G10X-4/25-26/001"
+		expected := "FSS-PO-G10X-4-25-26-001"
 		got := formatPONumber(ref, fy, seq)
 		if got != expected {
 			t.Errorf("formatPONumber(%q, %q, %d) = %q, want %q", ref, fy, seq, got, expected)
@@ -48,7 +48,7 @@ func TestPONumberFormat(t *testing.T) {
 		ref := "G10X-4"
 		fy := "25-26"
 		seq := 4
-		expected := "FSS-PO-G10X-4/25-26/004"
+		expected := "FSS-PO-G10X-4-25-26-004"
 		got := formatPONumber(ref, fy, seq)
 		if got != expected {
 			t.Errorf("formatPONumber(%q, %q, %d) = %q, want %q", ref, fy, seq, got, expected)
@@ -59,7 +59,18 @@ func TestPONumberFormat(t *testing.T) {
 		ref := "PROJ-123"
 		fy := "26-27"
 		seq := 99
-		expected := "FSS-PO-PROJ-123/26-27/099"
+		expected := "FSS-PO-PROJ-123-26-27-099"
+		got := formatPONumber(ref, fy, seq)
+		if got != expected {
+			t.Errorf("formatPONumber(%q, %q, %d) = %q, want %q", ref, fy, seq, got, expected)
+		}
+	})
+
+	t.Run("format_with_slashes_in_ref", func(t *testing.T) {
+		ref := "OAVS/SC/2025-26/001"
+		fy := "25-26"
+		seq := 1
+		expected := "FSS-PO-OAVS/SC/2025-26/001-25-26-001"
 		got := formatPONumber(ref, fy, seq)
 		if got != expected {
 			t.Errorf("formatPONumber(%q, %q, %d) = %q, want %q", ref, fy, seq, got, expected)

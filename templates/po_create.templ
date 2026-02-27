@@ -280,8 +280,8 @@ templ POCreateContent(data POCreateData) {
 		// Action buttons
 		<div class="flex justify-end" style="gap: 12px; margin-top: 24px;">
 			<a
-				href={ templ.SafeURL("/projects/" + data.ProjectID) }
-				hx-get={ "/projects/" + data.ProjectID }
+				href={ templ.SafeURL("/projects/" + data.ProjectID + "/po") }
+				hx-get={ "/projects/" + data.ProjectID + "/po" }
 				hx-target="#main-content"
 				hx-push-url="true"
 				class="flex items-center justify-center"

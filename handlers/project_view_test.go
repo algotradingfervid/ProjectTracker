@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"projectcreation/templates"
 	"projectcreation/testhelpers"
 )
 
@@ -79,6 +81,12 @@ func TestHandleProjectView_HTMXPartial(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/projects/"+proj.Id, nil)
 	req.SetPathValue("id", proj.Id)
 	req.Header.Set("HX-Request", "true")
+	// Inject ActiveProject into context so GetActiveProject returns matching project
+	ctx := context.WithValue(req.Context(), ActiveProjectKey, &templates.ActiveProject{
+		ID:   proj.Id,
+		Name: "HTMX View",
+	})
+	req = req.WithContext(ctx)
 	rec := httptest.NewRecorder()
 
 	e := newTestRequestEvent(app, req, rec)

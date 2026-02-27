@@ -112,19 +112,7 @@ templ POLineItemsSection(data POEditData) {
 							<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
 							<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase;">ADD MANUAL ITEM</span>
 						</button>
-						<!-- PICK FROM BOQ button -->
-						<button
-							type="button"
-							hx-get={ fmt.Sprintf("/projects/%s/po/%s/boq-picker", data.ProjectID, data.POID) }
-							hx-target="#po-line-items"
-							hx-swap="outerHTML"
-							class="flex items-center"
-							style="padding: 8px 14px; gap: 6px; background-color: var(--terracotta); border: none; cursor: pointer;"
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"></rect><line x1="8" x2="16" y1="6" y2="6"></line><line x1="8" x2="16" y1="10" y2="10"></line><line x1="8" x2="12" y1="14" y2="14"></line></svg>
-							<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); text-transform: uppercase;">PICK FROM BOQ</span>
-						</button>
-					</div>
+						</div>
 				</div>
 
 				<!-- Inline Add Manual Item Form -->
@@ -269,14 +257,36 @@ templ POLineItemsSection(data POEditData) {
 										<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center; padding: 10px 12px; white-space: nowrap;">
 											{ item.HSNCode }
 										</td>
-										<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 12px; white-space: nowrap;">
-											{ fmtFloat2(item.Qty) }
+										<td style="padding: 6px 4px; white-space: nowrap;">
+											<input
+												type="number"
+												name="qty"
+												value={ fmtFloat2(item.Qty) }
+												step="0.01"
+												min="0"
+												hx-patch={ fmt.Sprintf("/projects/%s/po/%s/line-items/%s", data.ProjectID, data.POID, item.ID) }
+												hx-target="#po-line-items"
+												hx-swap="outerHTML"
+												hx-trigger="change"
+												style="width: 80px; padding: 6px 8px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right; background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+											/>
 										</td>
 										<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center; padding: 10px 12px; white-space: nowrap;">
 											{ item.UoM }
 										</td>
-										<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 12px; white-space: nowrap;">
-											{ fmtFloat2(item.Rate) }
+										<td style="padding: 6px 4px; white-space: nowrap;">
+											<input
+												type="number"
+												name="rate"
+												value={ fmtFloat2(item.Rate) }
+												step="0.01"
+												min="0"
+												hx-patch={ fmt.Sprintf("/projects/%s/po/%s/line-items/%s", data.ProjectID, data.POID, item.ID) }
+												hx-target="#po-line-items"
+												hx-swap="outerHTML"
+												hx-trigger="change"
+												style="width: 110px; padding: 6px 8px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right; background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+											/>
 										</td>
 										<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 12px; white-space: nowrap;">
 											{ fmtFloat2(item.BeforeGST) }
@@ -454,15 +464,40 @@ templ POEditContent(data POEditData) {
 							{ data.VendorName }
 						</div>
 					</div>
-					<div style="width: 160px;">
-						<div style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase;">
+					<div style="width: 200px;">
+						<label
+							for="new_status"
+							style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;"
+						>
 							STATUS
-						</div>
-						<div style="padding: 10px 14px; background-color: var(--bg-page); border: 1px solid var(--border-light); display: inline-block;">
-							<span style={ poStatusBadgeStyle(data.Status) }>
-								{ poStatusLabel(data.Status) }
-							</span>
-						</div>
+						</label>
+						<select
+							id="new_status"
+							name="new_status"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; cursor: pointer; appearance: auto;"
+						>
+							<option value="draft" selected?={ data.Status == "draft" }>Draft</option>
+							if data.Status == "draft" || data.Status == "sent" {
+								<option value="sent" selected?={ data.Status == "sent" }>Sent</option>
+							}
+							if data.Status == "sent" || data.Status == "acknowledged" {
+								<option value="acknowledged" selected?={ data.Status == "acknowledged" }>Acknowledged</option>
+							}
+							if data.Status == "acknowledged" || data.Status == "completed" {
+								<option value="completed" selected?={ data.Status == "completed" }>Completed</option>
+							}
+							if data.Status != "cancelled" {
+								<option value="cancelled">Cancelled</option>
+							}
+							if data.Status == "cancelled" {
+								<option value="cancelled" selected>Cancelled</option>
+							}
+						</select>
+						if data.Errors["status"] != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--error); margin-top: 4px;">
+								{ data.Errors["status"] }
+							</div>
+						}
 					</div>
 				</div>
 				<!-- Row 2: Order Date -->
@@ -650,7 +685,19 @@ templ POEditContent(data POEditData) {
 			</div>
 		</div>
 
-		<!-- Action Buttons (form save) -->
+		<!-- Line Items Section (inside form area, managed via separate HTMX endpoints) -->
+		@POLineItemsSection(data)
+
+		<!-- BOQ Picker Section (persistent, inline, loaded via HTMX on page load) -->
+		<div
+			id="boq-picker-container"
+			style="margin-bottom: 24px;"
+			hx-get={ fmt.Sprintf("/projects/%s/po/%s/boq-picker", data.ProjectID, data.POID) }
+			hx-trigger="load"
+			hx-swap="innerHTML"
+		></div>
+
+		<!-- Action Buttons -->
 		<div class="flex justify-end" style="gap: 12px; margin-bottom: 40px;">
 			<a
 				hx-get={ fmt.Sprintf("/projects/%s/po", data.ProjectID) }
@@ -673,9 +720,6 @@ templ POEditContent(data POEditData) {
 			</button>
 		</div>
 	</form>
-
-	<!-- Line Items Section (outside the form, managed via HTMX) -->
-	@POLineItemsSection(data)
 }
 
 templ POEditPage(data POEditData, headerData HeaderData, sidebarData SidebarData) {

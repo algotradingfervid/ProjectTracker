@@ -304,7 +304,7 @@ func TestHandlePOSave_PONumberGenerated(t *testing.T) {
 	}
 
 	poNumber := pos[0].GetString("po_number")
-	expectedPrefix := "FSS-PO-TEST-REF/"
+	expectedPrefix := "FSS-PO-TEST-REF-"
 	if !strings.HasPrefix(poNumber, expectedPrefix) {
 		t.Errorf("expected po_number to start with %q, got %q", expectedPrefix, poNumber)
 	}
@@ -363,10 +363,10 @@ func TestHandlePOSave_PONumberSequential(t *testing.T) {
 	firstPONumber := pos[0].GetString("po_number")
 	secondPONumber := pos[1].GetString("po_number")
 
-	if !strings.HasSuffix(firstPONumber, "/001") {
-		t.Errorf("expected first PO number to end with /001, got %q", firstPONumber)
+	if !strings.HasSuffix(firstPONumber, "-001") {
+		t.Errorf("expected first PO number to end with -001, got %q", firstPONumber)
 	}
-	if !strings.HasSuffix(secondPONumber, "/002") {
-		t.Errorf("expected second PO number to end with /002, got %q", secondPONumber)
+	if !strings.HasSuffix(secondPONumber, "-002") {
+		t.Errorf("expected second PO number to end with -002, got %q", secondPONumber)
 	}
 }
