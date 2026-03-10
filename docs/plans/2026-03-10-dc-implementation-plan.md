@@ -16,7 +16,7 @@
 
 | Phase | Status | Tasks Done | Next Task |
 |-------|--------|------------|-----------|
-| 1: Address Restructure | **In Progress** | 1.1, 1.2, 1.3, 1.4 | 1.5: Update address handlers |
+| 1: Address Restructure | **Complete** | 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7 | — |
 | 2: Numbering System | Not started | — | 2.1: Create number_sequences collection |
 | 3: DC Master Data | Not started | — | 3.1: Create DC collections |
 | 4: DC Wizard | Not started | — | 4.1: Wizard step 1 |
@@ -25,7 +25,7 @@
 | 7: Shipment Groups | Not started | — | 7.1: Group detail |
 | 8: Testing & Polish | Not started | — | 8.1: Integration tests |
 
-**Resume from:** Task 1.5 — Update Address Handlers for Flexible Schema
+**Resume from:** Phase 2, Task 2.1 — Create number_sequences Collection and Project Fields
 
 ---
 
@@ -469,7 +469,7 @@ git commit -m "feat: add address config service with column definition parsing"
 
 ---
 
-### Task 1.5: Update Address Handlers for Flexible Schema
+### Task 1.5: Update Address Handlers for Flexible Schema ✅ DONE
 
 **Files:**
 - Modify: `handlers/address_list.go`
@@ -555,7 +555,7 @@ git commit -m "refactor: update address handlers and templates for flexible JSON
 
 ---
 
-### Task 1.6: Update Address Config UI in Project Settings
+### Task 1.6: Update Address Config UI in Project Settings ✅ DONE
 
 **Files:**
 - Modify: `handlers/project_settings.go`
@@ -589,7 +589,7 @@ git commit -m "refactor: update project settings for configurable address column
 
 ---
 
-### Task 1.7: Update PO Handlers for New Address Format
+### Task 1.7: Update PO Handlers for New Address Format ✅ DONE
 
 **Files:**
 - Modify: `handlers/po_create.go`

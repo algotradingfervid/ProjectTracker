@@ -1,8 +1,10 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -116,9 +118,35 @@ func insertChunk(
 			record.Set("address_type", addressType)
 
 			// Set common address fields
+			dataMap := make(map[string]string)
 			for _, key := range importAddressFieldKeys() {
 				if val, ok := rowData[key]; ok && val != "" {
 					record.Set(key, val)
+					dataMap[key] = val
+				}
+			}
+
+			// Write flexible JSON data field
+			dataJSON, _ := json.Marshal(dataMap)
+			record.Set("data", string(dataJSON))
+
+			// Generate address_code
+			code := dataMap["company_name"]
+			if code == "" {
+				code = fmt.Sprintf("IMPORT-%d", startOffset+i+1)
+			}
+			record.Set("address_code", strings.ReplaceAll(strings.ToUpper(code), " ", "-"))
+
+			// Set address config relation
+			configCol, cfgErr := txApp.FindCollectionByNameOrId("address_configs")
+			if cfgErr == nil {
+				cfgRecords, _ := txApp.FindRecordsByFilter(
+					configCol, "project = {:pid} && address_type = {:type}",
+					"", 1, 0,
+					map[string]any{"pid": projectID, "type": addressType},
+				)
+				if len(cfgRecords) > 0 {
+					record.Set("config", cfgRecords[0].Id)
 				}
 			}
 

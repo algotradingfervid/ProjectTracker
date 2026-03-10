@@ -67,6 +67,7 @@ func HandleAddressExportExcel(app *pocketbase.PocketBase) func(*core.RequestEven
 		var rows []map[string]string
 
 		for _, rec := range records {
+			addrData := readAddressData(rec)
 			row := make(map[string]string)
 			for _, col := range columns {
 				if col.Field == "_ship_to_parent_name" {
@@ -75,7 +76,8 @@ func HandleAddressExportExcel(app *pocketbase.PocketBase) func(*core.RequestEven
 					if parentID != "" {
 						parentRec, err := app.FindRecordById("addresses", parentID)
 						if err == nil {
-							row[col.Field] = parentRec.GetString("company_name")
+							parentData := readAddressData(parentRec)
+							row[col.Field] = parentData["company_name"]
 						} else {
 							row[col.Field] = "(unknown)"
 						}
@@ -83,7 +85,7 @@ func HandleAddressExportExcel(app *pocketbase.PocketBase) func(*core.RequestEven
 						row[col.Field] = ""
 					}
 				} else {
-					row[col.Field] = rec.GetString(col.Field)
+					row[col.Field] = addrData[col.Field]
 				}
 			}
 			rows = append(rows, row)
