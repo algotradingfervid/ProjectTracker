@@ -1,5 +1,8 @@
 package templates
 
+import "fmt"
+import "strconv"
+
 type AddressFieldConfig struct {
 	Field    string // e.g. "req_company_name" (legacy)
 	Label    string // e.g. "Company Name"
@@ -22,12 +25,39 @@ type AddressTypeConfig struct {
 	Columns []AddressColumnConfig  // new flexible columns
 }
 
+type NumberingConfig struct {
+	Prefix    string
+	Format    string
+	Separator string
+	Padding   int
+	SeqStart  int
+	// DC-specific start numbers (only used for DC config)
+	SeqStartTDC  int
+	SeqStartODC  int
+	SeqStartSTDC int
+}
+
+type DefaultAddressOption struct {
+	ID          string
+	CompanyName string
+	City        string
+}
+
 type ProjectSettingsData struct {
 	ProjectID             string
 	ProjectName           string
+	ProjectRef            string
 	AddressTypes          []AddressTypeConfig
 	Errors                map[string]string
 	ShipToEqualsInstallAt bool
+	// Numbering
+	PONumbering NumberingConfig
+	DCNumbering NumberingConfig
+	// Default addresses
+	DefaultBillFromID    string
+	DefaultDispatchFromID string
+	BillFromAddresses    []DefaultAddressOption
+	DispatchFromAddresses []DefaultAddressOption
 }
 
 templ ProjectSettingsContent(data ProjectSettingsData) {
@@ -70,7 +100,7 @@ templ ProjectSettingsContent(data ProjectSettingsData) {
 			Project Settings
 		</h1>
 		<p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-top: 8px;">
-			Configure required fields for each address type
+			Configure address fields, document numbering, and default addresses
 		</p>
 	</div>
 	<!-- Validation Error Banner -->
@@ -171,6 +201,65 @@ templ ProjectSettingsContent(data ProjectSettingsData) {
 				</div>
 			}
 		</div>
+		<!-- PO Numbering Section -->
+		@numberingSection("PO NUMBERING", "po", data.PONumbering, data.ProjectRef, false)
+		<!-- DC Numbering Section -->
+		@numberingSection("DC NUMBERING", "dc", data.DCNumbering, data.ProjectRef, true)
+		<!-- Default Addresses Section -->
+		<div style="margin-top: 24px;">
+			<div style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; color: var(--text-primary); text-transform: uppercase; margin-bottom: 16px;">
+				DEFAULT ADDRESSES
+			</div>
+			<div style="background-color: var(--bg-card); padding: 24px;">
+				<p style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">
+					Pre-selected addresses when creating new DCs
+				</p>
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+					<!-- Default Bill From -->
+					<div>
+						<label style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 6px;">
+							DEFAULT BILL FROM
+						</label>
+						<select name="default_bill_from" style="width: 100%; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid var(--border-light); background-color: var(--bg-page); color: var(--text-primary);">
+							<option value="">— None —</option>
+							for _, addr := range data.BillFromAddresses {
+								<option value={ addr.ID }
+									if addr.ID == data.DefaultBillFromID {
+										selected
+									}
+								>
+									{ addr.CompanyName }
+									if addr.City != "" {
+										 — { addr.City }
+									}
+								</option>
+							}
+						</select>
+					</div>
+					<!-- Default Dispatch From -->
+					<div>
+						<label style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 6px;">
+							DEFAULT DISPATCH FROM
+						</label>
+						<select name="default_dispatch_from" style="width: 100%; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid var(--border-light); background-color: var(--bg-page); color: var(--text-primary);">
+							<option value="">— None —</option>
+							for _, addr := range data.DispatchFromAddresses {
+								<option value={ addr.ID }
+									if addr.ID == data.DefaultDispatchFromID {
+										selected
+									}
+								>
+									{ addr.CompanyName }
+									if addr.City != "" {
+										 — { addr.City }
+									}
+								</option>
+							}
+						</select>
+					</div>
+				</div>
+			</div>
+		</div>
 		<!-- Action Buttons -->
 		<div class="flex justify-end" style="gap: 12px; margin-top: 24px;">
 			<a
@@ -183,7 +272,7 @@ templ ProjectSettingsContent(data ProjectSettingsData) {
 			<button type="submit" class="flex items-center justify-center"
 				data-confirm-save
 				data-confirm-title="Save Settings"
-				data-confirm-message="Save address requirement settings?"
+				data-confirm-message="Save project settings?"
 				style="padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); background-color: var(--terracotta); border: none; cursor: pointer;"
 			>SAVE SETTINGS</button>
 		</div>
@@ -194,4 +283,147 @@ templ ProjectSettingsPage(data ProjectSettingsData, headerData HeaderData, sideb
 	@PageShellWithProject("Project Settings — Project Creation", headerData, sidebarData) {
 		@ProjectSettingsContent(data)
 	}
+}
+
+// numberingSection renders a configurable numbering section for PO or DC.
+templ numberingSection(title, group string, cfg NumberingConfig, projectRef string, isDC bool) {
+	<div style="margin-top: 24px;"
+		x-data={ fmt.Sprintf(`{
+			prefix: '%s',
+			format: '%s',
+			sep: '%s',
+			padding: %d,
+			projectRef: '%s',
+			typeCode: '%s',
+			preview() {
+				let f = this.format || '{PREFIX}{SEP}{TYPE}{SEP}{FY}{SEP}{SEQ}';
+				let s = this.sep || '-';
+				let pad = this.padding || 3;
+				let seq = '1'.padStart(pad, '0');
+				let fy = '2526';
+				let r = f.replaceAll('{PREFIX}', this.prefix)
+					.replaceAll('{SEP}', s)
+					.replaceAll('{TYPE}', this.typeCode)
+					.replaceAll('{FY}', fy)
+					.replaceAll('{SEQ}', seq)
+					.replaceAll('{PROJECT_REF}', this.projectRef);
+				return r;
+			}
+		}`, cfg.Prefix, cfg.Format, cfg.Separator, cfg.Padding, projectRef, previewTypeCode(group)) }>
+		<div style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; color: var(--text-primary); text-transform: uppercase; margin-bottom: 16px;">
+			{ title }
+		</div>
+		<div style="background-color: var(--bg-card); padding: 24px;">
+			<p style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">
+				Available tokens:
+				<code style="background: var(--bg-page); padding: 2px 4px; font-size: 11px;">{ "{PREFIX}" }</code>
+				<code style="background: var(--bg-page); padding: 2px 4px; font-size: 11px;">{ "{TYPE}" }</code>
+				<code style="background: var(--bg-page); padding: 2px 4px; font-size: 11px;">{ "{FY}" }</code>
+				<code style="background: var(--bg-page); padding: 2px 4px; font-size: 11px;">{ "{SEQ}" }</code>
+				<code style="background: var(--bg-page); padding: 2px 4px; font-size: 11px;">{ "{SEP}" }</code>
+				<code style="background: var(--bg-page); padding: 2px 4px; font-size: 11px;">{ "{PROJECT_REF}" }</code>
+			</p>
+			<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+				<!-- Prefix -->
+				<div>
+					<label style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 6px;">
+						PREFIX
+					</label>
+					<input type="text" name={ group + "_prefix" } x-model="prefix"
+						value={ cfg.Prefix }
+						placeholder="e.g. FSS"
+						style="width: 100%; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid var(--border-light); background-color: var(--bg-page); color: var(--text-primary);"/>
+				</div>
+				<!-- Separator -->
+				<div>
+					<label style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 6px;">
+						SEPARATOR
+					</label>
+					<input type="text" name={ group + "_separator" } x-model="sep"
+						value={ cfg.Separator }
+						placeholder="-"
+						style="width: 100%; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid var(--border-light); background-color: var(--bg-page); color: var(--text-primary);"/>
+				</div>
+				<!-- Padding -->
+				<div>
+					<label style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 6px;">
+						SEQUENCE PADDING
+					</label>
+					<input type="number" name={ group + "_seq_padding" } x-model.number="padding"
+						value={ strconv.Itoa(cfg.Padding) }
+						min="1" max="6"
+						style="width: 100%; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid var(--border-light); background-color: var(--bg-page); color: var(--text-primary);"/>
+				</div>
+			</div>
+			<!-- Format -->
+			<div style="margin-top: 16px;">
+				<label style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 6px;">
+					NUMBER FORMAT
+				</label>
+				<input type="text" name={ group + "_number_format" } x-model="format"
+					value={ cfg.Format }
+					placeholder="{PREFIX}{SEP}{TYPE}{SEP}{FY}{SEP}{SEQ}"
+					style="width: 100%; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid var(--border-light); background-color: var(--bg-page); color: var(--text-primary);"/>
+			</div>
+			if isDC {
+				<!-- DC-specific: per-type start numbers -->
+				<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 16px;">
+					<div>
+						<label style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 6px;">
+							TDC START NUMBER
+						</label>
+						<input type="number" name="dc_seq_start_tdc"
+							value={ strconv.Itoa(cfg.SeqStartTDC) }
+							min="1"
+							style="width: 100%; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid var(--border-light); background-color: var(--bg-page); color: var(--text-primary);"/>
+					</div>
+					<div>
+						<label style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 6px;">
+							ODC START NUMBER
+						</label>
+						<input type="number" name="dc_seq_start_odc"
+							value={ strconv.Itoa(cfg.SeqStartODC) }
+							min="1"
+							style="width: 100%; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid var(--border-light); background-color: var(--bg-page); color: var(--text-primary);"/>
+					</div>
+					<div>
+						<label style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 6px;">
+							STDC START NUMBER
+						</label>
+						<input type="number" name="dc_seq_start_stdc"
+							value={ strconv.Itoa(cfg.SeqStartSTDC) }
+							min="1"
+							style="width: 100%; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid var(--border-light); background-color: var(--bg-page); color: var(--text-primary);"/>
+					</div>
+				</div>
+			} else {
+				<!-- PO: single start number -->
+				<div style="margin-top: 16px; max-width: 220px;">
+					<label style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 6px;">
+						START NUMBER
+					</label>
+					<input type="number" name="po_seq_start"
+						value={ strconv.Itoa(cfg.SeqStart) }
+						min="1"
+						style="width: 100%; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid var(--border-light); background-color: var(--bg-page); color: var(--text-primary);"/>
+				</div>
+			}
+			<!-- Live Preview -->
+			<div style="margin-top: 16px; padding: 12px 16px; background-color: var(--bg-page); border: 1px dashed var(--border-light);">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;">
+					PREVIEW
+				</span>
+				<div style="font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; color: var(--text-primary); margin-top: 4px;" x-text="preview()">
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+// previewTypeCode returns the type code used for preview based on group.
+func previewTypeCode(group string) string {
+	if group == "po" {
+		return "PO"
+	}
+	return "TDC"
 }

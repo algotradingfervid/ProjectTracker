@@ -271,8 +271,10 @@ func TestHandlePOSave_PONumberGenerated(t *testing.T) {
 	app := testhelpers.NewTestApp(t)
 	project := testhelpers.CreateTestProject(t, app, "PO Number Test Project")
 	project.Set("reference_number", "TEST-REF")
+	project.Set("po_prefix", "FSS")
+	project.Set("po_number_format", "{PREFIX}{SEP}{TYPE}{SEP}{PROJECT_REF}{SEP}{FY}{SEP}{SEQ}")
 	if err := app.Save(project); err != nil {
-		t.Fatalf("failed to update project reference_number: %v", err)
+		t.Fatalf("failed to update project: %v", err)
 	}
 
 	vendor := testhelpers.CreateTestVendor(t, app, "Number Gen Vendor")
@@ -314,8 +316,9 @@ func TestHandlePOSave_PONumberSequential(t *testing.T) {
 	app := testhelpers.NewTestApp(t)
 	project := testhelpers.CreateTestProject(t, app, "Sequential PO Project")
 	project.Set("reference_number", "SEQ-TEST")
+	project.Set("po_prefix", "FSS")
 	if err := app.Save(project); err != nil {
-		t.Fatalf("failed to update project reference_number: %v", err)
+		t.Fatalf("failed to update project: %v", err)
 	}
 
 	vendor := testhelpers.CreateTestVendor(t, app, "Sequential Vendor")

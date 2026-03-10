@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/a-h/templ"
 	"github.com/pocketbase/pocketbase"
@@ -68,10 +69,12 @@ func HandleProjectSettings(app *pocketbase.PocketBase) func(*core.RequestEvent) 
 		data := templates.ProjectSettingsData{
 			ProjectID:             projectID,
 			ProjectName:           project.GetString("name"),
+			ProjectRef:            project.GetString("reference_number"),
 			Errors:                make(map[string]string),
 			ShipToEqualsInstallAt: shipToEqualsInstallAt,
 		}
 
+		// Address type configs
 		for _, addrType := range addressTypeOrder {
 			_, colDefs := getOrCreateAddressConfig(app, projectID, AddressType(addrType))
 
@@ -93,6 +96,50 @@ func HandleProjectSettings(app *pocketbase.PocketBase) func(*core.RequestEvent) 
 				Columns: columns,
 			})
 		}
+
+		// PO numbering config
+		data.PONumbering = templates.NumberingConfig{
+			Prefix:    project.GetString("po_prefix"),
+			Format:    project.GetString("po_number_format"),
+			Separator: project.GetString("po_separator"),
+			Padding:   project.GetInt("po_seq_padding"),
+			SeqStart:  project.GetInt("po_seq_start"),
+		}
+		if data.PONumbering.Padding == 0 {
+			data.PONumbering.Padding = 3
+		}
+		if data.PONumbering.SeqStart == 0 {
+			data.PONumbering.SeqStart = 1
+		}
+
+		// DC numbering config
+		data.DCNumbering = templates.NumberingConfig{
+			Prefix:       project.GetString("dc_prefix"),
+			Format:       project.GetString("dc_number_format"),
+			Separator:    project.GetString("dc_separator"),
+			Padding:      project.GetInt("dc_seq_padding"),
+			SeqStartTDC:  project.GetInt("dc_seq_start_tdc"),
+			SeqStartODC:  project.GetInt("dc_seq_start_odc"),
+			SeqStartSTDC: project.GetInt("dc_seq_start_stdc"),
+		}
+		if data.DCNumbering.Padding == 0 {
+			data.DCNumbering.Padding = 3
+		}
+		if data.DCNumbering.SeqStartTDC == 0 {
+			data.DCNumbering.SeqStartTDC = 1
+		}
+		if data.DCNumbering.SeqStartODC == 0 {
+			data.DCNumbering.SeqStartODC = 1
+		}
+		if data.DCNumbering.SeqStartSTDC == 0 {
+			data.DCNumbering.SeqStartSTDC = 1
+		}
+
+		// Default addresses
+		data.DefaultBillFromID = project.GetString("default_bill_from")
+		data.DefaultDispatchFromID = project.GetString("default_dispatch_from")
+		data.BillFromAddresses = fetchDefaultAddressOptions(app, projectID, "bill_from")
+		data.DispatchFromAddresses = fetchDefaultAddressOptions(app, projectID, "dispatch_from")
 
 		var component templ.Component
 		if e.Request.Header.Get("HX-Request") == "true" {
@@ -125,17 +172,14 @@ func HandleProjectSettingsSave(app *pocketbase.PocketBase) func(*core.RequestEve
 		shipToEqualsInstallAt := e.Request.FormValue("ship_to_equals_install_at") == "on" ||
 			e.Request.FormValue("ship_to_equals_install_at") == "true"
 		project.Set("ship_to_equals_install_at", shipToEqualsInstallAt)
-		if err := app.Save(project); err != nil {
-			log.Printf("project_settings_save: failed to save ship_to toggle: %v", err)
-		}
 
+		// Save address config columns
 		for _, addrType := range addressTypeOrder {
 			configRec, colDefs := getOrCreateAddressConfig(app, projectID, AddressType(addrType))
 			if configRec == nil {
 				continue
 			}
 
-			// Update column definitions from form data
 			for i, col := range colDefs {
 				colDefs[i].Required = e.Request.FormValue(addrType+"."+col.Name+".required") == "true"
 				colDefs[i].ShowInTable = e.Request.FormValue(addrType+"."+col.Name+".show_in_table") == "true"
@@ -149,8 +193,32 @@ func HandleProjectSettingsSave(app *pocketbase.PocketBase) func(*core.RequestEve
 				return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 			}
 
-			// Also update legacy project_address_settings for backward compat
 			syncLegacyAddressSettings(app, projectID, addrType, colDefs)
+		}
+
+		// Save PO numbering config
+		project.Set("po_prefix", e.Request.FormValue("po_prefix"))
+		project.Set("po_number_format", e.Request.FormValue("po_number_format"))
+		project.Set("po_separator", e.Request.FormValue("po_separator"))
+		project.Set("po_seq_padding", formInt(e.Request.FormValue("po_seq_padding"), 3))
+		project.Set("po_seq_start", formInt(e.Request.FormValue("po_seq_start"), 1))
+
+		// Save DC numbering config
+		project.Set("dc_prefix", e.Request.FormValue("dc_prefix"))
+		project.Set("dc_number_format", e.Request.FormValue("dc_number_format"))
+		project.Set("dc_separator", e.Request.FormValue("dc_separator"))
+		project.Set("dc_seq_padding", formInt(e.Request.FormValue("dc_seq_padding"), 3))
+		project.Set("dc_seq_start_tdc", formInt(e.Request.FormValue("dc_seq_start_tdc"), 1))
+		project.Set("dc_seq_start_odc", formInt(e.Request.FormValue("dc_seq_start_odc"), 1))
+		project.Set("dc_seq_start_stdc", formInt(e.Request.FormValue("dc_seq_start_stdc"), 1))
+
+		// Save default addresses
+		project.Set("default_bill_from", e.Request.FormValue("default_bill_from"))
+		project.Set("default_dispatch_from", e.Request.FormValue("default_dispatch_from"))
+
+		if err := app.Save(project); err != nil {
+			log.Printf("project_settings_save: failed to save project fields: %v", err)
+			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 		}
 
 		SetToast(e, "success", "Settings saved")
@@ -204,4 +272,50 @@ func syncLegacyAddressSettings(app *pocketbase.PocketBase, projectID, addrType s
 	if err := app.Save(record); err != nil {
 		log.Printf("syncLegacyAddressSettings: failed for %s/%s: %v", projectID, addrType, err)
 	}
+}
+
+// formInt parses a form value as int, returning defaultVal if empty or invalid.
+func formInt(s string, defaultVal int) int {
+	if s == "" {
+		return defaultVal
+	}
+	v, err := strconv.Atoi(s)
+	if err != nil || v < 1 {
+		return defaultVal
+	}
+	return v
+}
+
+// fetchDefaultAddressOptions returns address select items for the default address pickers.
+func fetchDefaultAddressOptions(app *pocketbase.PocketBase, projectID, addressType string) []templates.DefaultAddressOption {
+	// For dispatch_from, the DB type might be "ship_from" (legacy) — handle both
+	dbType := addressType
+	records, err := app.FindRecordsByFilter(
+		"addresses",
+		"project = {:pid} && address_type = {:type}",
+		"created", 0, 0,
+		map[string]any{"pid": projectID, "type": dbType},
+	)
+	if err != nil || len(records) == 0 {
+		// Try legacy ship_from if dispatch_from found nothing
+		if addressType == "dispatch_from" {
+			records, _ = app.FindRecordsByFilter(
+				"addresses",
+				"project = {:pid} && address_type = 'ship_from'",
+				"created", 0, 0,
+				map[string]any{"pid": projectID},
+			)
+		}
+	}
+
+	var options []templates.DefaultAddressOption
+	for _, rec := range records {
+		data := readAddressData(rec)
+		options = append(options, templates.DefaultAddressOption{
+			ID:          rec.Id,
+			CompanyName: data["company_name"],
+			City:        data["city"],
+		})
+	}
+	return options
 }
