@@ -1,0 +1,310 @@
+package templates
+
+import "fmt"
+
+type BOQPickerItem struct {
+	ID          string
+	Type        string // "sub_item" or "sub_sub_item"
+	Description string
+	UOM         string
+	HSNCode     string
+}
+
+type BOQItemGroup struct {
+	MainItemID          string
+	MainItemDescription string
+	BOQTitle            string
+	Items               []BOQPickerItem
+}
+
+type SelectedTemplateItem struct {
+	DefaultQuantity float64
+	SerialTracking  string
+}
+
+type DCTemplateFormData struct {
+	ProjectID     string
+	TemplateID    string // empty for create
+	Name          string
+	Purpose       string
+	BOQItems      []BOQItemGroup
+	SelectedItems map[string]SelectedTemplateItem // key: "type:id"
+	Errors        map[string]string
+	IsEdit        bool
+}
+
+func dcTemplateFormAction(data DCTemplateFormData) string {
+	if data.IsEdit {
+		return fmt.Sprintf("/projects/%s/dc-templates/%s/edit", data.ProjectID, data.TemplateID)
+	}
+	return fmt.Sprintf("/projects/%s/dc-templates/create", data.ProjectID)
+}
+
+func dcTemplateFormTitle(data DCTemplateFormData) string {
+	if data.IsEdit {
+		return "Edit DC Template"
+	}
+	return "Create DC Template"
+}
+
+func dcTemplateFormButton(data DCTemplateFormData) string {
+	if data.IsEdit {
+		return "UPDATE TEMPLATE"
+	}
+	return "CREATE TEMPLATE"
+}
+
+func isItemSelected(data DCTemplateFormData, itemType, itemID string) bool {
+	if data.SelectedItems == nil {
+		return false
+	}
+	key := fmt.Sprintf("%s:%s", itemType, itemID)
+	_, ok := data.SelectedItems[key]
+	return ok
+}
+
+func selectedQty(data DCTemplateFormData, itemType, itemID string) string {
+	if data.SelectedItems == nil {
+		return ""
+	}
+	key := fmt.Sprintf("%s:%s", itemType, itemID)
+	if item, ok := data.SelectedItems[key]; ok && item.DefaultQuantity > 0 {
+		return fmt.Sprintf("%.0f", item.DefaultQuantity)
+	}
+	return ""
+}
+
+func selectedSerial(data DCTemplateFormData, itemType, itemID string) string {
+	if data.SelectedItems == nil {
+		return "none"
+	}
+	key := fmt.Sprintf("%s:%s", itemType, itemID)
+	if item, ok := data.SelectedItems[key]; ok && item.SerialTracking != "" {
+		return item.SerialTracking
+	}
+	return "none"
+}
+
+templ DCTemplateFormContent(data DCTemplateFormData) {
+	// Breadcrumbs
+	<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+		<a
+			href={ templ.SafeURL("/projects/" + data.ProjectID) }
+			hx-get={ "/projects/" + data.ProjectID }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;"
+		>
+			PROJECT
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<a
+			href={ templ.SafeURL(fmt.Sprintf("/projects/%s/dc-templates/", data.ProjectID)) }
+			hx-get={ fmt.Sprintf("/projects/%s/dc-templates/", data.ProjectID) }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;"
+		>
+			DC TEMPLATES
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+			if data.IsEdit {
+				EDIT
+			} else {
+				NEW
+			}
+		</span>
+	</div>
+
+	// Title
+	<div>
+		<h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; color: var(--text-primary); margin: 0;">
+			{ dcTemplateFormTitle(data) }
+		</h1>
+		<p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-top: 6px;">
+			Define a reusable set of BOQ items for delivery challans
+		</p>
+	</div>
+
+	// Form
+	<form method="POST" action={ templ.SafeURL(dcTemplateFormAction(data)) } style="margin-top: 32px;">
+		// Error banner
+		if len(data.Errors) > 0 {
+			<div style="background-color: #FEE2E2; border: 1px solid #EF4444; padding: 12px 16px; margin-bottom: 24px;">
+				for _, msg := range data.Errors {
+					<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: #991B1B;">{ msg }</div>
+				}
+			</div>
+		}
+
+		// Section 1: Template Details
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">
+					TEMPLATE DETAILS
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				<div style="margin-bottom: 16px;">
+					<label for="name" style="display: block; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+						TEMPLATE NAME <span style="color: var(--terracotta);">*</span>
+					</label>
+					<input
+						type="text"
+						id="name"
+						name="name"
+						value={ data.Name }
+						required
+						placeholder="e.g. Standard Equipment Set"
+						style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid var(--border-color); background-color: var(--bg-page); color: var(--text-primary); outline: none;"
+					/>
+					if data.Errors["name"] != "" {
+						<div style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--error); margin-top: 4px;">
+							{ data.Errors["name"] }
+						</div>
+					}
+				</div>
+				<div style="margin-bottom: 16px;">
+					<label for="purpose" style="display: block; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+						PURPOSE
+					</label>
+					<input
+						type="text"
+						id="purpose"
+						name="purpose"
+						value={ data.Purpose }
+						placeholder="e.g. Initial site delivery"
+						style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid var(--border-color); background-color: var(--bg-page); color: var(--text-primary); outline: none;"
+					/>
+				</div>
+			</div>
+		</div>
+
+		// Section 2: BOQ Item Selection
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">
+					BOQ ITEMS
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				if len(data.BOQItems) == 0 {
+					<div style="padding: 32px; text-align: center;">
+						<p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary);">
+							No BOQ items found for this project. Create a BOQ with sub-items first.
+						</p>
+					</div>
+				} else {
+					<p style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+						Select items to include in this template. For each selected item, set a default quantity and serial tracking preference.
+					</p>
+					for _, group := range data.BOQItems {
+						<div style="margin-bottom: 20px; border: 1px solid var(--border-color);">
+							<div style="background-color: #E8E4DC; padding: 10px 16px;">
+								<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+									{ group.BOQTitle } — { group.MainItemDescription }
+								</span>
+							</div>
+							<div style="padding: 0;">
+								for _, item := range group.Items {
+									<div
+										x-data={ fmt.Sprintf(`{ checked: %t }`, isItemSelected(data, item.Type, item.ID)) }
+										style="padding: 12px 16px; border-bottom: 1px solid var(--border-color);"
+									>
+										<div class="flex items-center" style="gap: 12px;">
+											<input
+												type="checkbox"
+												name="item_ids"
+												value={ fmt.Sprintf("%s:%s", item.Type, item.ID) }
+												x-model="checked"
+												if isItemSelected(data, item.Type, item.ID) {
+													checked
+												}
+												style="width: 16px; height: 16px; accent-color: var(--terracotta);"
+											/>
+											<div class="flex-1">
+												<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+													{ item.Description }
+												</span>
+												if item.UOM != "" {
+													<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; color: var(--text-muted); margin-left: 8px;">
+														{ item.UOM }
+													</span>
+												}
+												if item.HSNCode != "" {
+													<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; color: var(--text-muted); margin-left: 8px;">
+														HSN: { item.HSNCode }
+													</span>
+												}
+											</div>
+										</div>
+										<div
+											x-show="checked"
+											x-transition
+											x-cloak
+											class="flex items-center"
+											style="gap: 16px; margin-top: 10px; padding-left: 28px;"
+										>
+											<div>
+												<label style="display: block; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+													DEFAULT QTY
+												</label>
+												<input
+													type="number"
+													name={ fmt.Sprintf("item_qty_%s_%s", item.Type, item.ID) }
+													value={ selectedQty(data, item.Type, item.ID) }
+													min="0"
+													step="1"
+													style="width: 100px; padding: 6px 10px; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid var(--border-color); background-color: var(--bg-page); color: var(--text-primary); outline: none;"
+												/>
+											</div>
+											<div>
+												<label style="display: block; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+													SERIAL TRACKING
+												</label>
+												<select
+													name={ fmt.Sprintf("item_serial_%s_%s", item.Type, item.ID) }
+													style="padding: 6px 10px; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid var(--border-color); background-color: var(--bg-page); color: var(--text-primary); outline: none;"
+												>
+													<option value="none" selected?={ selectedSerial(data, item.Type, item.ID) == "none" }>None</option>
+													<option value="optional" selected?={ selectedSerial(data, item.Type, item.ID) == "optional" }>Optional</option>
+													<option value="required" selected?={ selectedSerial(data, item.Type, item.ID) == "required" }>Required</option>
+												</select>
+											</div>
+										</div>
+									</div>
+								}
+							</div>
+						</div>
+					}
+				}
+			</div>
+		</div>
+
+		// Action buttons
+		<div class="flex justify-end" style="gap: 12px; margin-top: 24px;">
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/projects/%s/dc-templates/", data.ProjectID)) }
+				hx-get={ fmt.Sprintf("/projects/%s/dc-templates/", data.ProjectID) }
+				hx-target="#main-content"
+				hx-push-url="true"
+				style="display: inline-flex; align-items: center; padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; color: var(--text-secondary); border: 1px solid var(--border-color); cursor: pointer;"
+			>
+				CANCEL
+			</a>
+			<button
+				type="submit"
+				style="display: inline-flex; align-items: center; padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: var(--terracotta); color: white; border: none; cursor: pointer;"
+			>
+				{ dcTemplateFormButton(data) }
+			</button>
+		</div>
+	</form>
+}
+
+templ DCTemplateFormPage(data DCTemplateFormData, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject(dcTemplateFormTitle(data) + " — Project Creation", headerData, sidebarData) {
+		@DCTemplateFormContent(data)
+	}
+}

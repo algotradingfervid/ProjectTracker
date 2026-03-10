@@ -208,6 +208,15 @@ func main() {
 		se.Router.GET("/projects/{projectId}/po/{id}", handlers.HandlePOView(app))
 		se.Router.DELETE("/projects/{projectId}/po/{id}", handlers.HandlePODelete(app))
 
+		// ── DC Templates ────────────────────────────────────────
+		se.Router.GET("/projects/{projectId}/dc-templates/", handlers.HandleDCTemplateList(app))
+		se.Router.GET("/projects/{projectId}/dc-templates/create", handlers.HandleDCTemplateCreate(app))
+		se.Router.POST("/projects/{projectId}/dc-templates/create", handlers.HandleDCTemplateSave(app))
+		se.Router.GET("/projects/{projectId}/dc-templates/{id}/edit", handlers.HandleDCTemplateEdit(app))
+		se.Router.POST("/projects/{projectId}/dc-templates/{id}/edit", handlers.HandleDCTemplateUpdate(app))
+		se.Router.DELETE("/projects/{projectId}/dc-templates/{id}/delete", handlers.HandleDCTemplateDelete(app))
+		se.Router.POST("/projects/{projectId}/dc-templates/{id}/duplicate", handlers.HandleDCTemplateDuplicate(app))
+
 		// ── App Settings (global) ───────────────────────────────
 		se.Router.GET("/settings", handlers.HandleAppSettings(app))
 		se.Router.POST("/settings", handlers.HandleAppSettingsSave(app))
