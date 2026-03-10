@@ -613,6 +613,8 @@ git commit -m "refactor: update PO handlers for new address JSON format"
 
 ## Phase 2: Configurable Numbering System
 
+PO and DC have **separate** numbering configurations with the same UI pattern. Each has its own prefix, format, separator, padding, and start numbers.
+
 ### Task 2.1: Create `number_sequences` Collection and Project Fields
 
 **Files:**
@@ -621,7 +623,7 @@ git commit -m "refactor: update PO handlers for new address JSON format"
 **Step 1: Add collection and project fields**
 
 ```go
-// Number sequences — unified atomic counter for PO + DC numbers
+// Number sequences — atomic counter per document type
 ensureCollection(app, "number_sequences", func(c *core.Collection) {
     c.Fields.Add(&core.RelationField{
         Name:          "project",
@@ -642,15 +644,23 @@ ensureCollection(app, "number_sequences", func(c *core.Collection) {
     c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
 })
 
-// Add numbering fields to projects
-ensureField(app, "projects", &core.TextField{Name: "number_prefix"})
-ensureField(app, "projects", &core.TextField{Name: "number_format"})
-ensureField(app, "projects", &core.TextField{Name: "number_separator"})
-ensureField(app, "projects", &core.NumberField{Name: "seq_padding"})
-ensureField(app, "projects", &core.NumberField{Name: "seq_start_po"})
-ensureField(app, "projects", &core.NumberField{Name: "seq_start_tdc"})
-ensureField(app, "projects", &core.NumberField{Name: "seq_start_odc"})
-ensureField(app, "projects", &core.NumberField{Name: "seq_start_stdc"})
+// PO numbering fields on projects
+ensureField(app, "projects", &core.TextField{Name: "po_prefix"})
+ensureField(app, "projects", &core.TextField{Name: "po_number_format"})
+ensureField(app, "projects", &core.TextField{Name: "po_separator"})
+ensureField(app, "projects", &core.NumberField{Name: "po_seq_padding"})
+ensureField(app, "projects", &core.NumberField{Name: "po_seq_start"})
+
+// DC numbering fields on projects
+ensureField(app, "projects", &core.TextField{Name: "dc_prefix"})
+ensureField(app, "projects", &core.TextField{Name: "dc_number_format"})
+ensureField(app, "projects", &core.TextField{Name: "dc_separator"})
+ensureField(app, "projects", &core.NumberField{Name: "dc_seq_padding"})
+ensureField(app, "projects", &core.NumberField{Name: "dc_seq_start_tdc"})
+ensureField(app, "projects", &core.NumberField{Name: "dc_seq_start_odc"})
+ensureField(app, "projects", &core.NumberField{Name: "dc_seq_start_stdc"})
+
+// Default addresses for DC wizard
 ensureField(app, "projects", &core.RelationField{
     Name:         "default_bill_from",
     CollectionId: addressesCol.Id,
@@ -667,7 +677,7 @@ ensureField(app, "projects", &core.RelationField{
 
 ```bash
 git add collections/setup.go
-git commit -m "feat: add number_sequences collection and project numbering fields"
+git commit -m "feat: add number_sequences collection with separate PO and DC numbering fields"
 ```
 
 ---
@@ -683,7 +693,10 @@ git commit -m "feat: add number_sequences collection and project numbering field
 ```go
 package services
 
-import "testing"
+import (
+    "testing"
+    "time"
+)
 
 func TestGetFinancialYear(t *testing.T) {
     tests := []struct {
@@ -721,15 +734,38 @@ func TestFormatDocNumber(t *testing.T) {
         projRef  string
         expect   string
     }{
-        {"standard", "{PREFIX}{SEP}{TYPE}{SEP}{FY}{SEP}{SEQ}", "-", "FSS", "tdc", "2526", 1, 3, "OAVS", "FSS-TDC-2526-001"},
-        {"with_ref", "{PREFIX}{SEP}{TYPE}{SEP}{PROJECT_REF}{SEP}{FY}{SEP}{SEQ}", "-", "FSS", "po", "2526", 42, 4, "OAVS", "FSS-PO-OAVS-2526-0042"},
-        {"custom_sep", "{PREFIX}{SEP}{TYPE}{SEP}{FY}{SEP}{SEQ}", "/", "ABC", "odc", "2526", 5, 3, "", "ABC/ODC/2526/005"},
+        {"po_standard", "{PREFIX}{SEP}{TYPE}{SEP}{PROJECT_REF}{SEP}{FY}{SEP}{SEQ}", "-", "FSS", "po", "2526", 1, 3, "OAVS", "FSS-PO-OAVS-2526-001"},
+        {"dc_standard", "{PREFIX}{SEP}{TYPE}{SEP}{FY}{SEP}{SEQ}", "-", "ABC", "tdc", "2526", 1, 3, "", "ABC-TDC-2526-001"},
+        {"dc_official", "{PREFIX}{SEP}{TYPE}{SEP}{FY}{SEP}{SEQ}", "-", "ABC", "odc", "2526", 5, 3, "", "ABC-ODC-2526-005"},
+        {"dc_transfer", "{PREFIX}{SEP}{TYPE}{SEP}{FY}{SEP}{SEQ}", "-", "ABC", "stdc", "2526", 1, 4, "", "ABC-STDC-2526-0001"},
+        {"custom_sep", "{PREFIX}{SEP}{TYPE}{SEP}{FY}{SEP}{SEQ}", "/", "XYZ", "odc", "2526", 42, 4, "", "XYZ/ODC/2526/0042"},
+        {"po_with_ref", "{PREFIX}{SEP}{TYPE}{SEP}{PROJECT_REF}{SEP}{FY}{SEP}{SEQ}", "-", "FSS", "po", "2526", 42, 4, "OAVS", "FSS-PO-OAVS-2526-0042"},
     }
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             got := FormatDocNumber(tt.format, tt.sep, tt.prefix, tt.seqType, tt.fy, tt.seq, tt.padding, tt.projRef)
             if got != tt.expect {
                 t.Errorf("got %q, want %q", got, tt.expect)
+            }
+        })
+    }
+}
+
+func TestNumberingConfigForType(t *testing.T) {
+    tests := []struct {
+        seqType    string
+        expectGroup string
+    }{
+        {"po", "po"},
+        {"tdc", "dc"},
+        {"odc", "dc"},
+        {"stdc", "dc"},
+    }
+    for _, tt := range tests {
+        t.Run(tt.seqType, func(t *testing.T) {
+            got := ConfigGroupForType(tt.seqType)
+            if got != tt.expectGroup {
+                t.Errorf("ConfigGroupForType(%q) = %q, want %q", tt.seqType, got, tt.expectGroup)
             }
         })
     }
@@ -776,6 +812,15 @@ func TypeCode(seqType string) string {
     }
 }
 
+// ConfigGroupForType returns "po" or "dc" based on the sequence type.
+// PO types use po_* project fields; DC types use dc_* project fields.
+func ConfigGroupForType(seqType string) string {
+    if seqType == "po" {
+        return "po"
+    }
+    return "dc"
+}
+
 // FormatDocNumber formats a document number from a template and parameters.
 func FormatDocNumber(format, sep, prefix, seqType, fy string, seq, padding int, projRef string) string {
     padFmt := fmt.Sprintf("%%0%dd", padding)
@@ -790,30 +835,39 @@ func FormatDocNumber(format, sep, prefix, seqType, fy string, seq, padding int, 
 }
 
 // NextDocNumber atomically increments and returns the next document number.
+// It reads the appropriate config (PO or DC) based on the sequence type.
 func NextDocNumber(app *pocketbase.PocketBase, projectID, seqType string, docDate time.Time) (string, error) {
     project, err := app.FindRecordById("projects", projectID)
     if err != nil {
         return "", fmt.Errorf("project not found: %w", err)
     }
 
+    group := ConfigGroupForType(seqType) // "po" or "dc"
     fy := GetFinancialYear(docDate)
-    format := project.GetString("number_format")
+
+    // Read config fields based on group
+    format := project.GetString(group + "_number_format")
     if format == "" {
         format = "{PREFIX}{SEP}{TYPE}{SEP}{FY}{SEP}{SEQ}"
     }
-    sep := project.GetString("number_separator")
+    sep := project.GetString(group + "_separator")
     if sep == "" {
         sep = "-"
     }
-    prefix := project.GetString("number_prefix")
-    padding := project.GetInt("seq_padding")
+    prefix := project.GetString(group + "_prefix")
+    padding := project.GetInt(group + "_seq_padding")
     if padding == 0 {
         padding = 3
     }
     projRef := project.GetString("reference_number")
 
-    startField := "seq_start_" + seqType
-    seqStart := project.GetInt(startField)
+    // Determine start number: PO has one start, DC has per-type starts
+    var seqStart int
+    if group == "po" {
+        seqStart = project.GetInt("po_seq_start")
+    } else {
+        seqStart = project.GetInt("dc_seq_start_" + seqType)
+    }
     if seqStart == 0 {
         seqStart = 1
     }
@@ -860,14 +914,14 @@ func NextDocNumber(app *pocketbase.PocketBase, projectID, seqType string, docDat
 
 **Step 3: Run tests**
 
-Run: `go test ./services/ -run TestGetFinancialYear -v && go test ./services/ -run TestFormatDocNumber -v`
+Run: `go test ./services/ -run TestGetFinancialYear -v && go test ./services/ -run TestFormatDocNumber -v && go test ./services/ -run TestNumberingConfigForType -v`
 Expected: PASS
 
 **Step 4: Commit**
 
 ```bash
 git add services/numbering.go services/numbering_test.go
-git commit -m "feat: add unified document numbering service with financial year support"
+git commit -m "feat: add document numbering service with separate PO and DC configurations"
 ```
 
 ---
@@ -880,18 +934,18 @@ git commit -m "feat: add unified document numbering service with financial year 
 
 **Step 1: Update `GeneratePONumber` to use the new numbering service**
 
-Replace the existing PO number logic with a call to `NextDocNumber(app, projectID, "po", time.Now())`.
+Replace the existing PO number logic with a call to `NextDocNumber(app, projectID, "po", time.Now())`. The service reads `po_prefix`, `po_number_format`, `po_separator`, `po_seq_padding`, `po_seq_start` from the project record.
 
 **Step 2: Test PO creation still works**
 
 Run: `make run`, create a PO
-Expected: PO number generated using new format
+Expected: PO number generated using new configurable format
 
 **Step 3: Commit**
 
 ```bash
 git add services/po_number.go handlers/po_create.go
-git commit -m "refactor: migrate PO number generation to unified numbering service"
+git commit -m "refactor: migrate PO number generation to configurable numbering service"
 ```
 
 ---
@@ -904,29 +958,51 @@ git commit -m "refactor: migrate PO number generation to unified numbering servi
 
 **Step 1: Add numbering fields to settings handler**
 
-Load and save: `number_prefix`, `number_format`, `number_separator`, `seq_padding`, `seq_start_po`, `seq_start_tdc`, `seq_start_odc`, `seq_start_stdc`, `default_bill_from`, `default_dispatch_from`.
+Load and save two sets of fields:
 
-**Step 2: Add numbering config section to settings template**
+**PO Numbering:** `po_prefix`, `po_number_format`, `po_separator`, `po_seq_padding`, `po_seq_start`
 
-New tab or section in project settings with:
-- Number Prefix text input
-- Number Format text input with token reference
-- Separator text input
-- Sequence Padding number input
-- Start numbers per type (PO, TDC, ODC, STDC)
-- Default Bill From / Dispatch From address pickers
-- Live preview showing example numbers for each type (Alpine.js computed)
+**DC Numbering:** `dc_prefix`, `dc_number_format`, `dc_separator`, `dc_seq_padding`, `dc_seq_start_tdc`, `dc_seq_start_odc`, `dc_seq_start_stdc`
+
+**Default Addresses:** `default_bill_from`, `default_dispatch_from`
+
+**Step 2: Add numbering config sections to settings template**
+
+Two separate sections (or tabs) with the **same UI layout**:
+
+**PO Numbering section:**
+- PO Prefix text input
+- PO Number Format text input with token reference ({PREFIX}, {TYPE}, {FY}, {SEQ}, {SEP}, {PROJECT_REF})
+- PO Separator text input
+- PO Sequence Padding number input
+- PO Starting Number input
+- Live preview: shows example PO number as you type (Alpine.js computed)
+
+**DC Numbering section:**
+- DC Prefix text input
+- DC Number Format text input (same tokens)
+- DC Separator text input
+- DC Sequence Padding number input
+- Starting numbers per DC type:
+  - Transit DC (TDC) start number
+  - Official DC (ODC) start number
+  - Transfer DC (STDC) start number
+- Live preview: shows example numbers for TDC, ODC, STDC (Alpine.js computed)
+
+**Default Addresses section:**
+- Default Bill From address picker
+- Default Dispatch From address picker
 
 **Step 3: Test settings**
 
-Run: `make run`, configure numbering, verify preview updates
-Expected: Settings persist, preview shows formatted numbers
+Run: `make run`, configure PO and DC numbering separately, verify previews update independently
+Expected: PO settings and DC settings persist independently, previews show correctly formatted numbers
 
 **Step 4: Commit**
 
 ```bash
 git add handlers/project_settings.go templates/project_settings.templ
-git commit -m "feat: add document numbering configuration to project settings"
+git commit -m "feat: add separate PO and DC numbering configuration to project settings"
 ```
 
 ---

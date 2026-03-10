@@ -18,7 +18,7 @@ Integrate Delivery Challan management functionality from the standalone DC appli
 - **Both workflows from day one** — Direct Shipments and Transfer DCs
 - **Unified wizard** — single 4-step wizard with type toggle instead of two separate 5-step wizards
 - **Essential reports first** — DC list with filters + single DC PDF/Excel export; analytics reports later
-- **Configurable numbering** — unified system for PO + DC numbers with format tokens, padding, start number
+- **Configurable numbering** — separate configurations for PO and DC numbers, same UI pattern, independent format tokens, padding, and start numbers
 - **Full serial tracking** — with per-item configurability (none/optional/required)
 - **maroto for PDFs** — consistent with existing PO exports, no browser dependency
 
@@ -50,7 +50,7 @@ Integrate Delivery Challan management functionality from the standalone DC appli
 
 | Collection | Changes |
 |-----------|---------|
-| `projects` | Add: `dc_prefix`, `dc_number_format`, `dc_number_separator`, `dc_seq_padding`, `dc_seq_start_po`, `dc_seq_start_tdc`, `dc_seq_start_odc`, `dc_seq_start_stdc`, `default_bill_from`, `default_dispatch_from` |
+| `projects` | Add: PO numbering fields (`po_prefix`, `po_number_format`, `po_separator`, `po_seq_padding`, `po_seq_start`), DC numbering fields (`dc_prefix`, `dc_number_format`, `dc_separator`, `dc_seq_padding`, `dc_seq_start_tdc`, `dc_seq_start_odc`, `dc_seq_start_stdc`), `default_bill_from`, `default_dispatch_from` |
 | `addresses` | Restructured: replace fixed fields with `config` (relation), `address_code`, `data` (JSON), `district_name`, `mandal_name`, `mandal_code` |
 | `project_address_settings` | **Removed** — replaced by `address_configs` |
 
@@ -303,6 +303,8 @@ PROJECT DETAILS
 
 ## Section 6: Configurable Numbering System
 
+Two independent numbering configurations — **PO** and **DC** — with the same UI pattern but separate settings. This allows different prefixes, formats, and sequences for purchase orders vs delivery challans.
+
 ### `number_sequences` Collection
 
 - `project` (relation)
@@ -310,33 +312,48 @@ PROJECT DETAILS
 - `financial_year` (text: "2526")
 - `last_number` (number)
 
-### Project Settings Fields
+### Project Settings — PO Numbering
 
-- `number_format` — format template, e.g. `{PREFIX}{SEP}{TYPE}{SEP}{FY}{SEP}{SEQ}`
-- `number_separator` — e.g. `-`, `/`
-- `number_prefix` — e.g. `FSS`, `ABC`
-- `seq_padding` — digits in sequence (3 → `001`, 4 → `0001`)
-- `seq_start_po`, `seq_start_tdc`, `seq_start_odc`, `seq_start_stdc` — starting number per type
+| Field | Description | Example |
+|-------|-------------|---------|
+| `po_prefix` | Prefix for PO numbers | `FSS` |
+| `po_number_format` | Format template for POs | `{PREFIX}{SEP}{TYPE}{SEP}{PROJECT_REF}{SEP}{FY}{SEP}{SEQ}` |
+| `po_separator` | Separator character | `-` |
+| `po_seq_padding` | Digits in sequence | `3` → `001` |
+| `po_seq_start` | Starting sequence number | `1` |
 
-### Format Tokens
+### Project Settings — DC Numbering
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `dc_prefix` | Prefix for DC numbers | `ABC` |
+| `dc_number_format` | Format template for DCs | `{PREFIX}{SEP}{TYPE}{SEP}{FY}{SEP}{SEQ}` |
+| `dc_separator` | Separator character | `-` |
+| `dc_seq_padding` | Digits in sequence | `3` → `001` |
+| `dc_seq_start_tdc` | Starting sequence for Transit DCs | `1` |
+| `dc_seq_start_odc` | Starting sequence for Official DCs | `1` |
+| `dc_seq_start_stdc` | Starting sequence for Transfer DCs | `1` |
+
+### Format Tokens (Shared)
 
 | Token | Resolves To | Example |
 |-------|------------|---------|
-| `{PREFIX}` | Project's `number_prefix` | `FSS` |
+| `{PREFIX}` | Config's prefix (`po_prefix` or `dc_prefix`) | `FSS`, `ABC` |
 | `{TYPE}` | Sequence type code | `PO`, `TDC`, `ODC`, `STDC` |
 | `{FY}` | Indian financial year | `2526` |
 | `{SEQ}` | Zero-padded sequence | `001` |
-| `{SEP}` | Configured separator | `-` |
+| `{SEP}` | Config's separator (`po_separator` or `dc_separator`) | `-` |
 | `{PROJECT_REF}` | Project's `reference_number` | `OAVS` |
 
 ### Examples
 
-Format: `{PREFIX}{SEP}{TYPE}{SEP}{FY}{SEP}{SEQ}`
+**PO** (format: `{PREFIX}{SEP}{TYPE}{SEP}{PROJECT_REF}{SEP}{FY}{SEP}{SEQ}`, prefix: `FSS`):
+- `FSS-PO-OAVS-2526-001`
 
-- PO: `FSS-PO-2526-001`
-- Transit DC: `FSS-TDC-2526-001`
-- Official DC: `FSS-ODC-2526-003`
-- Transfer DC: `FSS-STDC-2526-001`
+**DC** (format: `{PREFIX}{SEP}{TYPE}{SEP}{FY}{SEP}{SEQ}`, prefix: `ABC`):
+- Transit DC: `ABC-TDC-2526-001`
+- Official DC: `ABC-ODC-2526-003`
+- Transfer DC: `ABC-STDC-2526-001`
 
 ### Financial Year
 
@@ -344,11 +361,18 @@ Indian Apr-Mar. Compact format: `2526` = April 2025 – March 2026. Auto-calcula
 
 ### Sequence Logic
 
-1. Find or create `number_sequences` record for (project, type, FY)
-2. If new record, initialize `last_number` to `seq_start_{type} - 1`
-3. Increment `last_number` atomically
-4. Format using project's format template
-5. Existing PO number generation migrates to this system
+1. Determine config group: PO types use `po_*` fields, DC types use `dc_*` fields
+2. Find or create `number_sequences` record for (project, type, FY)
+3. If new record, initialize `last_number` to the relevant `seq_start` value - 1
+4. Increment `last_number` atomically
+5. Format using the relevant format template (PO or DC)
+6. Existing PO number generation migrates to this system
+
+### Settings UI
+
+Project Settings shows two tabs/sections with identical layouts:
+- **PO Numbering** — prefix, format, separator, padding, start number, live preview
+- **DC Numbering** — prefix, format, separator, padding per type, start numbers per type (TDC/ODC/STDC), live preview
 
 ---
 
