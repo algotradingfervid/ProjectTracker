@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 
+	"projectcreation/services"
 	"projectcreation/templates"
 )
 
@@ -38,14 +40,15 @@ var addressFieldDefs = []struct {
 
 // addressTypeLabels maps address type values to display labels.
 var addressTypeLabels = map[string]string{
-	"bill_from":  "BILL FROM",
-	"ship_from":  "SHIP FROM",
-	"bill_to":    "BILL TO",
-	"ship_to":    "SHIP TO",
-	"install_at": "INSTALL AT",
+	"bill_from":     "BILL FROM",
+	"ship_from":     "SHIP FROM",
+	"dispatch_from": "DISPATCH FROM",
+	"bill_to":       "BILL TO",
+	"ship_to":       "SHIP TO",
+	"install_at":    "INSTALL AT",
 }
 
-var addressTypeOrder = []string{"bill_from", "ship_from", "bill_to", "ship_to", "install_at"}
+var addressTypeOrder = []string{"bill_from", "dispatch_from", "bill_to", "ship_to", "install_at"}
 
 func HandleProjectSettings(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
@@ -60,12 +63,6 @@ func HandleProjectSettings(app *pocketbase.PocketBase) func(*core.RequestEvent) 
 			return ErrorToast(e, http.StatusNotFound, "Project not found")
 		}
 
-		settingsCol, err := app.FindCollectionByNameOrId("project_address_settings")
-		if err != nil {
-			log.Printf("project_settings: could not find project_address_settings collection: %v", err)
-			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
-		}
-
 		shipToEqualsInstallAt := project.GetBool("ship_to_equals_install_at")
 
 		data := templates.ProjectSettingsData{
@@ -76,30 +73,24 @@ func HandleProjectSettings(app *pocketbase.PocketBase) func(*core.RequestEvent) 
 		}
 
 		for _, addrType := range addressTypeOrder {
-			records, _ := app.FindRecordsByFilter(
-				settingsCol,
-				"project = {:pid} && address_type = {:atype}",
-				"", 1, 0,
-				map[string]any{"pid": projectID, "atype": addrType},
-			)
+			_, colDefs := getOrCreateAddressConfig(app, projectID, AddressType(addrType))
 
-			var fields []templates.AddressFieldConfig
-			for _, fd := range addressFieldDefs {
-				required := false
-				if len(records) > 0 {
-					required = records[0].GetBool(fd.Field)
-				}
-				fields = append(fields, templates.AddressFieldConfig{
-					Field:    fd.Field,
-					Label:    fd.Label,
-					Required: required,
+			var columns []templates.AddressColumnConfig
+			for _, col := range colDefs {
+				columns = append(columns, templates.AddressColumnConfig{
+					Name:        col.Name,
+					Label:       col.Label,
+					Required:    col.Required,
+					ShowInTable: col.ShowInTable,
+					ShowInPrint: col.ShowInPrint,
+					SortOrder:   col.SortOrder,
 				})
 			}
 
 			data.AddressTypes = append(data.AddressTypes, templates.AddressTypeConfig{
-				Type:   addrType,
-				Label:  addressTypeLabels[addrType],
-				Fields: fields,
+				Type:    addrType,
+				Label:   addressTypeLabels[addrType],
+				Columns: columns,
 			})
 		}
 
@@ -138,39 +129,28 @@ func HandleProjectSettingsSave(app *pocketbase.PocketBase) func(*core.RequestEve
 			log.Printf("project_settings_save: failed to save ship_to toggle: %v", err)
 		}
 
-		settingsCol, err := app.FindCollectionByNameOrId("project_address_settings")
-		if err != nil {
-			log.Printf("project_settings_save: could not find project_address_settings collection: %v", err)
-			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
-		}
-
 		for _, addrType := range addressTypeOrder {
-			records, _ := app.FindRecordsByFilter(
-				settingsCol,
-				"project = {:pid} && address_type = {:atype}",
-				"", 1, 0,
-				map[string]any{"pid": projectID, "atype": addrType},
-			)
-
-			var record *core.Record
-			if len(records) > 0 {
-				record = records[0]
-			} else {
-				record = core.NewRecord(settingsCol)
-				record.Set("project", projectID)
-				record.Set("address_type", addrType)
+			configRec, colDefs := getOrCreateAddressConfig(app, projectID, AddressType(addrType))
+			if configRec == nil {
+				continue
 			}
 
-			for _, fd := range addressFieldDefs {
-				formKey := addrType + "." + fd.Field
-				checked := e.Request.FormValue(formKey) == "true"
-				record.Set(fd.Field, checked)
+			// Update column definitions from form data
+			for i, col := range colDefs {
+				colDefs[i].Required = e.Request.FormValue(addrType+"."+col.Name+".required") == "true"
+				colDefs[i].ShowInTable = e.Request.FormValue(addrType+"."+col.Name+".show_in_table") == "true"
+				colDefs[i].ShowInPrint = e.Request.FormValue(addrType+"."+col.Name+".show_in_print") == "true"
 			}
 
-			if err := app.Save(record); err != nil {
-				log.Printf("project_settings_save: failed to save settings for %s/%s: %v", projectID, addrType, err)
+			columnsJSON, _ := json.Marshal(colDefs)
+			configRec.Set("columns", string(columnsJSON))
+			if err := app.Save(configRec); err != nil {
+				log.Printf("project_settings_save: failed to save address_config for %s/%s: %v", projectID, addrType, err)
 				return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
 			}
+
+			// Also update legacy project_address_settings for backward compat
+			syncLegacyAddressSettings(app, projectID, addrType, colDefs)
 		}
 
 		SetToast(e, "success", "Settings saved")
@@ -183,5 +163,45 @@ func HandleProjectSettingsSave(app *pocketbase.PocketBase) func(*core.RequestEve
 			return e.String(http.StatusOK, "")
 		}
 		return e.Redirect(http.StatusFound, fmt.Sprintf("/projects/%s/settings", projectID))
+	}
+}
+
+// syncLegacyAddressSettings updates the old project_address_settings table
+// to keep backward compatibility with existing validation code.
+func syncLegacyAddressSettings(app *pocketbase.PocketBase, projectID, addrType string, colDefs []services.ColumnDef) {
+	settingsCol, err := app.FindCollectionByNameOrId("project_address_settings")
+	if err != nil {
+		return
+	}
+
+	// Map dispatch_from back to ship_from for legacy settings
+	legacyType := addrType
+	if addrType == "dispatch_from" {
+		legacyType = "ship_from"
+	}
+
+	records, _ := app.FindRecordsByFilter(
+		settingsCol,
+		"project = {:pid} && address_type = {:atype}",
+		"", 1, 0,
+		map[string]any{"pid": projectID, "atype": legacyType},
+	)
+
+	var record *core.Record
+	if len(records) > 0 {
+		record = records[0]
+	} else {
+		record = core.NewRecord(settingsCol)
+		record.Set("project", projectID)
+		record.Set("address_type", legacyType)
+	}
+
+	for _, col := range colDefs {
+		reqField := "req_" + col.Name
+		record.Set(reqField, col.Required)
+	}
+
+	if err := app.Save(record); err != nil {
+		log.Printf("syncLegacyAddressSettings: failed for %s/%s: %v", projectID, addrType, err)
 	}
 }

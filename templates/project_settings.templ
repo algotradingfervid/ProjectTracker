@@ -1,15 +1,25 @@
 package templates
 
 type AddressFieldConfig struct {
-	Field    string // e.g. "req_company_name"
+	Field    string // e.g. "req_company_name" (legacy)
 	Label    string // e.g. "Company Name"
 	Required bool
 }
 
+type AddressColumnConfig struct {
+	Name        string // e.g. "company_name"
+	Label       string // e.g. "Company Name"
+	Required    bool
+	ShowInTable bool
+	ShowInPrint bool
+	SortOrder   int
+}
+
 type AddressTypeConfig struct {
-	Type   string // e.g. "bill_from"
-	Label  string // e.g. "Bill From"
-	Fields []AddressFieldConfig
+	Type    string // e.g. "bill_from"
+	Label   string // e.g. "Bill From"
+	Fields  []AddressFieldConfig   // legacy
+	Columns []AddressColumnConfig  // new flexible columns
 }
 
 type ProjectSettingsData struct {
@@ -102,31 +112,62 @@ templ ProjectSettingsContent(data ProjectSettingsData) {
 					<input type="radio" name="settings_tabs" class="tab" aria-label={ addrType.Label } style="color: var(--text-primary); --tab-border-color: transparent;"/>
 				}
 				<div class="tab-content" style="padding: 24px 24px 16px; background-color: var(--bg-card); color: var(--text-primary);">
-				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 40px;">
-					for _, field := range addrType.Fields {
-						<label class="flex items-center cursor-pointer" style="padding: 10px 0; gap: 12px;">
-							if field.Required {
+					<!-- Column config header -->
+					<div class="flex items-center" style="padding-bottom: 12px; border-bottom: 1px solid var(--border-light); margin-bottom: 8px;">
+						<div style="flex: 1; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+							FIELD
+						</div>
+						<div style="width: 100px; text-align: center; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+							REQUIRED
+						</div>
+						<div style="width: 100px; text-align: center; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+							TABLE
+						</div>
+						<div style="width: 100px; text-align: center; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+							PRINT
+						</div>
+					</div>
+					<!-- Column rows -->
+					for _, col := range addrType.Columns {
+						<div class="flex items-center" style="padding: 8px 0; border-bottom: 1px solid var(--border-light);">
+							<div style="flex: 1; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+								{ col.Label }
+							</div>
+							<div style="width: 100px; text-align: center;">
 								<input
 									type="checkbox"
-									name={ addrType.Type + "." + field.Field }
-									checked
-									style="width: 18px; height: 18px; accent-color: var(--terracotta); cursor: pointer;"
+									name={ addrType.Type + "." + col.Name + ".required" }
+									if col.Required {
+										checked
+									}
+									style="width: 16px; height: 16px; accent-color: var(--terracotta); cursor: pointer;"
 									value="true"
 								/>
-							} else {
+							</div>
+							<div style="width: 100px; text-align: center;">
 								<input
 									type="checkbox"
-									name={ addrType.Type + "." + field.Field }
-									style="width: 18px; height: 18px; accent-color: var(--terracotta); cursor: pointer;"
+									name={ addrType.Type + "." + col.Name + ".show_in_table" }
+									if col.ShowInTable {
+										checked
+									}
+									style="width: 16px; height: 16px; accent-color: var(--terracotta); cursor: pointer;"
 									value="true"
 								/>
-							}
-							<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
-								{ field.Label }
-							</span>
-						</label>
+							</div>
+							<div style="width: 100px; text-align: center;">
+								<input
+									type="checkbox"
+									name={ addrType.Type + "." + col.Name + ".show_in_print" }
+									if col.ShowInPrint {
+										checked
+									}
+									style="width: 16px; height: 16px; accent-color: var(--terracotta); cursor: pointer;"
+									value="true"
+								/>
+							</div>
+						</div>
 					}
-				</div>
 				</div>
 			}
 		</div>
