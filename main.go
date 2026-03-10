@@ -29,6 +29,9 @@ func main() {
 		if err := collections.MigrateDefaultAddressSettings(app); err != nil {
 			log.Printf("Warning: address settings migration failed: %v", err)
 		}
+		if err := collections.MigrateAddressesToFlexible(app); err != nil {
+			log.Printf("Warning: address flexible migration failed: %v", err)
+		}
 		return se.Next()
 	})
 
@@ -204,6 +207,10 @@ func main() {
 		se.Router.GET("/projects/{projectId}/po", handlers.HandlePOList(app))
 		se.Router.GET("/projects/{projectId}/po/{id}", handlers.HandlePOView(app))
 		se.Router.DELETE("/projects/{projectId}/po/{id}", handlers.HandlePODelete(app))
+
+		// ── App Settings (global) ───────────────────────────────
+		se.Router.GET("/settings", handlers.HandleAppSettings(app))
+		se.Router.POST("/settings", handlers.HandleAppSettingsSave(app))
 
 		// ── Legacy BOQ redirects ─────────────────────────────────
 		se.Router.GET("/boq", func(e *core.RequestEvent) error {
