@@ -7,6 +7,8 @@ import "strings"
 type AddressListItem struct {
 	ID            string
 	Index         int
+	AddressCode   string
+	Data          map[string]string // flexible JSON data
 	CompanyName   string
 	ContactPerson string
 	AddressLine1  string
@@ -24,6 +26,10 @@ type AddressListItem struct {
 	Fax           string
 	Landmark      string
 	District      string
+	// Fixed fields for ship_to/install_at
+	DistrictName string
+	MandalName   string
+	MandalCode   string
 }
 
 type AddressListData struct {

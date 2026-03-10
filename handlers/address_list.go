@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
@@ -12,6 +13,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 
+	"projectcreation/services"
 	"projectcreation/templates"
 )
 
@@ -19,26 +21,28 @@ import (
 type AddressType string
 
 const (
-	AddressTypeBillFrom  AddressType = "bill_from"
-	AddressTypeShipFrom  AddressType = "ship_from"
-	AddressTypeBillTo    AddressType = "bill_to"
-	AddressTypeShipTo    AddressType = "ship_to"
-	AddressTypeInstallAt AddressType = "install_at"
+	AddressTypeBillFrom     AddressType = "bill_from"
+	AddressTypeShipFrom     AddressType = "ship_from"
+	AddressTypeDispatchFrom AddressType = "dispatch_from"
+	AddressTypeBillTo       AddressType = "bill_to"
+	AddressTypeShipTo       AddressType = "ship_to"
+	AddressTypeInstallAt    AddressType = "install_at"
 )
 
 // AddressTypeDisplayLabels maps address type to human-readable labels.
 var AddressTypeDisplayLabels = map[AddressType]string{
-	AddressTypeBillFrom:  "Bill From",
-	AddressTypeShipFrom:  "Ship From",
-	AddressTypeBillTo:    "Bill To",
-	AddressTypeShipTo:    "Ship To",
-	AddressTypeInstallAt: "Install At",
+	AddressTypeBillFrom:     "Bill From",
+	AddressTypeShipFrom:     "Ship From",
+	AddressTypeDispatchFrom: "Dispatch From",
+	AddressTypeBillTo:       "Bill To",
+	AddressTypeShipTo:       "Ship To",
+	AddressTypeInstallAt:    "Install At",
 }
 
 // ValidAddressTypes is the ordered list of all address types.
 var ValidAddressTypes = []AddressType{
 	AddressTypeBillFrom,
-	AddressTypeShipFrom,
+	AddressTypeDispatchFrom,
 	AddressTypeBillTo,
 	AddressTypeShipTo,
 	AddressTypeInstallAt,
@@ -200,26 +204,32 @@ func HandleAddressList(app *pocketbase.PocketBase, addressType AddressType) func
 		// Map records to view models
 		var items []templates.AddressListItem
 		for i, rec := range records {
+			data := readAddressData(rec)
 			items = append(items, templates.AddressListItem{
 				ID:            rec.Id,
 				Index:         offset + i + 1,
-				CompanyName:   rec.GetString("company_name"),
-				ContactPerson: rec.GetString("contact_person"),
-				AddressLine1:  rec.GetString("address_line_1"),
-				AddressLine2:  rec.GetString("address_line_2"),
-				City:          rec.GetString("city"),
-				State:         rec.GetString("state"),
-				PinCode:       rec.GetString("pin_code"),
-				Country:       rec.GetString("country"),
-				Phone:         rec.GetString("phone"),
-				Email:         rec.GetString("email"),
-				GSTIN:         rec.GetString("gstin"),
-				PAN:           rec.GetString("pan"),
-				CIN:           rec.GetString("cin"),
-				Website:       rec.GetString("website"),
-				Fax:           rec.GetString("fax"),
-				Landmark:      rec.GetString("landmark"),
-				District:      rec.GetString("district"),
+				AddressCode:   rec.GetString("address_code"),
+				Data:          data,
+				CompanyName:   data["company_name"],
+				ContactPerson: data["contact_person"],
+				AddressLine1:  data["address_line_1"],
+				AddressLine2:  data["address_line_2"],
+				City:          data["city"],
+				State:         data["state"],
+				PinCode:       data["pin_code"],
+				Country:       data["country"],
+				Phone:         data["phone"],
+				Email:         data["email"],
+				GSTIN:         data["gstin"],
+				PAN:           data["pan"],
+				CIN:           data["cin"],
+				Website:       data["website"],
+				Fax:           data["fax"],
+				Landmark:      data["landmark"],
+				District:      data["district"],
+				DistrictName:  rec.GetString("district_name"),
+				MandalName:    rec.GetString("mandal_name"),
+				MandalCode:    rec.GetString("mandal_code"),
 			})
 		}
 
@@ -288,5 +298,87 @@ func HandleAddressCount(app *pocketbase.PocketBase, addressType AddressType) fun
 
 		return e.String(200, fmt.Sprintf("%d", len(records)))
 	}
+}
+
+// readAddressData reads address field values from JSON data field with fallback to fixed fields.
+func readAddressData(rec *core.Record) map[string]string {
+	// Try reading from JSON data field first
+	if dataJSON := rec.GetString("data"); dataJSON != "" && dataJSON != "null" {
+		var parsed map[string]string
+		if err := json.Unmarshal([]byte(dataJSON), &parsed); err == nil && len(parsed) > 0 {
+			return parsed
+		}
+	}
+
+	// Fall back to fixed fields
+	data := make(map[string]string)
+	fixedFields := []string{
+		"company_name", "contact_person", "phone", "email", "gstin", "pan", "cin",
+		"address_line_1", "address_line_2", "landmark", "district", "city", "state",
+		"pin_code", "country", "fax", "website",
+	}
+	for _, f := range fixedFields {
+		if v := rec.GetString(f); v != "" {
+			data[f] = v
+		}
+	}
+	return data
+}
+
+// getOrCreateAddressConfig fetches or creates the address_config for a project/type.
+// Returns the config record and parsed column definitions.
+func getOrCreateAddressConfig(app *pocketbase.PocketBase, projectID string, addressType AddressType) (*core.Record, []services.ColumnDef) {
+	configType := mapToConfigType(addressType)
+
+	configCol, err := app.FindCollectionByNameOrId("address_configs")
+	if err != nil {
+		return nil, nil
+	}
+
+	records, err := app.FindRecordsByFilter(
+		configCol, "project = {:pid} && address_type = {:type}",
+		"", 1, 0,
+		map[string]any{"pid": projectID, "type": configType},
+	)
+	if err == nil && len(records) > 0 {
+		cols := services.ParseColumnDefs(records[0].GetString("columns"))
+		return records[0], cols
+	}
+
+	// Create default config
+	rec := core.NewRecord(configCol)
+	rec.Set("project", projectID)
+	rec.Set("address_type", configType)
+	rec.Set("columns", services.DefaultColumnDefsJSON(configType))
+	if err := app.Save(rec); err != nil {
+		log.Printf("getOrCreateAddressConfig: failed to create config: %v", err)
+		return nil, nil
+	}
+
+	cols := services.ParseColumnDefs(rec.GetString("columns"))
+	return rec, cols
+}
+
+// mapToConfigType maps handler address types to address_configs type values.
+func mapToConfigType(at AddressType) string {
+	if at == AddressTypeShipFrom {
+		return "dispatch_from"
+	}
+	return string(at)
+}
+
+// buildAddressDataJSON builds a JSON string from address form fields.
+func buildAddressDataJSON(fields map[string]string) string {
+	b, _ := json.Marshal(fields)
+	return string(b)
+}
+
+// generateAddressCode creates an address code from the company name or ID.
+func generateAddressCode(companyName, fallbackID string) string {
+	code := companyName
+	if code == "" {
+		code = fallbackID
+	}
+	return strings.ReplaceAll(strings.ToUpper(code), " ", "-")
 }
 

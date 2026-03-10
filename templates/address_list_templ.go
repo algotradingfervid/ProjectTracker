@@ -15,6 +15,8 @@ import "strings"
 type AddressListItem struct {
 	ID            string
 	Index         int
+	AddressCode   string
+	Data          map[string]string // flexible JSON data
 	CompanyName   string
 	ContactPerson string
 	AddressLine1  string
@@ -32,6 +34,10 @@ type AddressListItem struct {
 	Fax           string
 	Landmark      string
 	District      string
+	// Fixed fields for ship_to/install_at
+	DistrictName string
+	MandalName   string
+	MandalCode   string
 }
 
 type AddressListData struct {
@@ -166,7 +172,7 @@ func AddressListContent(data AddressListData) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(addressListAlpineData(data))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 134, Col: 42}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 140, Col: 42}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -179,7 +185,7 @@ func AddressListContent(data AddressListData) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.ProjectName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 148, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 154, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -192,7 +198,7 @@ func AddressListContent(data AddressListData) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.AddressLabel)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 152, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 158, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -205,7 +211,7 @@ func AddressListContent(data AddressListData) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(data.AddressLabel)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 159, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 165, Col: 24}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -218,7 +224,7 @@ func AddressListContent(data AddressListData) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(data.TotalCount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 162, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 168, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -231,7 +237,7 @@ func AddressListContent(data AddressListData) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(data.Search)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 170, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 176, Col: 24}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -244,7 +250,7 @@ func AddressListContent(data AddressListData) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s", data.ProjectID, addressTypeSlug(data.AddressType)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 172, Col: 105}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 178, Col: 105}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -262,7 +268,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("columns.%s", col.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 204, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 210, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -275,7 +281,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("toggleColumn('%s')", col.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 205, Col: 60}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 211, Col: 60}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -288,7 +294,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(col.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 209, Col: 20}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 215, Col: 20}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -306,7 +312,7 @@ func AddressListContent(data AddressListData) templ.Component {
 		var templ_7745c5c3_Var12 templ.SafeURL
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/new", data.ProjectID, addressTypeSlug(data.AddressType))))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 217, Col: 122}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 223, Col: 122}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -319,7 +325,7 @@ func AddressListContent(data AddressListData) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s/new", data.ProjectID, addressTypeSlug(data.AddressType)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 218, Col: 109}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 224, Col: 109}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -341,7 +347,7 @@ func AddressListContent(data AddressListData) templ.Component {
 						})
 					`, data.ProjectID, addressTypeSlug(data.AddressType)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 246, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 252, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -354,7 +360,7 @@ func AddressListContent(data AddressListData) templ.Component {
 		var templ_7745c5c3_Var15 templ.SafeURL
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/template", data.ProjectID, data.AddressType)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 260, Col: 110}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 266, Col: 110}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -367,7 +373,7 @@ func AddressListContent(data AddressListData) templ.Component {
 		var templ_7745c5c3_Var16 templ.SafeURL
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/import", data.ProjectID, data.AddressType)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 269, Col: 108}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 275, Col: 108}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -380,7 +386,7 @@ func AddressListContent(data AddressListData) templ.Component {
 		var templ_7745c5c3_Var17 templ.SafeURL
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/export", data.ProjectID, data.AddressType)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 278, Col: 108}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 284, Col: 108}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -398,7 +404,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("columns.%s", col.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 302, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 308, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
@@ -413,7 +419,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				data.ProjectID, addressTypeSlug(data.AddressType), col.ID,
 				toggleSortOrder(data.SortBy, col.ID, data.SortOrder)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 307, Col: 60}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 313, Col: 60}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
@@ -426,7 +432,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(col.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 312, Col: 18}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 318, Col: 18}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {
@@ -466,7 +472,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(data.AddressLabel)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 333, Col: 34}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 339, Col: 34}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -479,7 +485,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var22 templ.SafeURL
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/new", data.ProjectID, addressTypeSlug(data.AddressType))))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 335, Col: 124}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 341, Col: 124}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -492,7 +498,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s/new", data.ProjectID, addressTypeSlug(data.AddressType)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 336, Col: 111}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 342, Col: 111}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -511,7 +517,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var24 string
 				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("isSelected('%s')", item.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 352, Col: 65}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 358, Col: 65}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 				if templ_7745c5c3_Err != nil {
@@ -524,7 +530,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var25 string
 				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("toggleSelect('%s')", item.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 353, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 359, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 				if templ_7745c5c3_Err != nil {
@@ -537,7 +543,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var26 string
 				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(item.Index))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 359, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 365, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 				if templ_7745c5c3_Err != nil {
@@ -550,7 +556,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var27 string
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(item.CompanyName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 363, Col: 25}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 369, Col: 25}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {
@@ -563,7 +569,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var28 string
 				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(item.ContactPerson)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 366, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 372, Col: 27}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 				if templ_7745c5c3_Err != nil {
@@ -576,7 +582,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var29 string
 				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(item.AddressLine1)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 369, Col: 26}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 375, Col: 26}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 				if templ_7745c5c3_Err != nil {
@@ -589,7 +595,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var30 string
 				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(item.AddressLine2)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 372, Col: 26}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 378, Col: 26}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 				if templ_7745c5c3_Err != nil {
@@ -602,7 +608,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var31 string
 				templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(item.City)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 375, Col: 18}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 381, Col: 18}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 				if templ_7745c5c3_Err != nil {
@@ -615,7 +621,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var32 string
 				templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(item.State)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 378, Col: 19}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 384, Col: 19}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 				if templ_7745c5c3_Err != nil {
@@ -628,7 +634,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var33 string
 				templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(item.PinCode)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 381, Col: 21}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 387, Col: 21}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 				if templ_7745c5c3_Err != nil {
@@ -641,7 +647,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var34 string
 				templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(item.Country)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 384, Col: 21}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 390, Col: 21}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 				if templ_7745c5c3_Err != nil {
@@ -654,7 +660,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var35 string
 				templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(item.Phone)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 387, Col: 19}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 393, Col: 19}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 				if templ_7745c5c3_Err != nil {
@@ -667,7 +673,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(item.Email)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 390, Col: 19}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 396, Col: 19}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
@@ -680,7 +686,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var37 string
 				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(item.GSTIN)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 393, Col: 19}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 399, Col: 19}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 				if templ_7745c5c3_Err != nil {
@@ -693,7 +699,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var38 string
 				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(item.PAN)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 396, Col: 17}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 402, Col: 17}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 				if templ_7745c5c3_Err != nil {
@@ -706,7 +712,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var39 string
 				templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(item.CIN)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 399, Col: 17}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 405, Col: 17}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 				if templ_7745c5c3_Err != nil {
@@ -719,7 +725,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var40 string
 				templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(item.Website)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 402, Col: 21}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 408, Col: 21}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 				if templ_7745c5c3_Err != nil {
@@ -732,7 +738,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var41 string
 				templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(item.Fax)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 405, Col: 17}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 411, Col: 17}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 				if templ_7745c5c3_Err != nil {
@@ -745,7 +751,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var42 string
 				templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(item.Landmark)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 408, Col: 22}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 414, Col: 22}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 				if templ_7745c5c3_Err != nil {
@@ -758,7 +764,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var43 string
 				templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(item.District)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 411, Col: 22}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 417, Col: 22}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 				if templ_7745c5c3_Err != nil {
@@ -771,7 +777,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var44 templ.SafeURL
 				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/projects/%s/addresses/%s/%s/edit", data.ProjectID, addressTypeSlug(data.AddressType), item.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 417, Col: 138}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 423, Col: 138}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 				if templ_7745c5c3_Err != nil {
@@ -784,7 +790,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				var templ_7745c5c3_Var45 string
 				templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s/%s/edit", data.ProjectID, addressTypeSlug(data.AddressType), item.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 418, Col: 125}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 424, Col: 125}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 				if templ_7745c5c3_Err != nil {
@@ -817,7 +823,7 @@ func AddressListContent(data AddressListData) templ.Component {
 											})
 									`, data.ProjectID, item.ID, data.ProjectID, item.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 445, Col: 61}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 451, Col: 61}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 					if templ_7745c5c3_Err != nil {
@@ -844,7 +850,7 @@ func AddressListContent(data AddressListData) templ.Component {
 										})
 									`, data.ProjectID, addressTypeSlug(data.AddressType), item.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 463, Col: 71}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 469, Col: 71}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 					if templ_7745c5c3_Err != nil {
@@ -873,7 +879,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var48 string
 			templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(((data.Page - 1) * data.PageSize) + 1))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 480, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 486, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 			if templ_7745c5c3_Err != nil {
@@ -886,7 +892,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var49 string
 			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(min(data.Page*data.PageSize, data.TotalCount)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 480, Col: 134}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 486, Col: 134}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 			if templ_7745c5c3_Err != nil {
@@ -899,7 +905,7 @@ func AddressListContent(data AddressListData) templ.Component {
 			var templ_7745c5c3_Var50 string
 			templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(data.TotalCount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 480, Col: 171}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 486, Col: 171}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 			if templ_7745c5c3_Err != nil {
@@ -918,7 +924,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s?page=%d&page_size=%d&search=%s&sort_by=%s&sort_order=%s",
 					data.ProjectID, addressTypeSlug(data.AddressType), data.Page-1, data.PageSize, data.Search, data.SortBy, data.SortOrder))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 489, Col: 128}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 495, Col: 128}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 				if templ_7745c5c3_Err != nil {
@@ -947,7 +953,7 @@ func AddressListContent(data AddressListData) templ.Component {
 					var templ_7745c5c3_Var52 string
 					templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(pn))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 505, Col: 26}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 511, Col: 26}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 					if templ_7745c5c3_Err != nil {
@@ -966,7 +972,7 @@ func AddressListContent(data AddressListData) templ.Component {
 					templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s?page=%d&page_size=%d&search=%s&sort_by=%s&sort_order=%s",
 						data.ProjectID, addressTypeSlug(data.AddressType), pn, data.PageSize, data.Search, data.SortBy, data.SortOrder))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 511, Col: 120}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 517, Col: 120}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
 					if templ_7745c5c3_Err != nil {
@@ -979,7 +985,7 @@ func AddressListContent(data AddressListData) templ.Component {
 					var templ_7745c5c3_Var54 string
 					templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(pn))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 516, Col: 26}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 522, Col: 26}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 					if templ_7745c5c3_Err != nil {
@@ -1004,7 +1010,7 @@ func AddressListContent(data AddressListData) templ.Component {
 				templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/projects/%s/addresses/%s?page=%d&page_size=%d&search=%s&sort_by=%s&sort_order=%s",
 					data.ProjectID, addressTypeSlug(data.AddressType), data.Page+1, data.PageSize, data.Search, data.SortBy, data.SortOrder))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 525, Col: 128}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/address_list.templ`, Line: 531, Col: 128}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 				if templ_7745c5c3_Err != nil {

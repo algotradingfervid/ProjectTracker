@@ -33,7 +33,10 @@ type AddressFormData struct {
 	Landmark      string
 	District      string
 
-	// Required field indicators (from project_address_settings)
+	// Flexible values (JSON data from address record)
+	Values map[string]string
+
+	// Required field indicators (from project_address_settings or address_configs)
 	RequiredFields map[string]bool
 
 	// Validation errors (field name -> error message)
@@ -60,8 +63,8 @@ func addressTypeSlug(addressType string) string {
 	switch addressType {
 	case "bill_from":
 		return "bill-from"
-	case "ship_from":
-		return "ship-from"
+	case "ship_from", "dispatch_from":
+		return "dispatch-from"
 	case "bill_to":
 		return "bill-to"
 	case "ship_to":

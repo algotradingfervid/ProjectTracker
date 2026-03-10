@@ -166,6 +166,16 @@ func HandleAddressSave(app *pocketbase.PocketBase, addressType AddressType) func
 		record.Set("address_type", string(addressType))
 		setAddressRecordFields(record, fields)
 
+		// Write flexible JSON data
+		record.Set("data", buildAddressDataJSON(fields))
+		record.Set("address_code", generateAddressCode(fields["company_name"], ""))
+
+		// Set address config relation
+		configRec, _ := getOrCreateAddressConfig(app, projectID, addressType)
+		if configRec != nil {
+			record.Set("config", configRec.Id)
+		}
+
 		// Set ship_to_parent for install_at type
 		if addressType == AddressTypeInstallAt {
 			if parentID := e.Request.FormValue("ship_to_parent"); parentID != "" {
@@ -176,6 +186,12 @@ func HandleAddressSave(app *pocketbase.PocketBase, addressType AddressType) func
 		if err := app.Save(record); err != nil {
 			log.Printf("address_save: could not save address: %v", err)
 			return ErrorToast(e, http.StatusInternalServerError, "Something went wrong. Please try again.")
+		}
+
+		// Set address_code with record ID fallback if company name was empty
+		if fields["company_name"] == "" {
+			record.Set("address_code", generateAddressCode("", record.Id))
+			_ = app.Save(record)
 		}
 
 		// Redirect to address list

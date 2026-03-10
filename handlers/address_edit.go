@@ -60,6 +60,9 @@ func HandleAddressEdit(app *pocketbase.PocketBase, addressType AddressType) func
 			showShipToParent, shipToAddresses = fetchShipToOptions(app, projectID)
 		}
 
+		// Read field values from JSON data (with fallback to fixed fields)
+		addrData := readAddressData(addressRecord)
+
 		// Build form data from existing record
 		data := templates.AddressFormData{
 			IsEdit:           true,
@@ -68,23 +71,24 @@ func HandleAddressEdit(app *pocketbase.PocketBase, addressType AddressType) func
 			ProjectName:      projectRecord.GetString("name"),
 			AddressType:      string(addressType),
 			AddressLabel:     addressTypeLabel(addressType),
-			CompanyName:      addressRecord.GetString("company_name"),
-			ContactPerson:    addressRecord.GetString("contact_person"),
-			AddressLine1:     addressRecord.GetString("address_line_1"),
-			AddressLine2:     addressRecord.GetString("address_line_2"),
-			City:             addressRecord.GetString("city"),
-			State:            addressRecord.GetString("state"),
-			PinCode:          addressRecord.GetString("pin_code"),
-			Country:          addressRecord.GetString("country"),
-			Phone:            addressRecord.GetString("phone"),
-			Email:            addressRecord.GetString("email"),
-			GSTIN:            addressRecord.GetString("gstin"),
-			PAN:              addressRecord.GetString("pan"),
-			CIN:              addressRecord.GetString("cin"),
-			Website:          addressRecord.GetString("website"),
-			Fax:              addressRecord.GetString("fax"),
-			Landmark:         addressRecord.GetString("landmark"),
-			District:         addressRecord.GetString("district"),
+			Values:           addrData,
+			CompanyName:      addrData["company_name"],
+			ContactPerson:    addrData["contact_person"],
+			AddressLine1:     addrData["address_line_1"],
+			AddressLine2:     addrData["address_line_2"],
+			City:             addrData["city"],
+			State:            addrData["state"],
+			PinCode:          addrData["pin_code"],
+			Country:          addrData["country"],
+			Phone:            addrData["phone"],
+			Email:            addrData["email"],
+			GSTIN:            addrData["gstin"],
+			PAN:              addrData["pan"],
+			CIN:              addrData["cin"],
+			Website:          addrData["website"],
+			Fax:              addrData["fax"],
+			Landmark:         addrData["landmark"],
+			District:         addrData["district"],
 			RequiredFields:   requiredFields,
 			Errors:           make(map[string]string),
 			StateOptions:     services.IndianStates,
@@ -196,6 +200,18 @@ func HandleAddressUpdate(app *pocketbase.PocketBase, addressType AddressType) fu
 
 		// Update the record
 		setAddressRecordFields(addressRecord, fields)
+
+		// Update flexible JSON data
+		addressRecord.Set("data", buildAddressDataJSON(fields))
+		addressRecord.Set("address_code", generateAddressCode(fields["company_name"], addressRecord.Id))
+
+		// Ensure config relation is set
+		if addressRecord.GetString("config") == "" {
+			configRec, _ := getOrCreateAddressConfig(app, projectID, addressType)
+			if configRec != nil {
+				addressRecord.Set("config", configRec.Id)
+			}
+		}
 
 		if addressType == AddressTypeInstallAt {
 			if parentID := e.Request.FormValue("ship_to_parent"); parentID != "" {
