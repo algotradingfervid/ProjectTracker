@@ -12,9 +12,26 @@
 
 ---
 
+## Progress Tracker
+
+| Phase | Status | Tasks Done | Next Task |
+|-------|--------|------------|-----------|
+| 1: Address Restructure | **In Progress** | 1.1, 1.2, 1.3, 1.4 | 1.5: Update address handlers |
+| 2: Numbering System | Not started | — | 2.1: Create number_sequences collection |
+| 3: DC Master Data | Not started | — | 3.1: Create DC collections |
+| 4: DC Wizard | Not started | — | 4.1: Wizard step 1 |
+| 5: DC Lifecycle | Not started | — | 5.1: DC list view |
+| 6: Exports | Not started | — | 6.1: DC PDF export |
+| 7: Shipment Groups | Not started | — | 7.1: Group detail |
+| 8: Testing & Polish | Not started | — | 8.1: Integration tests |
+
+**Resume from:** Task 1.5 — Update Address Handlers for Flexible Schema
+
+---
+
 ## Phase 1: Address System Restructure
 
-### Task 1.1: Create `address_configs` Collection
+### Task 1.1: Create `address_configs` Collection ✅ DONE
 
 **Files:**
 - Modify: `collections/setup.go`
@@ -63,7 +80,7 @@ git commit -m "feat: add address_configs collection for flexible address columns
 
 ---
 
-### Task 1.2: Restructure `addresses` Collection
+### Task 1.2: Restructure `addresses` Collection ✅ DONE
 
 **Files:**
 - Modify: `collections/setup.go`
@@ -110,7 +127,7 @@ git commit -m "feat: restructure addresses collection for flexible JSON data"
 
 ---
 
-### Task 1.3: Write Address Data Migration
+### Task 1.3: Write Address Data Migration ✅ DONE
 
 **Files:**
 - Create: `collections/migrate_addresses.go`
@@ -298,7 +315,7 @@ git commit -m "feat: add address data migration from fixed fields to flexible JS
 
 ---
 
-### Task 1.4: Address Config Service Layer
+### Task 1.4: Address Config Service Layer ✅ DONE
 
 **Files:**
 - Create: `services/address_config.go`
