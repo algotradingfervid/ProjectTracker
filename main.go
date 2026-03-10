@@ -217,6 +217,17 @@ func main() {
 		se.Router.DELETE("/projects/{projectId}/dc-templates/{id}/delete", handlers.HandleDCTemplateDelete(app))
 		se.Router.POST("/projects/{projectId}/dc-templates/{id}/duplicate", handlers.HandleDCTemplateDuplicate(app))
 
+		// ── Transporters ────────────────────────────────────────
+		se.Router.GET("/projects/{projectId}/transporters/", handlers.HandleTransporterList(app))
+		se.Router.GET("/projects/{projectId}/transporters/create", handlers.HandleTransporterCreate(app))
+		se.Router.POST("/projects/{projectId}/transporters/create", handlers.HandleTransporterSave(app))
+		se.Router.GET("/projects/{projectId}/transporters/{id}", handlers.HandleTransporterDetail(app))
+		se.Router.GET("/projects/{projectId}/transporters/{id}/edit", handlers.HandleTransporterEdit(app))
+		se.Router.POST("/projects/{projectId}/transporters/{id}/edit", handlers.HandleTransporterUpdate(app))
+		se.Router.POST("/projects/{projectId}/transporters/{id}/toggle", handlers.HandleTransporterToggle(app))
+		se.Router.POST("/projects/{projectId}/transporters/{id}/vehicles", handlers.HandleVehicleAdd(app))
+		se.Router.DELETE("/projects/{projectId}/transporters/{id}/vehicles/{vid}", handlers.HandleVehicleDelete(app))
+
 		// ── App Settings (global) ───────────────────────────────
 		se.Router.GET("/settings", handlers.HandleAppSettings(app))
 		se.Router.POST("/settings", handlers.HandleAppSettingsSave(app))

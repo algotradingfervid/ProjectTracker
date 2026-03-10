@@ -1,0 +1,210 @@
+package templates
+
+import "fmt"
+
+type VehicleItem struct {
+	ID            string
+	VehicleNumber string
+	VehicleType   string
+	DriverName    string
+	DriverPhone   string
+}
+
+type TransporterFormData struct {
+	ProjectID     string
+	TransporterID string // empty for create
+	CompanyName   string
+	ContactPerson string
+	Phone         string
+	GSTNumber     string
+	IsActive      bool
+	Vehicles      []VehicleItem
+	Errors        map[string]string
+	IsEdit        bool
+}
+
+func transporterFormAction(data TransporterFormData) string {
+	if data.IsEdit {
+		return fmt.Sprintf("/projects/%s/transporters/%s/edit", data.ProjectID, data.TransporterID)
+	}
+	return fmt.Sprintf("/projects/%s/transporters/create", data.ProjectID)
+}
+
+func transporterFormTitle(data TransporterFormData) string {
+	if data.IsEdit {
+		return "Edit Transporter"
+	}
+	return "Add Transporter"
+}
+
+func transporterFormButton(data TransporterFormData) string {
+	if data.IsEdit {
+		return "UPDATE TRANSPORTER"
+	}
+	return "ADD TRANSPORTER"
+}
+
+templ TransporterFormContent(data TransporterFormData) {
+	// Breadcrumbs
+	<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+		<a
+			href={ templ.SafeURL("/projects/" + data.ProjectID) }
+			hx-get={ "/projects/" + data.ProjectID }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;"
+		>
+			PROJECT
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<a
+			href={ templ.SafeURL(fmt.Sprintf("/projects/%s/transporters/", data.ProjectID)) }
+			hx-get={ fmt.Sprintf("/projects/%s/transporters/", data.ProjectID) }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;"
+		>
+			TRANSPORTERS
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+			if data.IsEdit {
+				EDIT
+			} else {
+				NEW
+			}
+		</span>
+	</div>
+
+	// Title
+	<div>
+		<h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; color: var(--text-primary); margin: 0;">
+			{ transporterFormTitle(data) }
+		</h1>
+	</div>
+
+	// Form
+	<form method="POST" action={ templ.SafeURL(transporterFormAction(data)) } style="margin-top: 32px;">
+		// Error banner
+		if len(data.Errors) > 0 {
+			<div style="background-color: #FEE2E2; border: 1px solid #EF4444; padding: 12px 16px; margin-bottom: 24px;">
+				for _, msg := range data.Errors {
+					<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: #991B1B;">{ msg }</div>
+				}
+			</div>
+		}
+
+		// Company Details
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">
+					COMPANY DETAILS
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				<div class="grid grid-cols-2" style="gap: 16px;">
+					<div>
+						<label for="company_name" style="display: block; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+							COMPANY NAME <span style="color: var(--terracotta);">*</span>
+						</label>
+						<input
+							type="text"
+							id="company_name"
+							name="company_name"
+							value={ data.CompanyName }
+							required
+							placeholder="e.g. ABC Logistics"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid var(--border-color); background-color: var(--bg-page); color: var(--text-primary); outline: none;"
+						/>
+						if data.Errors["company_name"] != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--error); margin-top: 4px;">
+								{ data.Errors["company_name"] }
+							</div>
+						}
+					</div>
+					<div>
+						<label for="gst_number" style="display: block; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+							GST NUMBER
+						</label>
+						<input
+							type="text"
+							id="gst_number"
+							name="gst_number"
+							value={ data.GSTNumber }
+							placeholder="e.g. 29ABCDE1234F1Z5"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid var(--border-color); background-color: var(--bg-page); color: var(--text-primary); outline: none;"
+						/>
+					</div>
+				</div>
+				<div class="grid grid-cols-2" style="gap: 16px; margin-top: 16px;">
+					<div>
+						<label for="contact_person" style="display: block; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+							CONTACT PERSON
+						</label>
+						<input
+							type="text"
+							id="contact_person"
+							name="contact_person"
+							value={ data.ContactPerson }
+							placeholder="e.g. John Doe"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid var(--border-color); background-color: var(--bg-page); color: var(--text-primary); outline: none;"
+						/>
+					</div>
+					<div>
+						<label for="phone" style="display: block; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+							PHONE
+						</label>
+						<input
+							type="text"
+							id="phone"
+							name="phone"
+							value={ data.Phone }
+							placeholder="e.g. +91 98765 43210"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid var(--border-color); background-color: var(--bg-page); color: var(--text-primary); outline: none;"
+						/>
+					</div>
+				</div>
+				<div style="margin-top: 16px;">
+					<label class="flex items-center" style="gap: 8px; cursor: pointer;">
+						<input
+							type="checkbox"
+							name="is_active"
+							if data.IsActive {
+								checked
+							}
+							style="width: 16px; height: 16px; accent-color: var(--terracotta);"
+						/>
+						<span style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary);">
+							Active (available for DC selection)
+						</span>
+					</label>
+				</div>
+			</div>
+		</div>
+
+		// Action buttons
+		<div class="flex justify-end" style="gap: 12px; margin-top: 24px;">
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/projects/%s/transporters/", data.ProjectID)) }
+				hx-get={ fmt.Sprintf("/projects/%s/transporters/", data.ProjectID) }
+				hx-target="#main-content"
+				hx-push-url="true"
+				style="display: inline-flex; align-items: center; padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; color: var(--text-secondary); border: 1px solid var(--border-color); cursor: pointer;"
+			>
+				CANCEL
+			</a>
+			<button
+				type="submit"
+				style="display: inline-flex; align-items: center; padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: var(--terracotta); color: white; border: none; cursor: pointer;"
+			>
+				{ transporterFormButton(data) }
+			</button>
+		</div>
+	</form>
+}
+
+templ TransporterFormPage(data TransporterFormData, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject(transporterFormTitle(data) + " — Project Creation", headerData, sidebarData) {
+		@TransporterFormContent(data)
+	}
+}
