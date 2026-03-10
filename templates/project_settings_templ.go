@@ -10,6 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import "fmt"
 import "strconv"
+import "strings"
 
 type AddressFieldConfig struct {
 	Field    string // e.g. "req_company_name" (legacy)
@@ -96,7 +97,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("/projects/" + data.ProjectID + "/edit")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 85, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 86, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -109,7 +110,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.ProjectName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 90, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 91, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -132,7 +133,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 111, Col: 10}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 112, Col: 10}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -155,7 +156,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 		var templ_7745c5c3_Var5 templ.SafeURL
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/projects/" + data.ProjectID + "/settings"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 117, Col: 88}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 118, Col: 88}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -184,7 +185,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(addrType.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 140, Col: 85}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 141, Col: 85}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -202,7 +203,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(addrType.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 142, Col: 85}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 143, Col: 85}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -225,7 +226,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(col.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 164, Col: 19}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 165, Col: 19}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -238,7 +239,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(addrType.Type + "." + col.Name + ".required")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 169, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 170, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -261,7 +262,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(addrType.Type + "." + col.Name + ".show_in_table")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 180, Col: 65}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 181, Col: 65}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -284,7 +285,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(addrType.Type + "." + col.Name + ".show_in_print")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 191, Col: 65}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 192, Col: 65}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -338,7 +339,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(addr.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 226, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 227, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -361,7 +362,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(addr.CompanyName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 231, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 232, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -379,7 +380,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(addr.City)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 233, Col: 26}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 234, Col: 26}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 				if templ_7745c5c3_Err != nil {
@@ -403,7 +404,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(addr.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 247, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 248, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -426,7 +427,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(addr.CompanyName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 252, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 253, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -444,7 +445,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(addr.City)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 254, Col: 26}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 255, Col: 26}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -463,7 +464,7 @@ func ProjectSettingsContent(data ProjectSettingsData) templ.Component {
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs("/projects/" + data.ProjectID + "/edit")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 266, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 267, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -572,9 +573,9 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 					.replaceAll('{PROJECT_REF}', this.projectRef);
 				return r;
 			}
-		}`, cfg.Prefix, cfg.Format, cfg.Separator, cfg.Padding, projectRef, previewTypeCode(group)))
+		}`, jsEsc(cfg.Prefix), jsEsc(cfg.Format), jsEsc(cfg.Separator), cfg.Padding, jsEsc(projectRef), previewTypeCode(group)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 312, Col: 93}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 313, Col: 121}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
@@ -587,7 +588,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 314, Col: 10}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 315, Col: 10}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
@@ -600,7 +601,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs("{PREFIX}")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 319, Col: 93}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 320, Col: 93}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
@@ -613,7 +614,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs("{TYPE}")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 320, Col: 91}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 321, Col: 91}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
@@ -626,7 +627,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs("{FY}")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 321, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 322, Col: 89}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {
@@ -639,7 +640,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs("{SEQ}")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 322, Col: 90}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 323, Col: 90}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 		if templ_7745c5c3_Err != nil {
@@ -652,7 +653,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 		var templ_7745c5c3_Var28 string
 		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs("{SEP}")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 323, Col: 90}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 324, Col: 90}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 		if templ_7745c5c3_Err != nil {
@@ -665,7 +666,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs("{PROJECT_REF}")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 324, Col: 98}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 325, Col: 98}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
@@ -678,7 +679,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(group + "_prefix")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 332, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 333, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 		if templ_7745c5c3_Err != nil {
@@ -691,7 +692,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.Prefix)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 333, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 334, Col: 24}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -704,7 +705,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(group + "_separator")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 342, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 343, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -717,7 +718,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.Separator)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 343, Col: 27}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 344, Col: 27}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
@@ -730,7 +731,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(group + "_seq_padding")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 352, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 353, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
@@ -743,7 +744,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 		var templ_7745c5c3_Var35 string
 		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(cfg.Padding))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 353, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 354, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 		if templ_7745c5c3_Err != nil {
@@ -756,7 +757,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 		var templ_7745c5c3_Var36 string
 		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(group + "_number_format")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 363, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 364, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 		if templ_7745c5c3_Err != nil {
@@ -769,7 +770,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 		var templ_7745c5c3_Var37 string
 		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.Format)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 364, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 365, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 		if templ_7745c5c3_Err != nil {
@@ -787,7 +788,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 			var templ_7745c5c3_Var38 string
 			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(cfg.SeqStartTDC))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 376, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 377, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 			if templ_7745c5c3_Err != nil {
@@ -800,7 +801,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 			var templ_7745c5c3_Var39 string
 			templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(cfg.SeqStartODC))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 385, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 386, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 			if templ_7745c5c3_Err != nil {
@@ -813,7 +814,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 			var templ_7745c5c3_Var40 string
 			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(cfg.SeqStartSTDC))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 394, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 395, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 			if templ_7745c5c3_Err != nil {
@@ -831,7 +832,7 @@ func numberingSection(title, group string, cfg NumberingConfig, projectRef strin
 			var templ_7745c5c3_Var41 string
 			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(cfg.SeqStart))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 406, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/project_settings.templ`, Line: 407, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 			if templ_7745c5c3_Err != nil {
@@ -856,6 +857,13 @@ func previewTypeCode(group string) string {
 		return "PO"
 	}
 	return "TDC"
+}
+
+// jsEsc escapes a string for safe inclusion in a JavaScript single-quoted string literal.
+func jsEsc(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `'`, `\'`)
+	return s
 }
 
 var _ = templruntime.GeneratedTemplate

@@ -95,40 +95,46 @@ func NextDocNumber(app *pocketbase.PocketBase, projectID, seqType string, docDat
 		seqStart = 1
 	}
 
-	// Find or create sequence record
+	// Find or create sequence record within a transaction for atomicity
 	seqCol, err := app.FindCollectionByNameOrId("number_sequences")
 	if err != nil {
 		return "", fmt.Errorf("number_sequences collection not found: %w", err)
 	}
 
-	records, err := app.FindRecordsByFilter(
-		seqCol,
-		"project = {:pid} && sequence_type = {:type} && financial_year = {:fy}",
-		"", 1, 0,
-		map[string]any{"pid": projectID, "type": seqType, "fy": fy},
-	)
-	if err != nil {
-		return "", fmt.Errorf("failed to query sequences: %w", err)
-	}
-
 	var nextNum int
-	if len(records) > 0 {
-		rec := records[0]
-		nextNum = rec.GetInt("last_number") + 1
-		rec.Set("last_number", nextNum)
-		if err := app.Save(rec); err != nil {
-			return "", fmt.Errorf("failed to update sequence: %w", err)
+	err = app.RunInTransaction(func(txApp core.App) error {
+		records, err := txApp.FindRecordsByFilter(
+			seqCol,
+			"project = {:pid} && sequence_type = {:type} && financial_year = {:fy}",
+			"", 1, 0,
+			map[string]any{"pid": projectID, "type": seqType, "fy": fy},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to query sequences: %w", err)
 		}
-	} else {
-		nextNum = seqStart
-		rec := core.NewRecord(seqCol)
-		rec.Set("project", projectID)
-		rec.Set("sequence_type", seqType)
-		rec.Set("financial_year", fy)
-		rec.Set("last_number", nextNum)
-		if err := app.Save(rec); err != nil {
-			return "", fmt.Errorf("failed to create sequence: %w", err)
+
+		if len(records) > 0 {
+			rec := records[0]
+			nextNum = rec.GetInt("last_number") + 1
+			rec.Set("last_number", nextNum)
+			if err := txApp.Save(rec); err != nil {
+				return fmt.Errorf("failed to update sequence: %w", err)
+			}
+		} else {
+			nextNum = seqStart
+			rec := core.NewRecord(seqCol)
+			rec.Set("project", projectID)
+			rec.Set("sequence_type", seqType)
+			rec.Set("financial_year", fy)
+			rec.Set("last_number", nextNum)
+			if err := txApp.Save(rec); err != nil {
+				return fmt.Errorf("failed to create sequence: %w", err)
+			}
 		}
+		return nil
+	})
+	if err != nil {
+		return "", err
 	}
 
 	return FormatDocNumber(format, sep, prefix, seqType, fy, nextNum, padding, projRef), nil

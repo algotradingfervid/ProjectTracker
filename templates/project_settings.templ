@@ -2,6 +2,7 @@ package templates
 
 import "fmt"
 import "strconv"
+import "strings"
 
 type AddressFieldConfig struct {
 	Field    string // e.g. "req_company_name" (legacy)
@@ -309,7 +310,7 @@ templ numberingSection(title, group string, cfg NumberingConfig, projectRef stri
 					.replaceAll('{PROJECT_REF}', this.projectRef);
 				return r;
 			}
-		}`, cfg.Prefix, cfg.Format, cfg.Separator, cfg.Padding, projectRef, previewTypeCode(group)) }>
+		}`, jsEsc(cfg.Prefix), jsEsc(cfg.Format), jsEsc(cfg.Separator), cfg.Padding, jsEsc(projectRef), previewTypeCode(group)) }>
 		<div style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; color: var(--text-primary); text-transform: uppercase; margin-bottom: 16px;">
 			{ title }
 		</div>
@@ -426,4 +427,11 @@ func previewTypeCode(group string) string {
 		return "PO"
 	}
 	return "TDC"
+}
+
+// jsEsc escapes a string for safe inclusion in a JavaScript single-quoted string literal.
+func jsEsc(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `'`, `\'`)
+	return s
 }
