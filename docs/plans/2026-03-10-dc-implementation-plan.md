@@ -17,7 +17,7 @@
 | Phase | Status | Tasks Done | Next Task |
 |-------|--------|------------|-----------|
 | 1: Address Restructure | **Complete** | 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7 | — |
-| 2: Numbering System | Not started | — | 2.1: Create number_sequences collection |
+| 2: Numbering System | **Complete** | 2.1, 2.2, 2.3, 2.4 | — |
 | 3: DC Master Data | Not started | — | 3.1: Create DC collections |
 | 4: DC Wizard | Not started | — | 4.1: Wizard step 1 |
 | 5: DC Lifecycle | Not started | — | 5.1: DC list view |
@@ -25,7 +25,7 @@
 | 7: Shipment Groups | Not started | — | 7.1: Group detail |
 | 8: Testing & Polish | Not started | — | 8.1: Integration tests |
 
-**Resume from:** Phase 2, Task 2.1 — Create number_sequences Collection and Project Fields
+**Resume from:** Phase 3, Task 3.1 — Create DC Collections
 
 ---
 
@@ -632,7 +632,7 @@ git commit -m "refactor: update PO handlers for new address JSON format"
 
 PO and DC have **separate** numbering configurations with the same UI pattern. Each has its own prefix, format, separator, padding, and start numbers.
 
-### Task 2.1: Create `number_sequences` Collection and Project Fields
+### Task 2.1: Create `number_sequences` Collection and Project Fields ✅ DONE
 
 **Files:**
 - Modify: `collections/setup.go`
@@ -699,7 +699,7 @@ git commit -m "feat: add number_sequences collection with separate PO and DC num
 
 ---
 
-### Task 2.2: Numbering Service
+### Task 2.2: Numbering Service ✅ DONE
 
 **Files:**
 - Create: `services/numbering.go`
@@ -943,7 +943,7 @@ git commit -m "feat: add document numbering service with separate PO and DC conf
 
 ---
 
-### Task 2.3: Migrate PO Number Generation
+### Task 2.3: Migrate PO Number Generation ✅ DONE
 
 **Files:**
 - Modify: `services/po_number.go`
@@ -967,7 +967,7 @@ git commit -m "refactor: migrate PO number generation to configurable numbering 
 
 ---
 
-### Task 2.4: Add Numbering Config to Project Settings UI
+### Task 2.4: Add Numbering Config to Project Settings UI ✅ DONE
 
 **Files:**
 - Modify: `handlers/project_settings.go`
