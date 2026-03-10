@@ -362,6 +362,55 @@ func Setup(app *pocketbase.PocketBase) {
 		Name: "purchase_order", Required: true,
 		CollectionId: purchaseOrders.Id, CascadeDelete: true, MaxSelect: 1,
 	})
+
+	// ── Number Sequences (atomic counter per document type per FY) ───
+	ensureCollection(app, "number_sequences", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{
+			Name:          "project",
+			Required:      true,
+			CollectionId:  projects.Id,
+			CascadeDelete: true,
+			MaxSelect:     1,
+		})
+		c.Fields.Add(&core.SelectField{
+			Name:      "sequence_type",
+			Required:  true,
+			Values:    []string{"po", "tdc", "odc", "stdc"},
+			MaxSelect: 1,
+		})
+		c.Fields.Add(&core.TextField{Name: "financial_year", Required: true})
+		c.Fields.Add(&core.NumberField{Name: "last_number", Required: true})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+
+	// PO numbering config fields on projects
+	ensureField(app, "projects", &core.TextField{Name: "po_prefix"})
+	ensureField(app, "projects", &core.TextField{Name: "po_number_format"})
+	ensureField(app, "projects", &core.TextField{Name: "po_separator"})
+	ensureField(app, "projects", &core.NumberField{Name: "po_seq_padding"})
+	ensureField(app, "projects", &core.NumberField{Name: "po_seq_start"})
+
+	// DC numbering config fields on projects
+	ensureField(app, "projects", &core.TextField{Name: "dc_prefix"})
+	ensureField(app, "projects", &core.TextField{Name: "dc_number_format"})
+	ensureField(app, "projects", &core.TextField{Name: "dc_separator"})
+	ensureField(app, "projects", &core.NumberField{Name: "dc_seq_padding"})
+	ensureField(app, "projects", &core.NumberField{Name: "dc_seq_start_tdc"})
+	ensureField(app, "projects", &core.NumberField{Name: "dc_seq_start_odc"})
+	ensureField(app, "projects", &core.NumberField{Name: "dc_seq_start_stdc"})
+
+	// Default addresses for DC wizard
+	ensureField(app, "projects", &core.RelationField{
+		Name:         "default_bill_from",
+		CollectionId: addresses.Id,
+		MaxSelect:    1,
+	})
+	ensureField(app, "projects", &core.RelationField{
+		Name:         "default_dispatch_from",
+		CollectionId: addresses.Id,
+		MaxSelect:    1,
+	})
 }
 
 // ensureField adds a field to an existing collection if it doesn't already exist.
