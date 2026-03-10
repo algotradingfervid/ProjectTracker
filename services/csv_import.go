@@ -275,7 +275,8 @@ func loadShipToCompanyNames(app *pocketbase.PocketBase, projectID string) (map[s
 
 	names := make(map[string]bool, len(records))
 	for _, r := range records {
-		name := r.GetString("company_name")
+		data := ReadAddressData(r)
+		name := data["company_name"]
 		if name != "" {
 			names[name] = true
 		}

@@ -269,10 +269,11 @@ func fetchShipToOptions(app *pocketbase.PocketBase, projectID string) (bool, []t
 
 	var options []templates.ShipToOption
 	for _, rec := range records {
+		data := readAddressData(rec)
 		options = append(options, templates.ShipToOption{
 			ID:          rec.Id,
-			CompanyName: rec.GetString("company_name"),
-			City:        rec.GetString("city"),
+			CompanyName: data["company_name"],
+			City:        data["city"],
 		})
 	}
 

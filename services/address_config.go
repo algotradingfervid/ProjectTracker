@@ -1,6 +1,10 @@
 package services
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/pocketbase/pocketbase/core"
+)
 
 // ColumnDef describes a single column in an address configuration.
 type ColumnDef struct {
@@ -79,4 +83,29 @@ func setReq(cols []ColumnDef, names ...string) {
 	for i := range cols {
 		cols[i].Required = nameSet[cols[i].Name]
 	}
+}
+
+// ReadAddressData reads address field values from a record's JSON data field
+// with fallback to fixed fields for backward compatibility.
+func ReadAddressData(rec *core.Record) map[string]string {
+	if dataJSON := rec.GetString("data"); dataJSON != "" && dataJSON != "null" {
+		var parsed map[string]string
+		if err := json.Unmarshal([]byte(dataJSON), &parsed); err == nil && len(parsed) > 0 {
+			return parsed
+		}
+	}
+
+	// Fall back to fixed fields
+	data := make(map[string]string)
+	fixedFields := []string{
+		"company_name", "contact_person", "phone", "email", "gstin", "pan", "cin",
+		"address_line_1", "address_line_2", "landmark", "district", "city", "state",
+		"pin_code", "country", "fax", "website",
+	}
+	for _, f := range fixedFields {
+		if v := rec.GetString(f); v != "" {
+			data[f] = v
+		}
+	}
+	return data
 }

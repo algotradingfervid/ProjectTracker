@@ -7,14 +7,18 @@ import (
 
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
+
+	"projectcreation/collections"
 )
 
 // POExportData holds all data needed to generate a PO PDF.
 type POExportData struct {
-	// Company (hardcoded for now)
+	// Company branding (from app_settings)
 	CompanyName    string
 	CompanyAddress string
 	CompanyEmail   string
+	LogoBytes      []byte
+	LogoFilename   string
 
 	// PO Header
 	PONumber     string
@@ -203,10 +207,16 @@ func BuildPOExportData(app *pocketbase.PocketBase, poId string) (*POExportData, 
 	// 7. Calculate order-level totals
 	totals := CalcPOTotals(calcItems)
 
+	// Fetch company branding from app_settings
+	companyName := collections.GetCompanyName(app)
+	logoBytes, logoFilename, _ := collections.GetLogoBytes(app)
+
 	return &POExportData{
-		CompanyName:    "FSS ENGINEERING",
-		CompanyAddress: "Bangalore, Karnataka",
-		CompanyEmail:   "info@fssengineering.com",
+		CompanyName:    companyName,
+		CompanyAddress: "",
+		CompanyEmail:   "",
+		LogoBytes:      logoBytes,
+		LogoFilename:   logoFilename,
 
 		PONumber:     po.GetString("po_number"),
 		OrderDate:    po.GetString("order_date"),
@@ -236,21 +246,23 @@ func BuildPOExportData(app *pocketbase.PocketBase, poId string) (*POExportData, 
 
 // buildExportAddress creates a POExportAddress from a PocketBase address record.
 func buildExportAddress(addr *core.Record) *POExportAddress {
+	data := ReadAddressData(addr)
+
 	addrParts := []string{}
-	if line1 := addr.GetString("address_line_1"); line1 != "" {
+	if line1 := data["address_line_1"]; line1 != "" {
 		addrParts = append(addrParts, line1)
 	}
-	if line2 := addr.GetString("address_line_2"); line2 != "" {
+	if line2 := data["address_line_2"]; line2 != "" {
 		addrParts = append(addrParts, line2)
 	}
 	cityStateParts := []string{}
-	if city := addr.GetString("city"); city != "" {
+	if city := data["city"]; city != "" {
 		cityStateParts = append(cityStateParts, city)
 	}
-	if state := addr.GetString("state"); state != "" {
+	if state := data["state"]; state != "" {
 		cityStateParts = append(cityStateParts, state)
 	}
-	if pin := addr.GetString("pin_code"); pin != "" {
+	if pin := data["pin_code"]; pin != "" {
 		cityStateParts = append(cityStateParts, pin)
 	}
 	if len(cityStateParts) > 0 {
@@ -258,10 +270,10 @@ func buildExportAddress(addr *core.Record) *POExportAddress {
 	}
 
 	return &POExportAddress{
-		CompanyName:   addr.GetString("company_name"),
+		CompanyName:   data["company_name"],
 		AddressLines:  strings.Join(addrParts, "\n"),
-		ContactNo:     addr.GetString("phone"),
-		ContactPerson: addr.GetString("contact_name"),
-		GSTIN:         addr.GetString("gstin"),
+		ContactNo:     data["phone"],
+		ContactPerson: data["contact_person"],
+		GSTIN:         data["gstin"],
 	}
 }

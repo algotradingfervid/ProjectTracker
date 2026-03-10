@@ -258,7 +258,8 @@ func buildShipToLookup(app *pocketbase.PocketBase, projectID string) (map[string
 
 	lookup := make(map[string]string, len(records))
 	for _, r := range records {
-		name := r.GetString("company_name")
+		data := ReadAddressData(r)
+		name := data["company_name"]
 		if name != "" {
 			lookup[name] = r.Id
 		}

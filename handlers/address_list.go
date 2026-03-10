@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+
 	"github.com/a-h/templ"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -302,27 +303,7 @@ func HandleAddressCount(app *pocketbase.PocketBase, addressType AddressType) fun
 
 // readAddressData reads address field values from JSON data field with fallback to fixed fields.
 func readAddressData(rec *core.Record) map[string]string {
-	// Try reading from JSON data field first
-	if dataJSON := rec.GetString("data"); dataJSON != "" && dataJSON != "null" {
-		var parsed map[string]string
-		if err := json.Unmarshal([]byte(dataJSON), &parsed); err == nil && len(parsed) > 0 {
-			return parsed
-		}
-	}
-
-	// Fall back to fixed fields
-	data := make(map[string]string)
-	fixedFields := []string{
-		"company_name", "contact_person", "phone", "email", "gstin", "pan", "cin",
-		"address_line_1", "address_line_2", "landmark", "district", "city", "state",
-		"pin_code", "country", "fax", "website",
-	}
-	for _, f := range fixedFields {
-		if v := rec.GetString(f); v != "" {
-			data[f] = v
-		}
-	}
-	return data
+	return services.ReadAddressData(rec)
 }
 
 // getOrCreateAddressConfig fetches or creates the address_config for a project/type.

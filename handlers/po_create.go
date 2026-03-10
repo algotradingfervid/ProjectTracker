@@ -67,12 +67,13 @@ func fetchAddressesByType(app *pocketbase.PocketBase, projectId, addressType str
 
 	var items []templates.AddressSelectItem
 	for _, rec := range records {
+		data := readAddressData(rec)
 		items = append(items, templates.AddressSelectItem{
 			ID:           rec.Id,
-			CompanyName:  rec.GetString("company_name"),
-			AddressLine1: rec.GetString("address_line_1"),
-			City:         rec.GetString("city"),
-			State:        rec.GetString("state"),
+			CompanyName:  data["company_name"],
+			AddressLine1: data["address_line_1"],
+			City:         data["city"],
+			State:        data["state"],
 		})
 	}
 	return items

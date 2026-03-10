@@ -92,7 +92,8 @@ func HandleAddressDeleteInfo(app *pocketbase.PocketBase) func(*core.RequestEvent
 		record, _ := app.FindRecordById("addresses", addressID)
 		companyName := ""
 		if record != nil {
-			companyName = record.GetString("company_name")
+			data := readAddressData(record)
+			companyName = data["company_name"]
 		}
 
 		return e.JSON(http.StatusOK, map[string]any{

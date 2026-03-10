@@ -9,6 +9,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 
+	"projectcreation/collections"
 	"projectcreation/services"
 	"projectcreation/templates"
 )
@@ -64,16 +65,17 @@ func HandlePOView(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 		var billTo *templates.POViewAddress
 		if billToID := po.GetString("bill_to_address"); billToID != "" {
 			if addr, err := app.FindRecordById("addresses", billToID); err == nil {
+				data := readAddressData(addr)
 				billTo = &templates.POViewAddress{
-					CompanyName:  addr.GetString("company_name"),
-					AddressLine1: addr.GetString("address_line_1"),
-					AddressLine2: addr.GetString("address_line_2"),
-					City:         addr.GetString("city"),
-					State:        addr.GetString("state"),
-					PinCode:      addr.GetString("pin_code"),
-					GSTIN:        addr.GetString("gstin"),
-					ContactName:  addr.GetString("contact_name"),
-					Phone:        addr.GetString("phone"),
+					CompanyName:  data["company_name"],
+					AddressLine1: data["address_line_1"],
+					AddressLine2: data["address_line_2"],
+					City:         data["city"],
+					State:        data["state"],
+					PinCode:      data["pin_code"],
+					GSTIN:        data["gstin"],
+					ContactName:  data["contact_person"],
+					Phone:        data["phone"],
 				}
 			} else {
 				log.Printf("po_view: could not find bill_to address %s: %v", billToID, err)
@@ -84,16 +86,17 @@ func HandlePOView(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 		var shipTo *templates.POViewAddress
 		if shipToID := po.GetString("ship_to_address"); shipToID != "" {
 			if addr, err := app.FindRecordById("addresses", shipToID); err == nil {
+				data := readAddressData(addr)
 				shipTo = &templates.POViewAddress{
-					CompanyName:  addr.GetString("company_name"),
-					AddressLine1: addr.GetString("address_line_1"),
-					AddressLine2: addr.GetString("address_line_2"),
-					City:         addr.GetString("city"),
-					State:        addr.GetString("state"),
-					PinCode:      addr.GetString("pin_code"),
-					GSTIN:        addr.GetString("gstin"),
-					ContactName:  addr.GetString("contact_name"),
-					Phone:        addr.GetString("phone"),
+					CompanyName:  data["company_name"],
+					AddressLine1: data["address_line_1"],
+					AddressLine2: data["address_line_2"],
+					City:         data["city"],
+					State:        data["state"],
+					PinCode:      data["pin_code"],
+					GSTIN:        data["gstin"],
+					ContactName:  data["contact_person"],
+					Phone:        data["phone"],
 				}
 			} else {
 				log.Printf("po_view: could not find ship_to address %s: %v", shipToID, err)
@@ -147,6 +150,8 @@ func HandlePOView(app *pocketbase.PocketBase) func(*core.RequestEvent) error {
 
 		// 10. Build the view data struct
 		data := templates.POViewData{
+			CompanyName:    collections.GetCompanyName(app),
+			LogoURL:        collections.GetLogoURL(app),
 			ProjectID:      projectId,
 			POID:           po.Id,
 			PONumber:       po.GetString("po_number"),
