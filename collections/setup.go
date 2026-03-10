@@ -384,6 +384,161 @@ func Setup(app *pocketbase.PocketBase) {
 		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
 	})
 
+	// ── DC Templates ────────────────────────────────────────────────
+	dcTemplatesCol := ensureCollection(app, "dc_templates", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.TextField{Name: "name", Required: true})
+		c.Fields.Add(&core.TextField{Name: "purpose"})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+
+	// DC Template Items — references BOQ sub_items or sub_sub_items
+	ensureCollection(app, "dc_template_items", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{Name: "template", Required: true, CollectionId: dcTemplatesCol.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.SelectField{Name: "source_item_type", Required: true, Values: []string{"sub_item", "sub_sub_item"}, MaxSelect: 1})
+		c.Fields.Add(&core.TextField{Name: "source_item_id", Required: true})
+		c.Fields.Add(&core.NumberField{Name: "default_quantity"})
+		c.Fields.Add(&core.SelectField{Name: "serial_tracking", Required: true, Values: []string{"none", "optional", "required"}, MaxSelect: 1})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+	})
+
+	// ── Transporters ────────────────────────────────────────────────
+	transportersCol := ensureCollection(app, "transporters", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.TextField{Name: "company_name", Required: true})
+		c.Fields.Add(&core.TextField{Name: "contact_person"})
+		c.Fields.Add(&core.TextField{Name: "phone"})
+		c.Fields.Add(&core.TextField{Name: "gst_number"})
+		c.Fields.Add(&core.BoolField{Name: "is_active"})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+
+	// Transporter Vehicles
+	ensureCollection(app, "transporter_vehicles", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{Name: "transporter", Required: true, CollectionId: transportersCol.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.TextField{Name: "vehicle_number", Required: true})
+		c.Fields.Add(&core.TextField{Name: "vehicle_type"})
+		c.Fields.Add(&core.TextField{Name: "driver_name"})
+		c.Fields.Add(&core.TextField{Name: "driver_phone"})
+		c.Fields.Add(&core.FileField{Name: "rc_image", MaxSelect: 1, MaxSize: 5242880, MimeTypes: []string{"image/jpeg", "image/png", "application/pdf"}})
+		c.Fields.Add(&core.FileField{Name: "driver_license", MaxSelect: 1, MaxSize: 5242880, MimeTypes: []string{"image/jpeg", "image/png", "application/pdf"}})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+	})
+
+	// ── Shipment Groups ─────────────────────────────────────────────
+	shipmentGroupsCol := ensureCollection(app, "shipment_groups", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.RelationField{Name: "template", CollectionId: dcTemplatesCol.Id, MaxSelect: 1})
+		c.Fields.Add(&core.NumberField{Name: "num_locations", Required: true})
+		c.Fields.Add(&core.SelectField{Name: "tax_type", Required: true, Values: []string{"cgst_sgst", "igst"}, MaxSelect: 1})
+		c.Fields.Add(&core.BoolField{Name: "reverse_charge"})
+		c.Fields.Add(&core.SelectField{Name: "status", Required: true, Values: []string{"draft", "issued"}, MaxSelect: 1})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+
+	// ── Delivery Challans ───────────────────────────────────────────
+	dcCol := ensureCollection(app, "delivery_challans", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.TextField{Name: "dc_number", Required: true})
+		c.Fields.Add(&core.SelectField{Name: "dc_type", Required: true, Values: []string{"transit", "official", "transfer"}, MaxSelect: 1})
+		c.Fields.Add(&core.SelectField{Name: "status", Required: true, Values: []string{"draft", "issued", "splitting", "split"}, MaxSelect: 1})
+		c.Fields.Add(&core.RelationField{Name: "template", CollectionId: dcTemplatesCol.Id, MaxSelect: 1})
+		c.Fields.Add(&core.RelationField{Name: "bill_from_address", CollectionId: addresses.Id, MaxSelect: 1})
+		c.Fields.Add(&core.RelationField{Name: "dispatch_from_address", CollectionId: addresses.Id, MaxSelect: 1})
+		c.Fields.Add(&core.RelationField{Name: "bill_to_address", CollectionId: addresses.Id, MaxSelect: 1})
+		c.Fields.Add(&core.RelationField{Name: "ship_to_address", CollectionId: addresses.Id, MaxSelect: 1})
+		c.Fields.Add(&core.TextField{Name: "challan_date", Required: true})
+		c.Fields.Add(&core.TextField{Name: "issued_at"})
+		c.Fields.Add(&core.RelationField{Name: "shipment_group", CollectionId: shipmentGroupsCol.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+
+	// DC Line Items
+	dcLineItemsCol := ensureCollection(app, "dc_line_items", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{Name: "dc", Required: true, CollectionId: dcCol.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.SelectField{Name: "source_item_type", Required: true, Values: []string{"sub_item", "sub_sub_item"}, MaxSelect: 1})
+		c.Fields.Add(&core.TextField{Name: "source_item_id", Required: true})
+		c.Fields.Add(&core.NumberField{Name: "quantity", Required: true})
+		c.Fields.Add(&core.NumberField{Name: "rate"})
+		c.Fields.Add(&core.NumberField{Name: "tax_percentage"})
+		c.Fields.Add(&core.NumberField{Name: "taxable_amount"})
+		c.Fields.Add(&core.NumberField{Name: "tax_amount"})
+		c.Fields.Add(&core.NumberField{Name: "total_amount"})
+		c.Fields.Add(&core.NumberField{Name: "line_order"})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+
+	// Serial Numbers
+	ensureCollection(app, "serial_numbers", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{Name: "project", Required: true, CollectionId: projects.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.RelationField{Name: "line_item", Required: true, CollectionId: dcLineItemsCol.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.TextField{Name: "serial_number", Required: true})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+	})
+
+	// DC Transit Details
+	ensureCollection(app, "dc_transit_details", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{Name: "dc", Required: true, CollectionId: dcCol.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.RelationField{Name: "transporter", CollectionId: transportersCol.Id, MaxSelect: 1})
+		c.Fields.Add(&core.TextField{Name: "vehicle_number"})
+		c.Fields.Add(&core.TextField{Name: "eway_bill_number"})
+		c.Fields.Add(&core.TextField{Name: "docket_number"})
+		c.Fields.Add(&core.TextField{Name: "notes"})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+	})
+
+	// ── Transfer DCs ────────────────────────────────────────────────
+	transferDCsCol := ensureCollection(app, "transfer_dcs", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{Name: "dc", Required: true, CollectionId: dcCol.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.RelationField{Name: "hub_address", CollectionId: addresses.Id, MaxSelect: 1})
+		c.Fields.Add(&core.RelationField{Name: "template", CollectionId: dcTemplatesCol.Id, MaxSelect: 1})
+		c.Fields.Add(&core.SelectField{Name: "tax_type", Required: true, Values: []string{"cgst_sgst", "igst"}, MaxSelect: 1})
+		c.Fields.Add(&core.BoolField{Name: "reverse_charge"})
+		c.Fields.Add(&core.RelationField{Name: "transporter", CollectionId: transportersCol.Id, MaxSelect: 1})
+		c.Fields.Add(&core.TextField{Name: "vehicle_number"})
+		c.Fields.Add(&core.TextField{Name: "eway_bill_number"})
+		c.Fields.Add(&core.TextField{Name: "docket_number"})
+		c.Fields.Add(&core.TextField{Name: "notes"})
+		c.Fields.Add(&core.NumberField{Name: "num_destinations", Required: true})
+		c.Fields.Add(&core.NumberField{Name: "num_split"})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+
+	// Transfer DC Destinations
+	transferDCDestsCol := ensureCollection(app, "transfer_dc_destinations", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{Name: "transfer_dc", Required: true, CollectionId: transferDCsCol.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.RelationField{Name: "ship_to_address", Required: true, CollectionId: addresses.Id, MaxSelect: 1})
+		c.Fields.Add(&core.TextField{Name: "split_group"})
+		c.Fields.Add(&core.BoolField{Name: "is_split"})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+	})
+
+	// Transfer DC Destination Quantities
+	ensureCollection(app, "transfer_dc_dest_quantities", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{Name: "destination", Required: true, CollectionId: transferDCDestsCol.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.SelectField{Name: "source_item_type", Required: true, Values: []string{"sub_item", "sub_sub_item"}, MaxSelect: 1})
+		c.Fields.Add(&core.TextField{Name: "source_item_id", Required: true})
+		c.Fields.Add(&core.NumberField{Name: "quantity", Required: true})
+	})
+
+	// Transfer DC Splits
+	transferDCSplitsCol := ensureCollection(app, "transfer_dc_splits", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{Name: "transfer_dc", Required: true, CollectionId: transferDCsCol.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.RelationField{Name: "shipment_group", Required: true, CollectionId: shipmentGroupsCol.Id, CascadeDelete: true, MaxSelect: 1})
+		c.Fields.Add(&core.NumberField{Name: "split_number", Required: true})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+	})
+
+	// Back-references on shipment_groups
+	ensureField(app, "shipment_groups", &core.RelationField{Name: "transfer_dc", CollectionId: transferDCsCol.Id, MaxSelect: 1})
+	ensureField(app, "shipment_groups", &core.RelationField{Name: "split", CollectionId: transferDCSplitsCol.Id, MaxSelect: 1})
+
 	// PO numbering config fields on projects
 	ensureField(app, "projects", &core.TextField{Name: "po_prefix"})
 	ensureField(app, "projects", &core.TextField{Name: "po_number_format"})
