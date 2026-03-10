@@ -133,6 +133,30 @@ func Setup(app *pocketbase.PocketBase) {
 		c.Fields.Add(&core.NumberField{Name: "gst_percent", Required: true})
 	})
 
+	// ── Address Configs (flexible column definitions per address type per project) ─
+	addressConfigsCol := ensureCollection(app, "address_configs", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{
+			Name:          "project",
+			Required:      true,
+			CollectionId:  projects.Id,
+			CascadeDelete: true,
+			MaxSelect:     1,
+		})
+		c.Fields.Add(&core.SelectField{
+			Name:      "address_type",
+			Required:  true,
+			Values:    []string{"bill_from", "dispatch_from", "bill_to", "ship_to", "install_at"},
+			MaxSelect: 1,
+		})
+		c.Fields.Add(&core.JSONField{
+			Name:     "columns",
+			Required: true,
+			MaxSize:  10000,
+		})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+
 	// ── Addresses ────────────────────────────────────────────────────
 	addresses := ensureCollection(app, "addresses", func(c *core.Collection) {
 		c.Fields.Add(&core.SelectField{
@@ -187,6 +211,23 @@ func Setup(app *pocketbase.PocketBase) {
 		MaxSelect:     1,
 	})
 
+	// New flexible address fields (coexist with old fixed fields during migration)
+	ensureField(app, "addresses", &core.RelationField{
+		Name:          "config",
+		Required:      false, // not required yet — migration will populate
+		CollectionId:  addressConfigsCol.Id,
+		CascadeDelete: true,
+		MaxSelect:     1,
+	})
+	ensureField(app, "addresses", &core.TextField{Name: "address_code"})
+	ensureField(app, "addresses", &core.JSONField{
+		Name:    "data",
+		MaxSize: 50000,
+	})
+	ensureField(app, "addresses", &core.TextField{Name: "district_name"})
+	ensureField(app, "addresses", &core.TextField{Name: "mandal_name"})
+	ensureField(app, "addresses", &core.TextField{Name: "mandal_code"})
+
 	// ── Project Address Settings ─────────────────────────────────────
 	ensureCollection(app, "project_address_settings", func(c *core.Collection) {
 		c.Fields.Add(&core.RelationField{
@@ -225,32 +266,6 @@ func Setup(app *pocketbase.PocketBase) {
 		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
 		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
 	})
-
-	// ── Address Configs (flexible column definitions per address type per project) ─
-	addressConfigsCol := ensureCollection(app, "address_configs", func(c *core.Collection) {
-		c.Fields.Add(&core.RelationField{
-			Name:          "project",
-			Required:      true,
-			CollectionId:  projects.Id,
-			CascadeDelete: true,
-			MaxSelect:     1,
-		})
-		c.Fields.Add(&core.SelectField{
-			Name:      "address_type",
-			Required:  true,
-			Values:    []string{"bill_from", "dispatch_from", "bill_to", "ship_to", "install_at"},
-			MaxSelect: 1,
-		})
-		c.Fields.Add(&core.JSONField{
-			Name:     "columns",
-			Required: true,
-			MaxSize:  10000,
-		})
-		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
-		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
-	})
-	// Suppress unused variable warning — addressConfigsCol used in later tasks
-	_ = addressConfigsCol
 
 	// ── Vendors (global vendor directory) ────────────────────────────
 	vendors := ensureCollection(app, "vendors", func(c *core.Collection) {
