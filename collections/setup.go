@@ -8,9 +8,21 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-// Setup programmatically creates/ensures the projects, boqs, main_boq_items,
-// sub_items, sub_sub_items, addresses, and project_address_settings collections.
+// Setup programmatically creates/ensures all application collections.
 func Setup(app *pocketbase.PocketBase) {
+	// ── App Settings (singleton for company branding) ────────────
+	ensureCollection(app, "app_settings", func(c *core.Collection) {
+		c.Fields.Add(&core.TextField{Name: "company_name", Required: true})
+		c.Fields.Add(&core.FileField{
+			Name:      "logo",
+			MaxSelect: 1,
+			MaxSize:   2 * 1024 * 1024, // 2MB
+			MimeTypes: []string{"image/png", "image/jpeg", "image/svg+xml", "image/webp"},
+		})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+
 	// ── Projects (top-level container for BOQs and addresses) ────────
 	projects := ensureCollection(app, "projects", func(c *core.Collection) {
 		c.Fields.Add(&core.TextField{Name: "name", Required: true})
@@ -213,6 +225,32 @@ func Setup(app *pocketbase.PocketBase) {
 		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
 		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
 	})
+
+	// ── Address Configs (flexible column definitions per address type per project) ─
+	addressConfigsCol := ensureCollection(app, "address_configs", func(c *core.Collection) {
+		c.Fields.Add(&core.RelationField{
+			Name:          "project",
+			Required:      true,
+			CollectionId:  projects.Id,
+			CascadeDelete: true,
+			MaxSelect:     1,
+		})
+		c.Fields.Add(&core.SelectField{
+			Name:      "address_type",
+			Required:  true,
+			Values:    []string{"bill_from", "dispatch_from", "bill_to", "ship_to", "install_at"},
+			MaxSelect: 1,
+		})
+		c.Fields.Add(&core.JSONField{
+			Name:     "columns",
+			Required: true,
+			MaxSize:  10000,
+		})
+		c.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
+		c.Fields.Add(&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true})
+	})
+	// Suppress unused variable warning — addressConfigsCol used in later tasks
+	_ = addressConfigsCol
 
 	// ── Vendors (global vendor directory) ────────────────────────────
 	vendors := ensureCollection(app, "vendors", func(c *core.Collection) {
