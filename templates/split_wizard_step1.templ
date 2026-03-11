@@ -1,0 +1,202 @@
+package templates
+
+import "fmt"
+
+type SplitDestination struct {
+	ID          string
+	ShipToName  string
+	ShipToCity  string
+	ShipToState string
+	IsSplit     bool
+	TotalQty    int
+}
+
+type SplitWizardStep1Data struct {
+	ProjectID    string
+	DCID         string
+	DCNumber     string
+	Destinations []SplitDestination
+	Errors       map[string]string
+}
+
+templ SplitWizardStep1Content(data SplitWizardStep1Data) {
+	<!-- Breadcrumbs -->
+	<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+		<a
+			hx-get={ fmt.Sprintf("/projects/%s", data.ProjectID) }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none; cursor: pointer;"
+		>
+			PROJECT
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<a
+			hx-get={ fmt.Sprintf("/projects/%s/dcs/", data.ProjectID) }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none; cursor: pointer;"
+		>
+			DELIVERY CHALLANS
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<a
+			hx-get={ fmt.Sprintf("/projects/%s/dcs/%s", data.ProjectID, data.DCID) }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none; cursor: pointer;"
+		>
+			{ data.DCNumber }
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+			SPLIT WIZARD
+		</span>
+	</div>
+
+	<!-- Page Title -->
+	<div class="flex items-center justify-between" style="margin-bottom: 32px;">
+		<div>
+			<h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: 0.5px;">
+				SPLIT TRANSFER DC
+			</h1>
+			<p style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin: 4px 0 0 0;">
+				{ data.DCNumber } — Step 1 of 3: Select Destinations
+			</p>
+		</div>
+		<!-- Step indicator -->
+		<div class="flex items-center" style="gap: 8px;">
+			<div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background-color: var(--terracotta); color: #FFFFFF; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;">
+				1
+			</div>
+			<div style="width: 24px; height: 2px; background-color: #D1CCC4;"></div>
+			<div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background-color: #E8E4DC; color: var(--text-muted); font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;">
+				2
+			</div>
+			<div style="width: 24px; height: 2px; background-color: #D1CCC4;"></div>
+			<div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background-color: #E8E4DC; color: var(--text-muted); font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;">
+				3
+			</div>
+		</div>
+	</div>
+
+	<!-- Form -->
+	<form
+		hx-post={ fmt.Sprintf("/projects/%s/transfer-dcs/%s/split/step2", data.ProjectID, data.DCID) }
+		hx-target="#main-content"
+		hx-swap="innerHTML"
+	>
+		<div style="max-width: 800px; background-color: #FFFFFF; padding: 32px; border: 1px solid #D1CCC4;">
+			<div style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); text-transform: uppercase; margin-bottom: 16px;">
+				SELECT DESTINATIONS TO SPLIT
+			</div>
+			<p style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin: 0 0 20px 0;">
+				Choose which destinations to include in this split. Already-split destinations are shown for reference but cannot be selected again.
+			</p>
+
+			if data.Errors["destinations"] != "" {
+				<div style="padding: 10px 16px; margin-bottom: 16px; background-color: #FEE2E2; border: 1px solid #FECACA; font-family: 'Inter', sans-serif; font-size: 13px; color: #DC2626;">
+					{ data.Errors["destinations"] }
+				</div>
+			}
+
+			<table style="width: 100%; border-collapse: collapse; border: 1px solid #D1CCC4;">
+				<thead>
+					<tr style="background-color: var(--bg-sidebar);">
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: center; padding: 10px 12px; width: 50px; text-transform: uppercase;">
+							SELECT
+						</th>
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: left; padding: 10px 12px; text-transform: uppercase;">
+							DESTINATION
+						</th>
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: left; padding: 10px 12px; text-transform: uppercase;">
+							LOCATION
+						</th>
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: right; padding: 10px 12px; text-transform: uppercase;">
+							TOTAL QTY
+						</th>
+						<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: center; padding: 10px 12px; text-transform: uppercase;">
+							STATUS
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+					for i, dest := range data.Destinations {
+						<tr style={ splitDestRowStyle(i) }>
+							<td style="text-align: center; padding: 10px 12px;">
+								if dest.IsSplit {
+									<input type="checkbox" disabled style="opacity: 0.4; cursor: not-allowed;" />
+								} else {
+									<input type="checkbox" name="destination_ids" value={ dest.ID } style="width: 16px; height: 16px; cursor: pointer; accent-color: var(--terracotta);" />
+								}
+							</td>
+							<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); padding: 10px 12px; font-weight: 500;">
+								{ dest.ShipToName }
+							</td>
+							<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); padding: 10px 12px;">
+								if dest.ShipToCity != "" {
+									{ dest.ShipToCity }
+								}
+								if dest.ShipToCity != "" && dest.ShipToState != "" {
+									{ ", " }
+								}
+								if dest.ShipToState != "" {
+									{ dest.ShipToState }
+								}
+							</td>
+							<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); text-align: right; padding: 10px 12px; font-weight: 500;">
+								{ fmt.Sprintf("%d", dest.TotalQty) }
+							</td>
+							<td style="text-align: center; padding: 10px 12px;">
+								if dest.IsSplit {
+									<span style="display: inline-block; padding: 2px 8px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; background-color: #D1FAE5; color: #065F46;">
+										SPLIT
+									</span>
+								} else {
+									<span style="display: inline-block; padding: 2px 8px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; background-color: #FEF3C7; color: #92400E;">
+										PENDING
+									</span>
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+
+		<!-- Actions -->
+		<div class="flex items-center justify-between" style="margin-top: 24px; max-width: 800px;">
+			<a
+				hx-get={ fmt.Sprintf("/projects/%s/dcs/%s", data.ProjectID, data.DCID) }
+				hx-target="#main-content"
+				hx-push-url="true"
+				style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-decoration: none; cursor: pointer;"
+			>
+				CANCEL
+			</a>
+			<button
+				type="submit"
+				class="flex items-center"
+				style="gap: 6px; padding: 12px 28px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: #FFFFFF; background-color: var(--terracotta); text-transform: uppercase; cursor: pointer; border: none;"
+			>
+				NEXT: TRANSPORT & SERIALS
+				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+			</button>
+		</div>
+	</form>
+
+	<div style="height: 48px;"></div>
+}
+
+func splitDestRowStyle(i int) string {
+	if i%2 == 0 {
+		return "border-top: 1px solid #D1CCC4; background-color: #FFFFFF;"
+	}
+	return "border-top: 1px solid #D1CCC4; background-color: #F7F5F2;"
+}
+
+templ SplitWizardStep1Page(data SplitWizardStep1Data, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject("Split Transfer DC — Project Creation", headerData, sidebarData) {
+		@SplitWizardStep1Content(data)
+	}
+}

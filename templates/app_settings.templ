@@ -1,0 +1,162 @@
+package templates
+
+type AppSettingsData struct {
+	CompanyName string
+	LogoURL     string
+	Errors      map[string]string
+	Success     string
+}
+
+templ AppSettingsContent(data AppSettingsData) {
+	<div style="max-width: 640px;">
+		<!-- Page Title -->
+		<div style="margin-bottom: 40px;">
+			<h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.02em; text-transform: uppercase;">
+				GLOBAL SETTINGS
+			</h1>
+			<p style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin-top: 8px;">
+				Company branding used in the application header and PDF exports.
+			</p>
+		</div>
+
+		<form
+			method="POST"
+			action="/settings"
+			enctype="multipart/form-data"
+			hx-post="/settings"
+			hx-encoding="multipart/form-data"
+			hx-target="#main-content"
+			x-data="{
+				previewURL: '',
+				removeLogo: false,
+				handleFile(event) {
+					const file = event.target.files[0];
+					if (file) {
+						this.previewURL = URL.createObjectURL(file);
+						this.removeLogo = false;
+					}
+				},
+				clearLogo() {
+					this.removeLogo = true;
+					this.previewURL = '';
+					document.getElementById('logo-input').value = '';
+				}
+			}"
+		>
+			<!-- Logo Section -->
+			<div style="padding: 32px; margin-bottom: 24px; background-color: var(--bg-card);">
+				<label style="display: block; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 16px;">
+					COMPANY LOGO
+				</label>
+
+				<!-- Current Logo Preview -->
+				<div style="margin-bottom: 20px;">
+					if data.LogoURL != "" {
+						<div x-show="!removeLogo && !previewURL">
+							<img
+								src={ data.LogoURL }
+								alt="Company Logo"
+								style="max-height: 64px; max-width: 240px; object-fit: contain;"
+							/>
+						</div>
+					}
+					<!-- New file preview -->
+					<div x-show="previewURL" x-cloak>
+						<img
+							:src="previewURL"
+							alt="Logo preview"
+							style="max-height: 64px; max-width: 240px; object-fit: contain;"
+						/>
+					</div>
+					<!-- No logo placeholder -->
+					if data.LogoURL == "" {
+						<div x-show="!previewURL" style="width: 120px; height: 64px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-light);">
+							<span style="font-family: 'Inter', sans-serif; font-size: 11px; color: var(--text-muted);">No logo</span>
+						</div>
+					}
+				</div>
+
+				<!-- Upload / Remove Buttons -->
+				<div style="display: flex; gap: 12px; align-items: center;">
+					<label
+						for="logo-input"
+						style="display: inline-block; padding: 8px 20px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: white; background-color: var(--terracotta);"
+					>
+						UPLOAD LOGO
+					</label>
+					<input
+						type="file"
+						id="logo-input"
+						name="logo"
+						accept="image/png,image/jpeg,image/svg+xml,image/webp"
+						@change="handleFile($event)"
+						style="display: none;"
+					/>
+					if data.LogoURL != "" {
+						<button
+							type="button"
+							@click="clearLogo()"
+							style="padding: 8px 20px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--error); background: none; border: 1px solid var(--error);"
+						>
+							REMOVE
+						</button>
+					}
+				</div>
+
+				<input type="hidden" name="remove_logo" :value="removeLogo ? 'true' : 'false'"/>
+
+				<p style="font-family: 'Inter', sans-serif; font-size: 11px; color: var(--text-muted); margin-top: 12px;">
+					PNG, JPEG, SVG, or WebP. Max 2 MB. Recommended height: 40–80px.
+				</p>
+			</div>
+
+			<!-- Company Name Section -->
+			<div style="padding: 32px; margin-bottom: 24px; background-color: var(--bg-card);">
+				<label
+					for="company_name"
+					style="display: block; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px;"
+				>
+					COMPANY NAME
+				</label>
+				<input
+					type="text"
+					id="company_name"
+					name="company_name"
+					value={ data.CompanyName }
+					style={ "width: 100%; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: white; border: 1px solid " + inputBorderColor(data.Errors["company_name"]) + ";" }
+				/>
+				if data.Errors["company_name"] != "" {
+					<p style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--error); margin-top: 6px;">
+						{ data.Errors["company_name"] }
+					</p>
+				}
+				<p style="font-family: 'Inter', sans-serif; font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+					Used in the header and as the company name on PDF exports.
+				</p>
+			</div>
+
+			<!-- Save Button -->
+			<div style="display: flex; justify-content: flex-end;">
+				<button
+					type="submit"
+					style="padding: 10px 32px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: white; background-color: var(--terracotta); border: none;"
+				>
+					SAVE SETTINGS
+				</button>
+			</div>
+		</form>
+	</div>
+}
+
+templ AppSettingsPage(data AppSettingsData, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject("Global Settings", headerData, sidebarData) {
+		@AppSettingsContent(data)
+	}
+}
+
+func inputBorderColor(errMsg string) string {
+	if errMsg != "" {
+		return "var(--error)"
+	}
+	return "var(--border-light)"
+}

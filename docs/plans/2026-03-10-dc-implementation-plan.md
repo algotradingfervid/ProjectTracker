@@ -18,14 +18,14 @@
 |-------|--------|------------|-----------|
 | 1: Address Restructure | **Complete** | 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7 | — |
 | 2: Numbering System | **Complete** | 2.1, 2.2, 2.3, 2.4 | — |
-| 3: DC Master Data | Not started | — | 3.1: Create DC collections |
-| 4: DC Wizard | Not started | — | 4.1: Wizard step 1 |
-| 5: DC Lifecycle | Not started | — | 5.1: DC list view |
-| 6: Exports | Not started | — | 6.1: DC PDF export |
-| 7: Shipment Groups | Not started | — | 7.1: Group detail |
-| 8: Testing & Polish | Not started | — | 8.1: Integration tests |
+| 3: DC Master Data | **Complete** | 3.1, 3.2, 3.3, 3.4 | — |
+| 4: DC Wizard | **Complete** | 4.1, 4.2, 4.3, 4.4, 4.5 | — |
+| 5: DC Lifecycle | **Complete** | 5.1, 5.2, 5.3, 5.4, 5.5 | — |
+| 6: Exports | **Complete** | 6.1, 6.2, 6.3 | — |
+| 7: Shipment Groups | **Complete** | 7.1 | — |
+| 8: Testing & Polish | **Complete** | 8.1, 8.2, 8.3 | — |
 
-**Resume from:** Phase 3, Task 3.1 — Create DC Collections
+**All phases complete.**
 
 ---
 
@@ -1026,7 +1026,7 @@ git commit -m "feat: add separate PO and DC numbering configuration to project s
 
 ## Phase 3: DC Master Data (Templates + Transporters)
 
-### Task 3.1: Create DC Collections
+### Task 3.1: Create DC Collections ✅ DONE
 
 **Files:**
 - Modify: `collections/setup.go`
@@ -1209,7 +1209,7 @@ git commit -m "feat: add all DC-related collections (templates, transporters, DC
 
 ---
 
-### Task 3.2: DC Templates — Handlers & Templates
+### Task 3.2: DC Templates — Handlers & Templates ✅ DONE
 
 **Files:**
 - Create: `handlers/dc_template_list.go`
@@ -1279,7 +1279,7 @@ git commit -m "feat: add DC template CRUD with BOQ item selection"
 
 ---
 
-### Task 3.3: Transporters — Handlers & Templates
+### Task 3.3: Transporters — Handlers & Templates ✅ DONE
 
 **Files:**
 - Create: `handlers/transporter_list.go`
@@ -1351,7 +1351,7 @@ git commit -m "feat: add transporter management with vehicle CRUD and file uploa
 
 ---
 
-### Task 3.4: Update Sidebar Navigation
+### Task 3.4: Update Sidebar Navigation ✅ DONE
 
 **Files:**
 - Modify: `templates/sidebar.templ`
@@ -1418,7 +1418,7 @@ git commit -m "feat: add DC management section to sidebar navigation"
 
 ## Phase 4: Unified DC Wizard
 
-### Task 4.1: DC Wizard — Step 1 (Setup)
+### Task 4.1: DC Wizard — Step 1 (Setup) ✅ DONE
 
 **Files:**
 - Create: `handlers/dc_wizard.go`
@@ -1478,7 +1478,7 @@ git commit -m "feat: add DC wizard step 1 - setup (type, template, transporter)"
 
 ---
 
-### Task 4.2: DC Wizard — Step 2 (Destinations)
+### Task 4.2: DC Wizard — Step 2 (Destinations) ✅ DONE
 
 **Files:**
 - Modify: `handlers/dc_wizard.go`
@@ -1520,7 +1520,7 @@ git commit -m "feat: add DC wizard step 2 - destinations with auto tax type"
 
 ---
 
-### Task 4.3: DC Wizard — Step 3 (Items & Serials)
+### Task 4.3: DC Wizard — Step 3 (Items & Serials) ✅ DONE
 
 **Files:**
 - Modify: `handlers/dc_wizard.go`
@@ -1623,7 +1623,7 @@ git commit -m "feat: add DC wizard step 3 - items grid with serial number valida
 
 ---
 
-### Task 4.4: DC Wizard — Step 4 (Review & Confirm)
+### Task 4.4: DC Wizard — Step 4 (Review & Confirm) ✅ DONE
 
 **Files:**
 - Modify: `handlers/dc_wizard.go`
@@ -1664,7 +1664,7 @@ git commit -m "feat: add DC wizard step 4 - review and confirm"
 
 ---
 
-### Task 4.5: DC Creation Service (Atomic)
+### Task 4.5: DC Creation Service (Atomic) ✅ DONE
 
 **Files:**
 - Create: `services/dc_creation.go`
@@ -1718,7 +1718,7 @@ git commit -m "feat: add atomic DC creation service for direct shipments and tra
 
 ## Phase 5: DC Lifecycle
 
-### Task 5.1: DC List View
+### Task 5.1: DC List View ✅ DONE
 
 **Files:**
 - Create: `handlers/dc_list.go`
@@ -1770,7 +1770,7 @@ git commit -m "feat: add delivery challan list view with type and status filters
 
 ---
 
-### Task 5.2: DC Detail View
+### Task 5.2: DC Detail View ✅ DONE
 
 **Files:**
 - Create: `handlers/dc_detail.go`
@@ -1802,7 +1802,7 @@ git commit -m "feat: add delivery challan detail view with full document display
 
 ---
 
-### Task 5.3: DC Issue Flow
+### Task 5.3: DC Issue Flow ✅ DONE
 
 **Files:**
 - Create: `services/dc_issue.go`
@@ -1842,7 +1842,7 @@ git commit -m "feat: add DC issuance with serial number validation"
 
 ---
 
-### Task 5.4: DC Edit and Delete
+### Task 5.4: DC Edit and Delete ✅ DONE
 
 **Files:**
 - Create: `handlers/dc_edit.go`

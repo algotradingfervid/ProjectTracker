@@ -266,6 +266,93 @@ func CreateTestSubSubItem(t *testing.T, app *pocketbase.PocketBase, subItemID, d
 	return record
 }
 
+// CreateTestDCTemplate creates a DC template record linked to a project.
+func CreateTestDCTemplate(t *testing.T, app *pocketbase.PocketBase, projectID, name string) *core.Record {
+	t.Helper()
+	col, err := app.FindCollectionByNameOrId("dc_templates")
+	if err != nil {
+		t.Fatalf("failed to find dc_templates collection: %v", err)
+	}
+	record := core.NewRecord(col)
+	record.Set("project", projectID)
+	record.Set("name", name)
+	record.Set("purpose", "Test template")
+	if err := app.Save(record); err != nil {
+		t.Fatalf("failed to save test DC template: %v", err)
+	}
+	return record
+}
+
+// CreateTestTransporter creates a transporter record linked to a project.
+func CreateTestTransporter(t *testing.T, app *pocketbase.PocketBase, projectID, name string) *core.Record {
+	t.Helper()
+	col, err := app.FindCollectionByNameOrId("transporters")
+	if err != nil {
+		t.Fatalf("failed to find transporters collection: %v", err)
+	}
+	record := core.NewRecord(col)
+	record.Set("project", projectID)
+	record.Set("company_name", name)
+	record.Set("is_active", true)
+	if err := app.Save(record); err != nil {
+		t.Fatalf("failed to save test transporter: %v", err)
+	}
+	return record
+}
+
+// CreateTestVehicle creates a vehicle record linked to a transporter.
+func CreateTestVehicle(t *testing.T, app *pocketbase.PocketBase, transporterID, vehicleNumber string) *core.Record {
+	t.Helper()
+	col, err := app.FindCollectionByNameOrId("transporter_vehicles")
+	if err != nil {
+		t.Fatalf("failed to find transporter_vehicles collection: %v", err)
+	}
+	record := core.NewRecord(col)
+	record.Set("transporter", transporterID)
+	record.Set("vehicle_number", vehicleNumber)
+	record.Set("vehicle_type", "truck")
+	if err := app.Save(record); err != nil {
+		t.Fatalf("failed to save test vehicle: %v", err)
+	}
+	return record
+}
+
+// CreateTestDeliveryChallan creates a delivery challan record linked to a project.
+func CreateTestDeliveryChallan(t *testing.T, app *pocketbase.PocketBase, projectID, dcNumber, dcType, status string) *core.Record {
+	t.Helper()
+	col, err := app.FindCollectionByNameOrId("delivery_challans")
+	if err != nil {
+		t.Fatalf("failed to find delivery_challans collection: %v", err)
+	}
+	record := core.NewRecord(col)
+	record.Set("project", projectID)
+	record.Set("dc_number", dcNumber)
+	record.Set("dc_type", dcType)
+	record.Set("status", status)
+	record.Set("challan_date", "2026-03-10")
+	if err := app.Save(record); err != nil {
+		t.Fatalf("failed to save test delivery challan: %v", err)
+	}
+	return record
+}
+
+// CreateTestShipmentGroup creates a shipment group record linked to a project.
+func CreateTestShipmentGroup(t *testing.T, app *pocketbase.PocketBase, projectID string) *core.Record {
+	t.Helper()
+	col, err := app.FindCollectionByNameOrId("shipment_groups")
+	if err != nil {
+		t.Fatalf("failed to find shipment_groups collection: %v", err)
+	}
+	record := core.NewRecord(col)
+	record.Set("project", projectID)
+	record.Set("status", "draft")
+	record.Set("num_locations", 1)
+	if err := app.Save(record); err != nil {
+		t.Fatalf("failed to save test shipment group: %v", err)
+	}
+	return record
+}
+
 func truncate(s string, n int) string {
 	if len(s) <= n {
 		return s

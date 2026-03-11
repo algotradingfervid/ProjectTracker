@@ -8,6 +8,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 
+	"projectcreation/collections"
 	"projectcreation/templates"
 )
 
@@ -87,6 +88,8 @@ func ActiveProjectMiddleware(app *pocketbase.PocketBase) func(e *core.RequestEve
 		headerData := templates.HeaderData{
 			ActiveProject: activeProj,
 			Projects:      selectorItems,
+			LogoURL:       collections.GetLogoURL(app),
+			CompanyName:   collections.GetCompanyName(app),
 		}
 
 		// Store in context

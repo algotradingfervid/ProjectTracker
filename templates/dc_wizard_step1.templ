@@ -1,0 +1,400 @@
+package templates
+
+import "fmt"
+import "encoding/json"
+
+type DCTemplateSelectItem struct {
+	ID        string
+	Name      string
+	Purpose   string
+	ItemCount int
+}
+
+type VehicleSelectItem struct {
+	ID            string
+	VehicleNumber string
+	VehicleType   string
+	DriverName    string
+	DriverPhone   string
+}
+
+type TransporterSelectItem struct {
+	ID            string
+	CompanyName   string
+	ContactPerson string
+	Phone         string
+	Vehicles      []VehicleSelectItem
+}
+
+type DCWizardStep1Data struct {
+	ProjectID      string
+	Templates      []DCTemplateSelectItem
+	Transporters   []TransporterSelectItem
+	DCType         string
+	TemplateID     string
+	ChallanDate    string
+	TransporterID  string
+	VehicleID      string
+	EwayBillNumber string
+	DocketNumber   string
+	ReverseCharge  bool
+	Errors         map[string]string
+}
+
+func transportersJSON(transporters []TransporterSelectItem) string {
+	type vehicleJSON struct {
+		ID            string `json:"id"`
+		VehicleNumber string `json:"vehicleNumber"`
+		VehicleType   string `json:"vehicleType"`
+		DriverName    string `json:"driverName"`
+		DriverPhone   string `json:"driverPhone"`
+	}
+	type transporterJSON struct {
+		ID       string        `json:"id"`
+		Vehicles []vehicleJSON `json:"vehicles"`
+	}
+	var result []transporterJSON
+	for _, t := range transporters {
+		tj := transporterJSON{ID: t.ID}
+		for _, v := range t.Vehicles {
+			tj.Vehicles = append(tj.Vehicles, vehicleJSON{
+				ID:            v.ID,
+				VehicleNumber: v.VehicleNumber,
+				VehicleType:   v.VehicleType,
+				DriverName:    v.DriverName,
+				DriverPhone:   v.DriverPhone,
+			})
+		}
+		result = append(result, tj)
+	}
+	b, _ := json.Marshal(result)
+	return string(b)
+}
+
+func wizardStepIndicator(current, total int) string {
+	return fmt.Sprintf("Step %d of %d", current, total)
+}
+
+templ DCWizardStep1Content(data DCWizardStep1Data) {
+	// Breadcrumbs
+	<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+		<a
+			href={ templ.SafeURL("/projects/" + data.ProjectID) }
+			hx-get={ "/projects/" + data.ProjectID }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;"
+		>
+			PROJECT
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<a
+			href={ templ.SafeURL("/projects/" + data.ProjectID + "/dcs/") }
+			hx-get={ "/projects/" + data.ProjectID + "/dcs/" }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;"
+		>
+			DELIVERY CHALLANS
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+			NEW DC
+		</span>
+	</div>
+
+	// Page header with step indicator
+	<div class="flex items-center justify-between">
+		<div>
+			<h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--text-primary); margin: 0;">
+				Create Delivery Challan
+			</h1>
+			<p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-top: 8px;">
+				Step 1 of 4 — Setup
+			</p>
+		</div>
+		// Step progress
+		<div class="flex items-center" style="gap: 8px;">
+			<div style="width: 32px; height: 32px; background-color: var(--terracotta); color: white; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;">1</div>
+			<div style="width: 24px; height: 2px; background-color: var(--border-light);"></div>
+			<div style="width: 32px; height: 32px; background-color: var(--border-light); color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600;">2</div>
+			<div style="width: 24px; height: 2px; background-color: var(--border-light);"></div>
+			<div style="width: 32px; height: 32px; background-color: var(--border-light); color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600;">3</div>
+			<div style="width: 24px; height: 2px; background-color: var(--border-light);"></div>
+			<div style="width: 32px; height: 32px; background-color: var(--border-light); color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600;">4</div>
+		</div>
+	</div>
+
+	// Form
+	<form
+		method="POST"
+		action={ templ.SafeURL("/projects/" + data.ProjectID + "/dcs/create/step2") }
+		hx-post={ "/projects/" + data.ProjectID + "/dcs/create/step2" }
+		hx-target="#main-content"
+		hx-push-url="false"
+		style="margin-top: 32px;"
+		x-data={ fmt.Sprintf(`{
+			dcType: '%s',
+			transporterId: '%s',
+			vehicleId: '%s',
+			transporters: %s,
+			get vehicles() {
+				const t = this.transporters.find(t => t.id === this.transporterId);
+				return t ? t.vehicles : [];
+			},
+			get selectedVehicle() {
+				const v = this.vehicles.find(v => v.id === this.vehicleId);
+				return v || null;
+			}
+		}`, data.DCType, data.TransporterID, data.VehicleID, transportersJSON(data.Transporters)) }
+	>
+		// Error banner
+		if len(data.Errors) > 0 {
+			<div style="background-color: #FEE2E2; border: 1px solid #EF4444; padding: 12px 16px; margin-bottom: 24px;">
+				for _, msg := range data.Errors {
+					<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: #DC2626;">
+						{ msg }
+					</div>
+				}
+			</div>
+		}
+
+		// Section: DC Type
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					DC TYPE
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				<div class="flex" style="gap: 16px;">
+					<label
+						class="flex items-center cursor-pointer"
+						style="padding: 16px 24px; border: 2px solid transparent; background-color: var(--bg-page); flex: 1;"
+						:style={ `dcType === 'direct' ? 'border-color: var(--terracotta)' : 'border-color: var(--border-light)'` }
+					>
+						<input type="radio" name="dc_type" value="direct" x-model="dcType" class="hidden"/>
+						<div>
+							<div style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: var(--text-primary);">
+								Direct Shipment
+							</div>
+							<div style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+								Ship directly to one or more destinations
+							</div>
+						</div>
+					</label>
+					<label
+						class="flex items-center cursor-pointer"
+						style="padding: 16px 24px; border: 2px solid transparent; background-color: var(--bg-page); flex: 1;"
+						:style={ `dcType === 'transfer' ? 'border-color: var(--terracotta)' : 'border-color: var(--border-light)'` }
+					>
+						<input type="radio" name="dc_type" value="transfer" x-model="dcType" class="hidden"/>
+						<div>
+							<div style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: var(--text-primary);">
+								Transfer DC
+							</div>
+							<div style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+								Transfer via hub, split to destinations later
+							</div>
+						</div>
+					</label>
+				</div>
+			</div>
+		</div>
+
+		// Section: Template & Date
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					TEMPLATE &amp; DATE
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				// DC Template
+				<div style="margin-bottom: 16px;">
+					<label for="template_id" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						DC TEMPLATE <span style="color: var(--terracotta);">*</span>
+					</label>
+					if len(data.Templates) == 0 {
+						<div style="padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-muted); background-color: var(--bg-page); border: 1px solid var(--border-light); box-sizing: border-box;">
+							No DC templates created yet.
+							<a
+								href={ templ.SafeURL("/projects/" + data.ProjectID + "/dc-templates/create") }
+								hx-get={ "/projects/" + data.ProjectID + "/dc-templates/create" }
+								hx-target="#main-content"
+								hx-push-url="true"
+								style="color: var(--terracotta); text-decoration: none; font-weight: 600;"
+							>
+								Create one
+							</a>
+							to continue.
+						</div>
+					} else {
+						<select id="template_id" name="template_id" required
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none;">
+							<option value="">— Select Template —</option>
+							for _, t := range data.Templates {
+								if t.ID == data.TemplateID {
+									<option value={ t.ID } selected>{ t.Name } ({ fmt.Sprintf("%d items", t.ItemCount) })</option>
+								} else {
+									<option value={ t.ID }>{ t.Name } ({ fmt.Sprintf("%d items", t.ItemCount) })</option>
+								}
+							}
+						</select>
+					}
+					if data.Errors["template_id"] != "" {
+						<div style="font-family: 'Inter', sans-serif; font-size: 12px; color: #DC2626; margin-top: 4px;">
+							{ data.Errors["template_id"] }
+						</div>
+					}
+				</div>
+
+				// Challan Date
+				<div>
+					<label for="challan_date" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						CHALLAN DATE <span style="color: var(--terracotta);">*</span>
+					</label>
+					<input
+						type="date"
+						id="challan_date"
+						name="challan_date"
+						value={ data.ChallanDate }
+						required
+						style="width: 100%; max-width: 240px; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+					/>
+					if data.Errors["challan_date"] != "" {
+						<div style="font-family: 'Inter', sans-serif; font-size: 12px; color: #DC2626; margin-top: 4px;">
+							{ data.Errors["challan_date"] }
+						</div>
+					}
+				</div>
+			</div>
+		</div>
+
+		// Section: Transport Details
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					TRANSPORT DETAILS
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				// Transporter
+				<div style="margin-bottom: 16px;">
+					<label for="transporter_id" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						TRANSPORTER
+					</label>
+					<select
+						id="transporter_id"
+						name="transporter_id"
+						x-model="transporterId"
+						@change="vehicleId = ''"
+						style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none;"
+					>
+						<option value="">— Select Transporter —</option>
+						for _, t := range data.Transporters {
+							<option value={ t.ID }>{ t.CompanyName }</option>
+						}
+					</select>
+				</div>
+
+				// Vehicle (dynamic based on transporter selection)
+				<div style="margin-bottom: 16px;" x-show="transporterId !== ''" x-cloak>
+					<label for="vehicle_id" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						VEHICLE
+					</label>
+					<select
+						id="vehicle_id"
+						name="vehicle_id"
+						x-model="vehicleId"
+						style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none;"
+					>
+						<option value="">— Select Vehicle —</option>
+						<template x-for="v in vehicles" :key="v.id">
+							<option :value="v.id" x-text="v.vehicleNumber + (v.vehicleType ? ' (' + v.vehicleType + ')' : '')" :selected="v.id === vehicleId"></option>
+						</template>
+					</select>
+					// Driver info auto-display
+					<div x-show="selectedVehicle" x-cloak style="margin-top: 8px; padding: 8px 12px; background-color: var(--bg-page); border: 1px solid var(--border-light);">
+						<span style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary);">
+							Driver: <span x-text="selectedVehicle ? selectedVehicle.driverName : ''" style="font-weight: 600;"></span>
+							<span x-show="selectedVehicle && selectedVehicle.driverPhone" x-text="selectedVehicle ? ' — ' + selectedVehicle.driverPhone : ''"></span>
+						</span>
+					</div>
+				</div>
+
+				// Eway Bill & Docket in a row
+				<div class="flex" style="gap: 24px;">
+					<div class="flex-1">
+						<label for="eway_bill_number" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+							E-WAY BILL NUMBER
+						</label>
+						<input
+							type="text"
+							id="eway_bill_number"
+							name="eway_bill_number"
+							value={ data.EwayBillNumber }
+							placeholder="Optional"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+						/>
+					</div>
+					<div class="flex-1">
+						<label for="docket_number" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+							DOCKET NUMBER
+						</label>
+						<input
+							type="text"
+							id="docket_number"
+							name="docket_number"
+							value={ data.DocketNumber }
+							placeholder="Optional"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+						/>
+					</div>
+				</div>
+
+				// Reverse Charge
+				<div style="margin-top: 16px;">
+					<label class="flex items-center cursor-pointer" style="gap: 10px;">
+						<input
+							type="checkbox"
+							name="reverse_charge"
+							if data.ReverseCharge {
+								checked
+							}
+							style="width: 16px; height: 16px; accent-color: var(--terracotta);"
+						/>
+						<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+							REVERSE CHARGE
+						</span>
+					</label>
+				</div>
+			</div>
+		</div>
+
+		// Actions
+		<div class="flex items-center justify-between" style="padding-top: 16px;">
+			<a
+				href={ templ.SafeURL("/projects/" + data.ProjectID + "/dcs/") }
+				hx-get={ "/projects/" + data.ProjectID + "/dcs/" }
+				hx-target="#main-content"
+				hx-push-url="true"
+				style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-decoration: none; padding: 12px 24px; background-color: var(--bg-card); border: 1px solid var(--border-light); cursor: pointer; text-transform: uppercase;"
+			>
+				CANCEL
+			</a>
+			<button
+				type="submit"
+				style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; color: white; padding: 12px 32px; background-color: var(--terracotta); border: none; cursor: pointer; text-transform: uppercase;"
+			>
+				NEXT: DESTINATIONS →
+			</button>
+		</div>
+	</form>
+}
+
+templ DCWizardStep1Page(data DCWizardStep1Data, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject("Create Delivery Challan — Project Creation", headerData, sidebarData) {
+		@DCWizardStep1Content(data)
+	}
+}

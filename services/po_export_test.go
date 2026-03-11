@@ -38,8 +38,8 @@ func TestBuildPOExportData_Complete(t *testing.T) {
 	if data.PONumber != "FSS-PO-001" {
 		t.Errorf("PONumber = %q, want %q", data.PONumber, "FSS-PO-001")
 	}
-	if data.CompanyName != "FSS ENGINEERING" {
-		t.Errorf("CompanyName = %q, want %q", data.CompanyName, "FSS ENGINEERING")
+	if data.CompanyName != "Fervidsmart Solutions Pvt Ltd" {
+		t.Errorf("CompanyName = %q, want %q", data.CompanyName, "Fervidsmart Solutions Pvt Ltd")
 	}
 	if data.OrderDate != "2025-01-15" {
 		t.Errorf("OrderDate = %q, want %q", data.OrderDate, "2025-01-15")

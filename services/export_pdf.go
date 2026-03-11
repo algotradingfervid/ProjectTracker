@@ -6,6 +6,7 @@ import (
 
 	"github.com/johnfercher/maroto/v2"
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
+	"github.com/johnfercher/maroto/v2/pkg/components/image"
 	"github.com/johnfercher/maroto/v2/pkg/components/row"
 	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	"github.com/johnfercher/maroto/v2/pkg/config"
@@ -62,8 +63,45 @@ func GeneratePDF(data ExportData) ([]byte, error) {
 	return doc.GetBytes(), nil
 }
 
-// addHeader adds the title, reference number, and date to the PDF.
+// addHeader adds company branding, title, reference number, and date to the PDF.
 func addHeader(m core.Maroto, data ExportData) {
+	// Company branding row (logo + name)
+	if len(data.LogoBytes) > 0 {
+		ext := logoExtension(data.LogoFilename)
+		m.AddRows(
+			row.New(12).Add(
+				col.New(2).Add(
+					image.NewFromBytes(data.LogoBytes, ext, props.Rect{
+						Percent: 80,
+						Center:  false,
+					}),
+				),
+				col.New(10).Add(
+					text.New(data.CompanyName, props.Text{
+						Size:  10,
+						Style: fontstyle.Bold,
+						Align: align.Left,
+						Top:   2,
+						Color: &props.Color{Red: 80, Green: 80, Blue: 80},
+					}),
+				),
+			),
+		)
+	} else if data.CompanyName != "" {
+		m.AddRows(
+			row.New(8).Add(
+				col.New(12).Add(
+					text.New(data.CompanyName, props.Text{
+						Size:  10,
+						Style: fontstyle.Bold,
+						Align: align.Left,
+						Color: &props.Color{Red: 80, Green: 80, Blue: 80},
+					}),
+				),
+			),
+		)
+	}
+
 	// Title row
 	m.AddRows(
 		row.New(12).Add(

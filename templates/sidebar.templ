@@ -21,6 +21,9 @@ type SidebarData struct {
 	VendorCount       int
 	POCount           int
 	ShipToIsInstallAt bool
+	DCTemplateCount   int
+	TransporterCount  int
+	DCCount           int
 }
 
 // Backward-compatible: renders sidebar without project context
@@ -99,35 +102,21 @@ templ SidebarWithProject(data SidebarData) {
 					@SidebarProjectsLink(data)
 				}
 
-				<!-- Settings -->
-				if data.ActiveProject != nil {
-					<a
-						href={ templ.SafeURL(fmt.Sprintf("/projects/%s/settings", data.ActiveProject.ID)) }
-						hx-get={ fmt.Sprintf("/projects/%s/settings", data.ActiveProject.ID) }
-						hx-target="#main-content"
-						hx-push-url="true"
-						class="flex items-center"
-						style={ sidebarLinkStyle(isPathActive(data.ActivePath, fmt.Sprintf("/projects/%s/settings", data.ActiveProject.ID))) + " gap: 12px; padding: 14px 0; border-top: 1px solid var(--border-dark);" }
-					>
-						<svg style={ sidebarIconStyle(isPathActive(data.ActivePath, fmt.Sprintf("/projects/%s/settings", data.ActiveProject.ID))) + " width: 20px; height: 20px;" } xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-							<circle cx="12" cy="12" r="3"></circle>
-						</svg>
-						<span style={ sidebarLabelStyle(isPathActive(data.ActivePath, fmt.Sprintf("/projects/%s/settings", data.ActiveProject.ID))) }>SETTINGS</span>
-					</a>
-				} else {
-					<a
-						href="/settings"
-						class="flex items-center"
-						style="gap: 12px; padding: 14px 0; border-top: 1px solid var(--border-dark);"
-					>
-						<svg style="width: 20px; height: 20px; color: #666666;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-							<circle cx="12" cy="12" r="3"></circle>
-						</svg>
-						<span style="color: #666666; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 500; letter-spacing: 1px;">SETTINGS</span>
-					</a>
-				}
+				<!-- Global Settings (always links to /settings) -->
+				<a
+					href="/settings"
+					hx-get="/settings"
+					hx-target="#main-content"
+					hx-push-url="true"
+					class="flex items-center"
+					style={ sidebarLinkStyle(isPathActive(data.ActivePath, "/settings")) + " gap: 12px; padding: 14px 0; border-top: 1px solid var(--border-dark);" }
+				>
+					<svg style={ sidebarIconStyle(isPathActive(data.ActivePath, "/settings")) + " width: 20px; height: 20px;" } xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+						<circle cx="12" cy="12" r="3"></circle>
+					</svg>
+					<span style={ sidebarLabelStyle(isPathActive(data.ActivePath, "/settings")) }>SETTINGS</span>
+				</a>
 			</div>
 		</div>
 	</aside>
@@ -186,6 +175,31 @@ templ SidebarProjectSection(data SidebarData) {
 				isPathActive(data.ActivePath, fmt.Sprintf("/projects/%s/po", data.ActiveProject.ID)),
 				data.POCount,
 			)
+			<!-- DC MANAGEMENT Section -->
+			<div style="margin-top: 4px; margin-bottom: 4px;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; color: #555555; text-transform: uppercase; letter-spacing: 1.5px; padding: 10px 0 4px 0; border-top: 1px solid var(--border-dark);">
+					DC MANAGEMENT
+				</div>
+			</div>
+			@SidebarSubLink(
+				fmt.Sprintf("/projects/%s/dc-templates/", data.ActiveProject.ID),
+				"DC TEMPLATES",
+				isDCPath(data.ActivePath, data.ActiveProject.ID, "dc-templates"),
+				data.DCTemplateCount,
+			)
+			@SidebarSubLink(
+				fmt.Sprintf("/projects/%s/transporters/", data.ActiveProject.ID),
+				"TRANSPORTERS",
+				isDCPath(data.ActivePath, data.ActiveProject.ID, "transporters"),
+				data.TransporterCount,
+			)
+			@SidebarSubLink(
+				fmt.Sprintf("/projects/%s/dcs/", data.ActiveProject.ID),
+				"DELIVERY CHALLANS",
+				isDCPath(data.ActivePath, data.ActiveProject.ID, "dcs"),
+				data.DCCount,
+			)
+
 			<!-- Vendors Link (project-scoped) -->
 			@SidebarSubLink(
 				fmt.Sprintf("/projects/%s/vendors", data.ActiveProject.ID),
@@ -395,4 +409,9 @@ func isAnyAddressActive(currentPath, projectID string) bool {
 
 func isVendorGlobalPath(currentPath string) bool {
 	return currentPath == "/vendors" || strings.HasPrefix(currentPath, "/vendors/")
+}
+
+func isDCPath(currentPath, projectID, section string) bool {
+	prefix := fmt.Sprintf("/projects/%s/%s", projectID, section)
+	return currentPath == prefix || strings.HasPrefix(currentPath, prefix+"/") || strings.HasPrefix(currentPath, prefix)
 }

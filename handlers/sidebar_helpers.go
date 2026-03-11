@@ -44,6 +44,18 @@ func BuildSidebarData(r *http.Request, app *pocketbase.PocketBase) templates.Sid
 	vendorLinks, _ := app.FindRecordsByFilter("project_vendors", "project = {:pid}", "", 0, 0, map[string]any{"pid": activeProj.ID})
 	data.VendorCount = len(vendorLinks)
 
+	// Count DC templates
+	dcTemplates, _ := app.FindRecordsByFilter("dc_templates", "project = {:pid}", "", 0, 0, map[string]any{"pid": activeProj.ID})
+	data.DCTemplateCount = len(dcTemplates)
+
+	// Count transporters
+	transporters, _ := app.FindRecordsByFilter("transporters", "project = {:pid}", "", 0, 0, map[string]any{"pid": activeProj.ID})
+	data.TransporterCount = len(transporters)
+
+	// Count delivery challans
+	dcs, _ := app.FindRecordsByFilter("delivery_challans", "project = {:pid}", "", 0, 0, map[string]any{"pid": activeProj.ID})
+	data.DCCount = len(dcs)
+
 	// Count addresses by type
 	addrCol, _ := app.FindCollectionByNameOrId("addresses")
 	if addrCol != nil {

@@ -1,0 +1,238 @@
+package templates
+
+import "fmt"
+
+type SplitReviewItem struct {
+	ParentLineItemID string
+	Description      string
+	TotalQty         int
+	Serials          []string
+}
+
+type SplitWizardStep3Data struct {
+	ProjectID        string
+	DCID             string
+	DCNumber         string
+	SelectedDestIDs  []string
+	DestinationNames []string
+	TransporterID    string
+	TransporterName  string
+	VehicleID        string
+	VehicleNumber    string
+	EwayBillNumber   string
+	DocketNumber     string
+	Items            []SplitReviewItem
+}
+
+templ SplitWizardStep3Content(data SplitWizardStep3Data) {
+	<!-- Breadcrumbs -->
+	<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+		<a
+			hx-get={ fmt.Sprintf("/projects/%s", data.ProjectID) }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none; cursor: pointer;"
+		>
+			PROJECT
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<a
+			hx-get={ fmt.Sprintf("/projects/%s/dcs/%s", data.ProjectID, data.DCID) }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none; cursor: pointer;"
+		>
+			{ data.DCNumber }
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+			SPLIT — REVIEW
+		</span>
+	</div>
+
+	<!-- Page Title + Step Indicator -->
+	<div class="flex items-center justify-between" style="margin-bottom: 32px;">
+		<div>
+			<h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: 0.5px;">
+				REVIEW & CONFIRM SPLIT
+			</h1>
+			<p style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin: 4px 0 0 0;">
+				{ data.DCNumber } — Step 3 of 3: Review and Confirm
+			</p>
+		</div>
+		<div class="flex items-center" style="gap: 8px;">
+			<div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background-color: #4A7C59; color: #FFFFFF; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;">
+				&#10003;
+			</div>
+			<div style="width: 24px; height: 2px; background-color: #4A7C59;"></div>
+			<div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background-color: #4A7C59; color: #FFFFFF; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;">
+				&#10003;
+			</div>
+			<div style="width: 24px; height: 2px; background-color: var(--terracotta);"></div>
+			<div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background-color: var(--terracotta); color: #FFFFFF; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;">
+				3
+			</div>
+		</div>
+	</div>
+
+	<!-- Review Content -->
+	<div style="max-width: 800px;">
+		<!-- Destinations -->
+		<div style="background-color: #FFFFFF; padding: 24px 32px; border: 1px solid #D1CCC4; margin-bottom: 16px;">
+			<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px;">
+				DESTINATIONS ({ fmt.Sprintf("%d", len(data.SelectedDestIDs)) })
+			</div>
+			for _, name := range data.DestinationNames {
+				<div style="padding: 6px 0; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); border-bottom: 1px solid #F0EDE7;">
+					{ name }
+				</div>
+			}
+		</div>
+
+		<!-- Transport -->
+		<div style="background-color: #FFFFFF; padding: 24px 32px; border: 1px solid #D1CCC4; margin-bottom: 16px;">
+			<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px;">
+				TRANSPORT DETAILS
+			</div>
+			<div class="flex" style="flex-wrap: wrap; gap: 0;">
+				<div style="width: 50%; padding: 6px 0; box-sizing: border-box; padding-right: 16px;">
+					<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
+						TRANSPORTER
+					</div>
+					<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+						if data.TransporterName != "" {
+							{ data.TransporterName }
+						} else {
+							<span style="color: var(--text-muted); font-style: italic;">Not specified</span>
+						}
+					</div>
+				</div>
+				<div style="width: 50%; padding: 6px 0; box-sizing: border-box; padding-left: 16px;">
+					<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
+						VEHICLE
+					</div>
+					<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+						if data.VehicleNumber != "" {
+							{ data.VehicleNumber }
+						} else {
+							<span style="color: var(--text-muted); font-style: italic;">Not specified</span>
+						}
+					</div>
+				</div>
+				if data.EwayBillNumber != "" {
+					<div style="width: 50%; padding: 6px 0; box-sizing: border-box; padding-right: 16px; margin-top: 8px;">
+						<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
+							E-WAY BILL NUMBER
+						</div>
+						<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+							{ data.EwayBillNumber }
+						</div>
+					</div>
+				}
+				if data.DocketNumber != "" {
+					<div style="width: 50%; padding: 6px 0; box-sizing: border-box; padding-left: 16px; margin-top: 8px;">
+						<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
+							DOCKET NUMBER
+						</div>
+						<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+							{ data.DocketNumber }
+						</div>
+					</div>
+				}
+			</div>
+		</div>
+
+		<!-- Items & Serials -->
+		<div style="background-color: #FFFFFF; padding: 24px 32px; border: 1px solid #D1CCC4; margin-bottom: 16px;">
+			<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px;">
+				ITEMS & SERIAL NUMBERS
+			</div>
+			for _, item := range data.Items {
+				<div style="padding: 12px 0; border-bottom: 1px solid #F0EDE7;">
+					<div class="flex items-center justify-between">
+						<span style="font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary);">
+							{ item.Description }
+						</span>
+						<span style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; color: var(--text-secondary);">
+							QTY: { fmt.Sprintf("%d", item.TotalQty) }
+						</span>
+					</div>
+					if len(item.Serials) > 0 {
+						<div style="margin-top: 6px; padding: 6px 8px; background-color: #F0EDE7; font-family: 'Inter', sans-serif; font-size: 11px; color: var(--text-secondary); line-height: 1.8;">
+							<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+								SERIALS ({ fmt.Sprintf("%d", len(item.Serials)) }):
+							</span>
+							for _, serial := range item.Serials {
+								<span style="display: inline-block; padding: 1px 6px; margin: 2px 3px; background-color: #FFFFFF; border: 1px solid #D1CCC4; font-size: 11px;">
+									{ serial }
+								</span>
+							}
+						</div>
+					}
+				</div>
+			}
+		</div>
+	</div>
+
+	<!-- Confirm Form -->
+	<form
+		hx-post={ fmt.Sprintf("/projects/%s/transfer-dcs/%s/split", data.ProjectID, data.DCID) }
+		hx-target="#main-content"
+		hx-swap="innerHTML"
+	>
+		<!-- Carry forward all data as hidden fields -->
+		for _, destID := range data.SelectedDestIDs {
+			<input type="hidden" name="destination_ids" value={ destID } />
+		}
+		<input type="hidden" name="transporter_id" value={ data.TransporterID } />
+		<input type="hidden" name="vehicle_id" value={ data.VehicleID } />
+		<input type="hidden" name="eway_bill_number" value={ data.EwayBillNumber } />
+		<input type="hidden" name="docket_number" value={ data.DocketNumber } />
+		for _, item := range data.Items {
+			if len(item.Serials) > 0 {
+				<input type="hidden" name={ fmt.Sprintf("serials_%s", item.ParentLineItemID) } value={ splitSerialsValue(item.Serials) } />
+			}
+		}
+
+		<!-- Actions -->
+		<div class="flex items-center justify-between" style="margin-top: 24px; max-width: 800px;">
+			<a
+				hx-get={ fmt.Sprintf("/projects/%s/transfer-dcs/%s/split", data.ProjectID, data.DCID) }
+				hx-target="#main-content"
+				hx-push-url="true"
+				class="flex items-center"
+				style="gap: 6px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-decoration: none; cursor: pointer;"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
+				START OVER
+			</a>
+			<button
+				type="submit"
+				class="flex items-center"
+				style="gap: 6px; padding: 12px 28px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: #FFFFFF; background-color: #4A7C59; text-transform: uppercase; cursor: pointer; border: none;"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
+				CONFIRM SPLIT
+			</button>
+		</div>
+	</form>
+
+	<div style="height: 48px;"></div>
+}
+
+func splitSerialsValue(serials []string) string {
+	result := ""
+	for i, s := range serials {
+		if i > 0 {
+			result += "\n"
+		}
+		result += s
+	}
+	return result
+}
+
+templ SplitWizardStep3Page(data SplitWizardStep3Data, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject("Split Transfer DC — Review — Project Creation", headerData, sidebarData) {
+		@SplitWizardStep3Content(data)
+	}
+}

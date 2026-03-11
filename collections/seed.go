@@ -122,6 +122,11 @@ func Seed(app *pocketbase.PocketBase) error {
 
 	log.Println("seed: projects collection is empty – inserting seed data …")
 
+	// ── Ensure app_settings singleton exists ─────────────────────
+	if _, err := GetAppSettings(app); err != nil {
+		log.Printf("seed: warning: could not ensure app_settings: %v", err)
+	}
+
 	// ── lookup helper collections ────────────────────────────────────
 	boqsCol, err := app.FindCollectionByNameOrId("boqs")
 	if err != nil {

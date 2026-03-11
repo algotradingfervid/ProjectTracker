@@ -10,6 +10,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 
+	"projectcreation/collections"
 	"projectcreation/services"
 )
 
@@ -122,6 +123,10 @@ func buildExportData(app *pocketbase.PocketBase, boqID string) (services.ExportD
 		createdDate = dt.Time().Format("02 Jan 2006")
 	}
 
+	// Fetch company branding
+	companyName := collections.GetCompanyName(app)
+	logoBytes, logoFilename, _ := collections.GetLogoBytes(app)
+
 	return services.ExportData{
 		Title:           boqRecord.GetString("title"),
 		ReferenceNumber: boqRecord.GetString("reference_number"),
@@ -131,6 +136,9 @@ func buildExportData(app *pocketbase.PocketBase, boqID string) (services.ExportD
 		TotalBudgeted:   totalBudgeted,
 		Margin:          margin,
 		MarginPercent:   marginPercent,
+		CompanyName:     companyName,
+		LogoBytes:       logoBytes,
+		LogoFilename:    logoFilename,
 	}, nil
 }
 

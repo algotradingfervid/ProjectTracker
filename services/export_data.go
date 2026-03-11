@@ -23,4 +23,7 @@ type ExportData struct {
 	TotalBudgeted   float64
 	Margin          float64
 	MarginPercent   float64
+	CompanyName     string
+	LogoBytes       []byte
+	LogoFilename    string
 }

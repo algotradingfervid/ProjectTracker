@@ -3,12 +3,17 @@ package services
 import (
 	"fmt"
 
+	"path/filepath"
+	"strings"
+
 	"github.com/johnfercher/maroto/v2"
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
+	"github.com/johnfercher/maroto/v2/pkg/components/image"
 	"github.com/johnfercher/maroto/v2/pkg/components/row"
 	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	"github.com/johnfercher/maroto/v2/pkg/config"
 	"github.com/johnfercher/maroto/v2/pkg/consts/align"
+	"github.com/johnfercher/maroto/v2/pkg/consts/extension"
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
 	"github.com/johnfercher/maroto/v2/pkg/consts/orientation"
 	"github.com/johnfercher/maroto/v2/pkg/consts/pagesize"
@@ -54,39 +59,64 @@ func GeneratePOPDF(data *POExportData) ([]byte, error) {
 	return doc.GetBytes(), nil
 }
 
-// addPOHeader adds company name, "PURCHASE ORDER" title, address, email, and PO number.
+// addPOHeader adds company logo/name, "PURCHASE ORDER" title, and PO number.
 func addPOHeader(m core.Maroto, data *POExportData) {
-	// Row 1: Company name (left) + PURCHASE ORDER title (right)
-	m.AddRows(
-		row.New(10).Add(
-			col.New(6).Add(
-				text.New(data.CompanyName, props.Text{
-					Size:  14,
-					Style: fontstyle.Bold,
-					Align: align.Left,
-				}),
+	// Row 1: Company logo + name (left) + PURCHASE ORDER title (right)
+	if len(data.LogoBytes) > 0 {
+		ext := logoExtension(data.LogoFilename)
+		m.AddRows(
+			row.New(14).Add(
+				col.New(3).Add(
+					image.NewFromBytes(data.LogoBytes, ext, props.Rect{
+						Percent: 80,
+						Center:  false,
+					}),
+				),
+				col.New(3).Add(
+					text.New(data.CompanyName, props.Text{
+						Size:  11,
+						Style: fontstyle.Bold,
+						Align: align.Left,
+						Top:   3,
+					}),
+				),
+				col.New(6).Add(
+					text.New("PURCHASE ORDER", props.Text{
+						Size:  14,
+						Style: fontstyle.Bold,
+						Align: align.Right,
+						Top:   2,
+						Color: &props.Color{Red: 33, Green: 37, Blue: 41},
+					}),
+				),
 			),
-			col.New(6).Add(
-				text.New("PURCHASE ORDER", props.Text{
-					Size:  14,
-					Style: fontstyle.Bold,
-					Align: align.Right,
-					Color: &props.Color{Red: 33, Green: 37, Blue: 41},
-				}),
+		)
+	} else {
+		m.AddRows(
+			row.New(10).Add(
+				col.New(6).Add(
+					text.New(data.CompanyName, props.Text{
+						Size:  14,
+						Style: fontstyle.Bold,
+						Align: align.Left,
+					}),
+				),
+				col.New(6).Add(
+					text.New("PURCHASE ORDER", props.Text{
+						Size:  14,
+						Style: fontstyle.Bold,
+						Align: align.Right,
+						Color: &props.Color{Red: 33, Green: 37, Blue: 41},
+					}),
+				),
 			),
-		),
-	)
+		)
+	}
 
-	// Row 2: Company address + email (left) + PO number (right)
+	// Row 2: PO number (right-aligned)
 	m.AddRows(
 		row.New(8).Add(
-			col.New(6).Add(
-				text.New(fmt.Sprintf("%s | %s", data.CompanyAddress, data.CompanyEmail), props.Text{
-					Size:  8,
-					Align: align.Left,
-					Color: &props.Color{Red: 100, Green: 100, Blue: 100},
-				}),
-			),
+			col.New(6),
 			col.New(6).Add(
 				text.New(fmt.Sprintf("PO #: %s", data.PONumber), props.Text{
 					Size:  10,
@@ -99,6 +129,21 @@ func addPOHeader(m core.Maroto, data *POExportData) {
 
 	// Divider spacer
 	m.AddRows(row.New(3))
+}
+
+// logoExtension maps a filename to a maroto extension type.
+func logoExtension(filename string) extension.Type {
+	ext := strings.ToLower(filepath.Ext(filename))
+	switch ext {
+	case ".png":
+		return extension.Png
+	case ".jpg":
+		return extension.Jpg
+	case ".jpeg":
+		return extension.Jpeg
+	default:
+		return extension.Png
+	}
 }
 
 // addPOVendorBlock adds vendor details on the left and order metadata on the right.

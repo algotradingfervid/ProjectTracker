@@ -46,6 +46,8 @@ type POViewLineItem struct {
 }
 
 type POViewData struct {
+	CompanyName    string
+	LogoURL        string
 	ProjectID      string
 	POID           string
 	PONumber       string
@@ -149,10 +151,13 @@ templ POViewContent(data POViewData) {
 
 		<!-- 1. Document Header -->
 		<div class="flex justify-between items-start" style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid #D1CCC4;">
-			<!-- Left: Company Name -->
-			<div>
+			<!-- Left: Company Logo + Name -->
+			<div style="display: flex; align-items: center; gap: 12px;">
+				if data.LogoURL != "" {
+					<img src={ data.LogoURL } alt="Company Logo" style="max-height: 48px; max-width: 160px; object-fit: contain;"/>
+				}
 				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.5px;">
-					FSS ENGINEERING
+					{ data.CompanyName }
 				</div>
 			</div>
 			<!-- Right: PO Title + Number -->

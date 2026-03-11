@@ -1,0 +1,832 @@
+package templates
+
+import "fmt"
+
+type DCDetailAddress struct {
+	CompanyName  string
+	AddressLine1 string
+	AddressLine2 string
+	City         string
+	State        string
+	PinCode      string
+	GSTIN        string
+	ContactName  string
+	Phone        string
+}
+
+type DCDetailLineItem struct {
+	LineOrder   int
+	Description string
+	HSNCode     string
+	UOM         string
+	Qty         string
+	Rate        string
+	TaxPercent  string
+	Taxable     string
+	TaxAmount   string
+	Total       string
+	HasPricing  bool
+	Serials     []string
+}
+
+type DCDetailTransit struct {
+	TransporterName string
+	VehicleNumber   string
+	EwayBillNumber  string
+	DocketNumber    string
+	Notes           string
+}
+
+type DCDetailRelatedDC struct {
+	ID       string
+	DCNumber string
+	DCType   string
+	Status   string
+}
+
+type DCDetailShipmentGroup struct {
+	ID           string
+	Status       string
+	NumLocations int
+	TransitDC    *DCDetailRelatedDC
+	OfficialDCs  []DCDetailRelatedDC
+}
+
+type DCDetailDestination struct {
+	ID          string
+	ShipToName  string
+	ShipToCity  string
+	ShipToState string
+	IsSplit     bool
+}
+
+type DCDetailTransferInfo struct {
+	HubAddress      *DCDetailAddress
+	NumDestinations int
+	NumSplit        int
+	Destinations    []DCDetailDestination
+}
+
+type DCDetailData struct {
+	ProjectID     string
+	DCID          string
+	DCNumber      string
+	DCType        string
+	Status        string
+	TemplateName  string
+	ChallanDate   string
+	IssuedAt      string
+	BillFrom      *DCDetailAddress
+	DispatchFrom  *DCDetailAddress
+	BillTo        *DCDetailAddress
+	ShipTo        *DCDetailAddress
+	LineItems     []DCDetailLineItem
+	TotalTaxable  string
+	TotalTax      string
+	GrandTotal    string
+	Transit       *DCDetailTransit
+	ShipmentGroup *DCDetailShipmentGroup
+	TransferInfo  *DCDetailTransferInfo
+}
+
+// dcDetailStatusBadge returns inline CSS for a DC status badge.
+func dcDetailStatusBadge(status string) string {
+	switch status {
+	case "issued":
+		return "display: inline-block; padding: 4px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: #DBEAFE; color: #1D4ED8;"
+	case "splitting":
+		return "display: inline-block; padding: 4px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: #FEF3C7; color: #92400E;"
+	case "split":
+		return "display: inline-block; padding: 4px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: #D1FAE5; color: #065F46;"
+	default: // draft
+		return "display: inline-block; padding: 4px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: #F3F4F6; color: #6B7280;"
+	}
+}
+
+// dcTypeBadge returns inline CSS for a DC type badge.
+func dcTypeBadge(dcType string) string {
+	switch dcType {
+	case "transit":
+		return "display: inline-block; padding: 4px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: #EDE9FE; color: #6D28D9;"
+	case "official":
+		return "display: inline-block; padding: 4px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: #DBEAFE; color: #1D4ED8;"
+	case "transfer":
+		return "display: inline-block; padding: 4px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: #FEF3C7; color: #92400E;"
+	default:
+		return "display: inline-block; padding: 4px 10px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background-color: #F3F4F6; color: #6B7280;"
+	}
+}
+
+func dcDetailTypeLabel(dcType string) string {
+	switch dcType {
+	case "transit":
+		return "Transit DC"
+	case "official":
+		return "Official DC"
+	case "transfer":
+		return "Transfer DC"
+	default:
+		return dcType
+	}
+}
+
+templ DCDetailContent(data DCDetailData) {
+	<!-- Breadcrumbs -->
+	<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+		<a
+			hx-get={ fmt.Sprintf("/projects/%s", data.ProjectID) }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none; cursor: pointer;"
+		>
+			PROJECT
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<a
+			hx-get={ fmt.Sprintf("/projects/%s/dcs/", data.ProjectID) }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none; cursor: pointer;"
+		>
+			DELIVERY CHALLANS
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+			{ data.DCNumber }
+		</span>
+	</div>
+
+	<!-- Action Bar -->
+	<div class="flex items-center justify-between" style="margin-bottom: 24px;">
+		<a
+			hx-get={ fmt.Sprintf("/projects/%s/dcs/", data.ProjectID) }
+			hx-target="#main-content"
+			hx-push-url="true"
+			class="flex items-center"
+			style="gap: 6px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; text-decoration: none; cursor: pointer;"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
+			BACK TO LIST
+		</a>
+		<div class="flex items-center" style="gap: 12px;">
+			<!-- Type Badge -->
+			<span style={ dcTypeBadge(data.DCType) }>
+				{ dcDetailTypeLabel(data.DCType) }
+			</span>
+			<!-- Status Badge -->
+			<span style={ dcDetailStatusBadge(data.Status) }>
+				{ data.Status }
+			</span>
+
+			<!-- Actions based on status and type -->
+			if data.Status == "draft" {
+				<!-- Edit -->
+				<a
+					hx-get={ fmt.Sprintf("/projects/%s/dcs/%s/edit", data.ProjectID, data.DCID) }
+					hx-target="#main-content"
+					hx-push-url="true"
+					class="flex items-center"
+					style="gap: 6px; padding: 10px 18px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); background-color: var(--terracotta); text-transform: uppercase; text-decoration: none; cursor: pointer; border: none;"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+					EDIT
+				</a>
+				<!-- Issue -->
+				<button
+					hx-post={ fmt.Sprintf("/projects/%s/dcs/%s/issue", data.ProjectID, data.DCID) }
+					hx-target="#main-content"
+					hx-swap="innerHTML"
+					class="flex items-center"
+					style="gap: 6px; padding: 10px 18px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: #FFFFFF; background-color: #4A7C59; text-transform: uppercase; cursor: pointer; border: none;"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
+					ISSUE
+				</button>
+				<!-- Delete -->
+				<button
+					hx-delete={ fmt.Sprintf("/projects/%s/dcs/%s", data.ProjectID, data.DCID) }
+					hx-confirm="Are you sure you want to delete this delivery challan?"
+					hx-target="#main-content"
+					hx-swap="innerHTML"
+					class="flex items-center"
+					style="gap: 6px; padding: 10px 18px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: #DC2626; background-color: #FEE2E2; text-transform: uppercase; cursor: pointer; border: none;"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+					DELETE
+				</button>
+			}
+			if data.Status == "issued" || data.Status == "splitting" {
+				<!-- Export PDF -->
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/projects/%s/dcs/%s/export/pdf", data.ProjectID, data.DCID)) }
+					class="flex items-center"
+					style="gap: 6px; padding: 10px 18px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-light); background-color: var(--terracotta); text-transform: uppercase; text-decoration: none; cursor: pointer; border: none;"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
+					EXPORT PDF
+				</a>
+				<!-- Export Excel -->
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/projects/%s/dcs/%s/export/excel", data.ProjectID, data.DCID)) }
+					class="flex items-center"
+					style="gap: 6px; padding: 10px 18px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); background-color: #E8E4DC; text-transform: uppercase; text-decoration: none; cursor: pointer; border: none;"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
+					EXPORT EXCEL
+				</a>
+				<!-- Print -->
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/projects/%s/dcs/%s/print", data.ProjectID, data.DCID)) }
+					target="_blank"
+					class="flex items-center"
+					style="gap: 6px; padding: 10px 18px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-primary); background-color: #E8E4DC; text-transform: uppercase; text-decoration: none; cursor: pointer; border: none;"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect width="12" height="8" x="6" y="14"></rect></svg>
+					PRINT
+				</a>
+			}
+			if data.DCType == "transfer" && (data.Status == "issued" || data.Status == "splitting") {
+				<!-- Split -->
+				<a
+					hx-get={ fmt.Sprintf("/projects/%s/transfer-dcs/%s/split", data.ProjectID, data.DCID) }
+					hx-target="#main-content"
+					hx-push-url="true"
+					class="flex items-center"
+					style="gap: 6px; padding: 10px 18px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: #FFFFFF; background-color: #6D28D9; text-transform: uppercase; text-decoration: none; cursor: pointer; border: none;"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"></path><path d="M8 3H3v5"></path><path d="m21 3-8.5 8.5"></path><path d="M3 3l8.5 8.5"></path><path d="M3 16v5h5"></path><path d="m3 21 8.5-8.5"></path></svg>
+					SPLIT
+				</a>
+			}
+		</div>
+	</div>
+
+	<!-- Document Container -->
+	<div style="max-width: 900px; margin: 0 auto; background-color: #FFFFFF; padding: 48px; border: 1px solid #D1CCC4; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+
+		<!-- 1. Document Header -->
+		<div class="flex justify-between items-start" style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid #D1CCC4;">
+			<div>
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 1px;">
+					DELIVERY CHALLAN
+				</div>
+				<div style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-top: 4px;">
+					{ data.DCNumber }
+				</div>
+			</div>
+			<div style="text-align: right;">
+				<span style={ dcTypeBadge(data.DCType) }>
+					{ dcDetailTypeLabel(data.DCType) }
+				</span>
+				if data.TemplateName != "" {
+					<div style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+						Template: { data.TemplateName }
+					</div>
+				}
+			</div>
+		</div>
+
+		<!-- 2. Date Block -->
+		<div class="flex" style="gap: 0; margin-bottom: 20px; border: 1px solid #D1CCC4;">
+			<div style="flex: 1; padding: 12px 16px; border-right: 1px solid #D1CCC4;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
+					CHALLAN DATE
+				</div>
+				<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+					if data.ChallanDate != "" {
+						{ data.ChallanDate }
+					} else {
+						<span style="color: var(--text-muted);">&mdash;</span>
+					}
+				</div>
+			</div>
+			<div style="flex: 1; padding: 12px 16px; border-right: 1px solid #D1CCC4;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
+					STATUS
+				</div>
+				<div>
+					<span style={ dcDetailStatusBadge(data.Status) }>
+						{ data.Status }
+					</span>
+				</div>
+			</div>
+			<div style="flex: 1; padding: 12px 16px;">
+				<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
+					ISSUED AT
+				</div>
+				<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+					if data.IssuedAt != "" {
+						{ data.IssuedAt }
+					} else {
+						<span style="color: var(--text-muted);">&mdash;</span>
+					}
+				</div>
+			</div>
+		</div>
+
+		<!-- 3. Addresses: Bill From / Dispatch From -->
+		<div class="flex" style="gap: 0; margin-bottom: 20px; border: 1px solid #D1CCC4;">
+			<div style="flex: 1; border-right: 1px solid #D1CCC4;">
+				<div style="background-color: #F0EDE7; padding: 8px 16px;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+						BILL FROM
+					</span>
+				</div>
+				<div style="padding: 12px 16px;">
+					@dcAddressBlock(data.BillFrom)
+				</div>
+			</div>
+			<div style="flex: 1;">
+				<div style="background-color: #F0EDE7; padding: 8px 16px;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+						DISPATCH FROM
+					</span>
+				</div>
+				<div style="padding: 12px 16px;">
+					@dcAddressBlock(data.DispatchFrom)
+				</div>
+			</div>
+		</div>
+
+		<!-- 4. Addresses: Bill To / Ship To -->
+		<div class="flex" style="gap: 0; margin-bottom: 20px; border: 1px solid #D1CCC4;">
+			<div style="flex: 1; border-right: 1px solid #D1CCC4;">
+				<div style="background-color: #F0EDE7; padding: 8px 16px;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+						BILL TO
+					</span>
+				</div>
+				<div style="padding: 12px 16px;">
+					@dcAddressBlock(data.BillTo)
+				</div>
+			</div>
+			<div style="flex: 1;">
+				<div style="background-color: #F0EDE7; padding: 8px 16px;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+						SHIP TO
+					</span>
+				</div>
+				<div style="padding: 12px 16px;">
+					@dcAddressBlock(data.ShipTo)
+				</div>
+			</div>
+		</div>
+
+		<!-- 5. Transport Details -->
+		if data.Transit != nil {
+			<div style="border: 1px solid #D1CCC4; margin-bottom: 20px;">
+				<div style="background-color: #F0EDE7; padding: 8px 16px;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+						TRANSPORT DETAILS
+					</span>
+				</div>
+				<div class="flex" style="flex-wrap: wrap; padding: 12px 16px; gap: 0;">
+					if data.Transit.TransporterName != "" {
+						<div style="width: 50%; padding: 6px 0; box-sizing: border-box; padding-right: 16px;">
+							<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
+								TRANSPORTER
+							</div>
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+								{ data.Transit.TransporterName }
+							</div>
+						</div>
+					}
+					if data.Transit.VehicleNumber != "" {
+						<div style="width: 50%; padding: 6px 0; box-sizing: border-box; padding-left: 16px;">
+							<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
+								VEHICLE NUMBER
+							</div>
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+								{ data.Transit.VehicleNumber }
+							</div>
+						</div>
+					}
+					if data.Transit.EwayBillNumber != "" {
+						<div style="width: 50%; padding: 6px 0; box-sizing: border-box; padding-right: 16px; margin-top: 8px;">
+							<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
+								E-WAY BILL NUMBER
+							</div>
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+								{ data.Transit.EwayBillNumber }
+							</div>
+						</div>
+					}
+					if data.Transit.DocketNumber != "" {
+						<div style="width: 50%; padding: 6px 0; box-sizing: border-box; padding-left: 16px; margin-top: 8px;">
+							<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
+								DOCKET NUMBER
+							</div>
+							<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+								{ data.Transit.DocketNumber }
+							</div>
+						</div>
+					}
+				</div>
+			</div>
+		}
+
+		<!-- 6. Line Items Table -->
+		<div style="border: 1px solid #D1CCC4; margin-bottom: 0; overflow-x: auto;">
+			<div style="background-color: #F0EDE7; padding: 8px 16px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+					LINE ITEMS
+				</span>
+			</div>
+			if data.DCType == "official" {
+				<!-- Official DC: no pricing columns -->
+				<table style="width: 100%; border-collapse: collapse;">
+					<thead>
+						<tr style="background-color: var(--bg-sidebar);">
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+								SI NO.
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: left; padding: 10px 10px; border-right: 1px solid rgba(255,255,255,0.1);">
+								DESCRIPTION
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+								HSN CODE
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+								UOM
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: right; padding: 10px 10px; white-space: nowrap;">
+								QTY
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						if len(data.LineItems) == 0 {
+							<tr>
+								<td colspan="5" style="text-align: center; padding: 24px 16px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted); font-style: italic;">
+									No line items.
+								</td>
+							</tr>
+						} else {
+							for i, item := range data.LineItems {
+								<tr style={ dcDetailRowStyle(i) }>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ fmtInt(item.LineOrder) }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); padding: 10px 10px; border-right: 1px solid #E8E4DC;">
+										{ item.Description }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.HSNCode }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.UOM }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-primary); text-align: right; padding: 10px 10px; white-space: nowrap;">
+										{ item.Qty }
+									</td>
+								</tr>
+							}
+						}
+					</tbody>
+				</table>
+			} else {
+				<!-- Transit/Transfer DC: full pricing columns -->
+				<table style="width: 100%; border-collapse: collapse; min-width: 780px;">
+					<thead>
+						<tr style="background-color: var(--bg-sidebar);">
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+								SI NO.
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: left; padding: 10px 10px; border-right: 1px solid rgba(255,255,255,0.1);">
+								DESCRIPTION
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+								HSN CODE
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+								QTY
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+								UOM
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+								RATE
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+								TAXABLE
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+								TAX %
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);">
+								TAX AMT
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-light); text-align: right; padding: 10px 10px; white-space: nowrap;">
+								TOTAL
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						if len(data.LineItems) == 0 {
+							<tr>
+								<td colspan="10" style="text-align: center; padding: 24px 16px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted); font-style: italic;">
+									No line items.
+								</td>
+							</tr>
+						} else {
+							for i, item := range data.LineItems {
+								<tr style={ dcDetailRowStyle(i) }>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ fmtInt(item.LineOrder) }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); padding: 10px 10px; border-right: 1px solid #E8E4DC;">
+										{ item.Description }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.HSNCode }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.Qty }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: center; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.UOM }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.Rate }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.Taxable }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.TaxPercent }%
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); text-align: right; padding: 10px 10px; white-space: nowrap; border-right: 1px solid #E8E4DC;">
+										{ item.TaxAmount }
+									</td>
+									<td style="font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-primary); text-align: right; padding: 10px 10px; white-space: nowrap;">
+										{ item.Total }
+									</td>
+								</tr>
+								<!-- Serial numbers expandable row -->
+								if len(item.Serials) > 0 {
+									<tr style="border-top: 1px dashed #E8E4DC; background-color: #FAFAF8;">
+										<td colspan="10" style="padding: 8px 16px;" x-data="{ open: false }">
+											<button
+												@click="open = !open"
+												style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--terracotta); text-transform: uppercase; background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 4px;"
+											>
+												<svg x-show="!open" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+												<svg x-show="open" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
+												{ fmt.Sprintf("SERIAL NUMBERS (%d)", len(item.Serials)) }
+											</button>
+											<div x-show="open" x-cloak style="margin-top: 8px; padding: 8px 12px; background-color: #F0EDE7; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary); line-height: 1.8;">
+												for _, serial := range item.Serials {
+													<span style="display: inline-block; padding: 2px 8px; margin: 2px 4px; background-color: #FFFFFF; border: 1px solid #D1CCC4;">
+														{ serial }
+													</span>
+												}
+											</div>
+										</td>
+									</tr>
+								}
+							}
+						}
+					</tbody>
+				</table>
+			}
+		</div>
+
+		<!-- 7. Totals Section (transit/transfer only) -->
+		if data.DCType != "official" {
+			<div class="flex justify-end" style="margin-bottom: 20px; border: 1px solid #D1CCC4; border-top: none;">
+				<div style="width: 340px; padding: 16px 20px; border-left: 1px solid #D1CCC4;">
+					<div class="flex justify-between items-center" style="padding: 6px 0; border-bottom: 1px solid #E8E4DC;">
+						<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+							TAXABLE AMOUNT
+						</span>
+						<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+							{ data.TotalTaxable }
+						</span>
+					</div>
+					<div class="flex justify-between items-center" style="padding: 6px 0; border-bottom: 1px solid #D1CCC4;">
+						<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+							TAX AMOUNT
+						</span>
+						<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+							{ data.TotalTax }
+						</span>
+					</div>
+					<div class="flex justify-between items-center" style="padding: 10px 0 0 0;">
+						<span style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: var(--text-primary); text-transform: uppercase;">
+							GRAND TOTAL
+						</span>
+						<span style="font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--text-primary);">
+							{ data.GrandTotal }
+						</span>
+					</div>
+				</div>
+			</div>
+		}
+
+		<!-- 8. Shipment Group Info (for transit/official DCs) -->
+		if data.ShipmentGroup != nil {
+			<div style="border: 1px solid #D1CCC4; margin-bottom: 20px;">
+				<div style="background-color: #F0EDE7; padding: 8px 16px;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+						SHIPMENT GROUP
+					</span>
+					<span style={ dcDetailStatusBadge(data.ShipmentGroup.Status) }>
+						{ data.ShipmentGroup.Status }
+					</span>
+				</div>
+				<div style="padding: 12px 16px;">
+					<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">
+						{ fmt.Sprintf("%d location(s)", data.ShipmentGroup.NumLocations) }
+					</div>
+					<!-- Transit DC link -->
+					if data.ShipmentGroup.TransitDC != nil {
+						<div style="margin-bottom: 8px;">
+							<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-right: 8px;">
+								TRANSIT DC:
+							</span>
+							<a
+								hx-get={ fmt.Sprintf("/projects/%s/dcs/%s", data.ProjectID, data.ShipmentGroup.TransitDC.ID) }
+								hx-target="#main-content"
+								hx-push-url="true"
+								style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--terracotta); text-decoration: none; cursor: pointer;"
+							>
+								{ data.ShipmentGroup.TransitDC.DCNumber }
+							</a>
+							<span style={ dcDetailStatusBadge(data.ShipmentGroup.TransitDC.Status) }>
+								{ data.ShipmentGroup.TransitDC.Status }
+							</span>
+						</div>
+					}
+					<!-- Official DCs -->
+					if len(data.ShipmentGroup.OfficialDCs) > 0 {
+						<div>
+							<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-right: 8px;">
+								OFFICIAL DCS:
+							</span>
+							for _, odc := range data.ShipmentGroup.OfficialDCs {
+								<a
+									hx-get={ fmt.Sprintf("/projects/%s/dcs/%s", data.ProjectID, odc.ID) }
+									hx-target="#main-content"
+									hx-push-url="true"
+									style="display: inline-block; margin-right: 12px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--terracotta); text-decoration: none; cursor: pointer;"
+								>
+									{ odc.DCNumber }
+								</a>
+							}
+						</div>
+					}
+				</div>
+			</div>
+		}
+
+		<!-- 9. Transfer DC Destination Plan -->
+		if data.TransferInfo != nil {
+			<div style="border: 1px solid #D1CCC4; margin-bottom: 20px;">
+				<div style="background-color: #F0EDE7; padding: 8px 16px;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">
+						DESTINATION PLAN
+					</span>
+					<span style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary); margin-left: 12px;">
+						{ fmt.Sprintf("%d of %d split", data.TransferInfo.NumSplit, data.TransferInfo.NumDestinations) }
+					</span>
+				</div>
+				<!-- Hub address -->
+				if data.TransferInfo.HubAddress != nil {
+					<div style="padding: 12px 16px; border-bottom: 1px solid #E8E4DC;">
+						<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase; margin-right: 8px;">
+							HUB ADDRESS:
+						</span>
+						<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+							{ data.TransferInfo.HubAddress.CompanyName }
+							if data.TransferInfo.HubAddress.City != "" {
+								{ ", " }{ data.TransferInfo.HubAddress.City }
+							}
+						</span>
+					</div>
+				}
+				<!-- Destinations table -->
+				<table style="width: 100%; border-collapse: collapse;">
+					<thead>
+						<tr style="background-color: #F7F5F2;">
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-align: left; padding: 8px 16px; text-transform: uppercase;">
+								DESTINATION
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-align: left; padding: 8px 16px; text-transform: uppercase;">
+								CITY / STATE
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-align: center; padding: 8px 16px; text-transform: uppercase;">
+								SPLIT STATUS
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, dest := range data.TransferInfo.Destinations {
+							<tr style="border-top: 1px solid #E8E4DC;">
+								<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); padding: 8px 16px;">
+									{ dest.ShipToName }
+								</td>
+								<td style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); padding: 8px 16px;">
+									if dest.ShipToCity != "" {
+										{ dest.ShipToCity }
+									}
+									if dest.ShipToCity != "" && dest.ShipToState != "" {
+										{ ", " }
+									}
+									if dest.ShipToState != "" {
+										{ dest.ShipToState }
+									}
+								</td>
+								<td style="text-align: center; padding: 8px 16px;">
+									if dest.IsSplit {
+										<span style="display: inline-block; padding: 2px 8px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; background-color: #D1FAE5; color: #065F46;">
+											SPLIT
+										</span>
+									} else {
+										<span style="display: inline-block; padding: 2px 8px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; background-color: #FEF3C7; color: #92400E;">
+											PENDING
+										</span>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+
+	</div>
+	<!-- Bottom spacing -->
+	<div style="height: 48px;"></div>
+}
+
+// dcAddressBlock renders an address block or "Not specified" placeholder.
+templ dcAddressBlock(addr *DCDetailAddress) {
+	if addr != nil {
+		if addr.CompanyName != "" {
+			<div style="font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">
+				{ addr.CompanyName }
+			</div>
+		}
+		if addr.AddressLine1 != "" {
+			<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);">
+				{ addr.AddressLine1 }
+			</div>
+		}
+		if addr.AddressLine2 != "" {
+			<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);">
+				{ addr.AddressLine2 }
+			</div>
+		}
+		if addr.City != "" || addr.State != "" || addr.PinCode != "" {
+			<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);">
+				if addr.City != "" {
+					{ addr.City }
+				}
+				if addr.City != "" && addr.State != "" {
+					{ ", " }
+				}
+				if addr.State != "" {
+					{ addr.State }
+				}
+				if addr.PinCode != "" {
+					{ " — " }{ addr.PinCode }
+				}
+			</div>
+		}
+		if addr.GSTIN != "" {
+			<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); text-transform: uppercase;">GSTIN: </span>{ addr.GSTIN }
+			</div>
+		}
+		if addr.ContactName != "" || addr.Phone != "" {
+			<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+				if addr.ContactName != "" {
+					{ addr.ContactName }
+				}
+				if addr.Phone != "" {
+					if addr.ContactName != "" {
+						{ " · " }
+					}
+					{ addr.Phone }
+				}
+			</div>
+		}
+	} else {
+		<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted); font-style: italic;">
+			Not specified
+		</span>
+	}
+}
+
+func dcDetailRowStyle(i int) string {
+	if i%2 == 0 {
+		return "border-top: 1px solid #D1CCC4; background-color: #FFFFFF;"
+	}
+	return "border-top: 1px solid #D1CCC4; background-color: #F7F5F2;"
+}
+
+templ DCDetailPage(data DCDetailData, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject("DC Detail — Project Creation", headerData, sidebarData) {
+		@DCDetailContent(data)
+	}
+}

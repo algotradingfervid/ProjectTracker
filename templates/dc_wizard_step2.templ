@@ -1,0 +1,409 @@
+package templates
+
+import "fmt"
+import "strconv"
+
+type DCWizardStep2Data struct {
+	ProjectID             string
+	DCType                string
+	TemplateID            string
+	TemplateName          string
+	ChallanDate           string
+	TransporterID         string
+	TransporterName       string
+	VehicleID             string
+	VehicleNumber         string
+	EwayBillNumber        string
+	DocketNumber          string
+	ReverseCharge         bool
+	BillFromAddresses     []AddressSelectItem
+	DispatchFromAddresses []AddressSelectItem
+	BillToAddresses       []AddressSelectItem
+	ShipToAddresses       []AddressSelectItem
+	DefaultBillFromID     string
+	DefaultDispatchFromID string
+	BillFromID            string
+	DispatchFromID        string
+	BillToID              string
+	ShipToIDs             []string
+	NumDestinations       int
+	HubAddressID          string
+	TaxTypeOverride       string
+	Errors                map[string]string
+}
+
+func shipToIDForIndex(data DCWizardStep2Data, index int) string {
+	if data.ShipToIDs != nil && index < len(data.ShipToIDs) {
+		return data.ShipToIDs[index]
+	}
+	return ""
+}
+
+templ DCWizardStep2Content(data DCWizardStep2Data) {
+	// Breadcrumbs
+	<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+		<a
+			href={ templ.SafeURL("/projects/" + data.ProjectID) }
+			hx-get={ "/projects/" + data.ProjectID }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;"
+		>
+			PROJECT
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<a
+			href={ templ.SafeURL("/projects/" + data.ProjectID + "/dcs/") }
+			hx-get={ "/projects/" + data.ProjectID + "/dcs/" }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;"
+		>
+			DELIVERY CHALLANS
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+			NEW DC
+		</span>
+	</div>
+
+	// Page header with step indicator
+	<div class="flex items-center justify-between">
+		<div>
+			<h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--text-primary); margin: 0;">
+				Create Delivery Challan
+			</h1>
+			<p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-top: 8px;">
+				Step 2 of 4 — Destinations
+			</p>
+		</div>
+		// Step progress
+		<div class="flex items-center" style="gap: 8px;">
+			<div style="width: 32px; height: 32px; background-color: var(--success); color: white; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;">✓</div>
+			<div style="width: 24px; height: 2px; background-color: var(--terracotta);"></div>
+			<div style="width: 32px; height: 32px; background-color: var(--terracotta); color: white; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;">2</div>
+			<div style="width: 24px; height: 2px; background-color: var(--border-light);"></div>
+			<div style="width: 32px; height: 32px; background-color: var(--border-light); color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600;">3</div>
+			<div style="width: 24px; height: 2px; background-color: var(--border-light);"></div>
+			<div style="width: 32px; height: 32px; background-color: var(--border-light); color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600;">4</div>
+		</div>
+	</div>
+
+	// Step 1 Summary
+	<div style="background-color: var(--bg-card); padding: 12px 24px; margin-top: 24px; border-left: 3px solid var(--success);">
+		<div class="flex items-center" style="gap: 16px;">
+			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">SETUP:</span>
+			<span style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+				if data.DCType == "transfer" {
+					Transfer DC
+				} else {
+					Direct Shipment
+				}
+				— { data.TemplateName } — { data.ChallanDate }
+				if data.TransporterName != "" {
+					 — { data.TransporterName }
+					if data.VehicleNumber != "" {
+						({ data.VehicleNumber })
+					}
+				}
+			</span>
+		</div>
+	</div>
+
+	// Form
+	<form
+		method="POST"
+		action={ templ.SafeURL("/projects/" + data.ProjectID + "/dcs/create/step3") }
+		hx-post={ "/projects/" + data.ProjectID + "/dcs/create/step3" }
+		hx-target="#main-content"
+		hx-push-url="false"
+		style="margin-top: 24px;"
+		x-data={ fmt.Sprintf(`{
+			numDest: %d,
+			billFromOverride: %t,
+			dispatchFromOverride: %t
+		}`, data.NumDestinations, data.BillFromID != data.DefaultBillFromID && data.DefaultBillFromID != "", data.DispatchFromID != data.DefaultDispatchFromID && data.DefaultDispatchFromID != "") }
+	>
+		// Hidden fields carrying step 1 data forward
+		<input type="hidden" name="dc_type" value={ data.DCType }/>
+		<input type="hidden" name="template_id" value={ data.TemplateID }/>
+		<input type="hidden" name="challan_date" value={ data.ChallanDate }/>
+		<input type="hidden" name="transporter_id" value={ data.TransporterID }/>
+		<input type="hidden" name="vehicle_id" value={ data.VehicleID }/>
+		<input type="hidden" name="eway_bill_number" value={ data.EwayBillNumber }/>
+		<input type="hidden" name="docket_number" value={ data.DocketNumber }/>
+		if data.ReverseCharge {
+			<input type="hidden" name="reverse_charge" value="on"/>
+		}
+
+		// Error banner
+		if len(data.Errors) > 0 {
+			<div style="background-color: #FEE2E2; border: 1px solid #EF4444; padding: 12px 16px; margin-bottom: 24px;">
+				for _, msg := range data.Errors {
+					<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: #DC2626;">
+						{ msg }
+					</div>
+				}
+			</div>
+		}
+
+		// Section: Source Addresses (Bill From + Dispatch From)
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					SOURCE ADDRESSES
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				// Bill From
+				<div style="margin-bottom: 16px;">
+					<div class="flex items-center justify-between" style="margin-bottom: 6px;">
+						<label style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+							BILL FROM
+						</label>
+						if data.DefaultBillFromID != "" {
+							<button type="button" @click="billFromOverride = !billFromOverride"
+								style="font-family: 'Inter', sans-serif; font-size: 11px; color: var(--terracotta); background: none; border: none; cursor: pointer; text-decoration: underline;">
+								<span x-text="billFromOverride ? 'Use Default' : 'Override'"></span>
+							</button>
+						}
+					</div>
+					if data.DefaultBillFromID != "" {
+						<div x-show="!billFromOverride">
+							<input type="hidden" name="bill_from_id" :disabled="billFromOverride" value={ data.DefaultBillFromID }/>
+							// Show default address name
+							for _, a := range data.BillFromAddresses {
+								if a.ID == data.DefaultBillFromID {
+									<div style="padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); box-sizing: border-box;">
+										{ a.CompanyName } — { a.City }, { a.State }
+										<span style="font-size: 11px; color: var(--text-muted); margin-left: 8px;">(Project Default)</span>
+									</div>
+								}
+							}
+						</div>
+					}
+					<div x-show={ fmt.Sprintf("billFromOverride || '%s' === ''", data.DefaultBillFromID) } x-cloak>
+						<select name="bill_from_id" :disabled="!billFromOverride"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none;">
+							<option value="">— Select —</option>
+							for _, a := range data.BillFromAddresses {
+								if a.ID == data.BillFromID {
+									<option value={ a.ID } selected>{ a.CompanyName } — { a.City }, { a.State }</option>
+								} else {
+									<option value={ a.ID }>{ a.CompanyName } — { a.City }, { a.State }</option>
+								}
+							}
+						</select>
+					</div>
+				</div>
+
+				// Dispatch From
+				<div>
+					<div class="flex items-center justify-between" style="margin-bottom: 6px;">
+						<label style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+							DISPATCH FROM
+						</label>
+						if data.DefaultDispatchFromID != "" {
+							<button type="button" @click="dispatchFromOverride = !dispatchFromOverride"
+								style="font-family: 'Inter', sans-serif; font-size: 11px; color: var(--terracotta); background: none; border: none; cursor: pointer; text-decoration: underline;">
+								<span x-text="dispatchFromOverride ? 'Use Default' : 'Override'"></span>
+							</button>
+						}
+					</div>
+					if data.DefaultDispatchFromID != "" {
+						<div x-show="!dispatchFromOverride">
+							<input type="hidden" name="dispatch_from_id" :disabled="dispatchFromOverride" value={ data.DefaultDispatchFromID }/>
+							for _, a := range data.DispatchFromAddresses {
+								if a.ID == data.DefaultDispatchFromID {
+									<div style="padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); box-sizing: border-box;">
+										{ a.CompanyName } — { a.City }, { a.State }
+										<span style="font-size: 11px; color: var(--text-muted); margin-left: 8px;">(Project Default)</span>
+									</div>
+								}
+							}
+						</div>
+					}
+					<div x-show={ fmt.Sprintf("dispatchFromOverride || '%s' === ''", data.DefaultDispatchFromID) } x-cloak>
+						<select name="dispatch_from_id" :disabled="!dispatchFromOverride"
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none;">
+							<option value="">— Select —</option>
+							for _, a := range data.DispatchFromAddresses {
+								if a.ID == data.DispatchFromID {
+									<option value={ a.ID } selected>{ a.CompanyName } — { a.City }, { a.State }</option>
+								} else {
+									<option value={ a.ID }>{ a.CompanyName } — { a.City }, { a.State }</option>
+								}
+							}
+						</select>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		// Section: Destination Addresses
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					DESTINATION ADDRESSES
+				</span>
+			</div>
+			<div style="padding: 24px;">
+				// Bill To
+				<div style="margin-bottom: 16px;">
+					<label for="bill_to_id" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						BILL TO <span style="color: var(--terracotta);">*</span>
+					</label>
+					<select id="bill_to_id" name="bill_to_id" required
+						style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none;">
+						<option value="">— Select —</option>
+						for _, a := range data.BillToAddresses {
+							if a.ID == data.BillToID {
+								<option value={ a.ID } selected>{ a.CompanyName } — { a.City }, { a.State }</option>
+							} else {
+								<option value={ a.ID }>{ a.CompanyName } — { a.City }, { a.State }</option>
+							}
+						}
+					</select>
+					if data.Errors["bill_to_id"] != "" {
+						<div style="font-family: 'Inter', sans-serif; font-size: 12px; color: #DC2626; margin-top: 4px;">
+							{ data.Errors["bill_to_id"] }
+						</div>
+					}
+				</div>
+
+				// Hub Address (Transfer only)
+				if data.DCType == "transfer" {
+					<div style="margin-bottom: 16px;">
+						<label for="hub_address_id" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+							HUB ADDRESS <span style="color: var(--terracotta);">*</span>
+							<span style="font-weight: 400; color: var(--text-muted); text-transform: none; letter-spacing: 0;">(Transfer destination)</span>
+						</label>
+						<select id="hub_address_id" name="hub_address_id" required
+							style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none;">
+							<option value="">— Select —</option>
+							for _, a := range data.ShipToAddresses {
+								if a.ID == data.HubAddressID {
+									<option value={ a.ID } selected>{ a.CompanyName } — { a.City }, { a.State }</option>
+								} else {
+									<option value={ a.ID }>{ a.CompanyName } — { a.City }, { a.State }</option>
+								}
+							}
+						</select>
+						if data.Errors["hub_address_id"] != "" {
+							<div style="font-family: 'Inter', sans-serif; font-size: 12px; color: #DC2626; margin-top: 4px;">
+								{ data.Errors["hub_address_id"] }
+							</div>
+						}
+					</div>
+				}
+
+				// Number of Destinations
+				<div style="margin-bottom: 16px;">
+					<label for="num_destinations" style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						NUMBER OF SHIP-TO DESTINATIONS
+					</label>
+					<input
+						type="number"
+						id="num_destinations"
+						name="num_destinations"
+						x-model.number="numDest"
+						min="1"
+						max="20"
+						value={ strconv.Itoa(data.NumDestinations) }
+						style="width: 120px; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box;"
+					/>
+				</div>
+
+				// Ship To addresses (dynamic based on numDest)
+				<div class="flex flex-col" style="gap: 12px;">
+					for i := 0; i < 20; i++ {
+						<div x-show={ fmt.Sprintf("numDest > %d", i) } x-cloak>
+							<label style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+								SHIP TO { fmt.Sprintf("#%d", i+1) } <span style="color: var(--terracotta);">*</span>
+							</label>
+							<select name={ fmt.Sprintf("ship_to_id_%d", i) }
+								style="width: 100%; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none;">
+								<option value="">— Select —</option>
+								for _, a := range data.ShipToAddresses {
+									if a.ID == shipToIDForIndex(data, i) {
+										<option value={ a.ID } selected>{ a.CompanyName } — { a.City }, { a.State }</option>
+									} else {
+										<option value={ a.ID }>{ a.CompanyName } — { a.City }, { a.State }</option>
+									}
+								}
+							</select>
+							if data.Errors[fmt.Sprintf("ship_to_id_%d", i)] != "" {
+								<div style="font-family: 'Inter', sans-serif; font-size: 12px; color: #DC2626; margin-top: 4px;">
+									{ data.Errors[fmt.Sprintf("ship_to_id_%d", i)] }
+								</div>
+							}
+						</div>
+					}
+				</div>
+
+				// Tax Type Override
+				<div style="margin-top: 16px;">
+					<label style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+						TAX TYPE
+						<span style="font-weight: 400; color: var(--text-muted); text-transform: none; letter-spacing: 0;">(auto-calculated, override if needed)</span>
+					</label>
+					<select name="tax_type_override"
+						style="width: 240px; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); background-color: var(--bg-page); border: 1px solid var(--border-light); border-radius: 0; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none;">
+						<option value="">Auto-detect</option>
+						if data.TaxTypeOverride == "cgst_sgst" {
+							<option value="cgst_sgst" selected>CGST + SGST (Intra-state)</option>
+						} else {
+							<option value="cgst_sgst">CGST + SGST (Intra-state)</option>
+						}
+						if data.TaxTypeOverride == "igst" {
+							<option value="igst" selected>IGST (Inter-state)</option>
+						} else {
+							<option value="igst">IGST (Inter-state)</option>
+						}
+					</select>
+				</div>
+			</div>
+		</div>
+
+		// Actions
+		<div class="flex items-center justify-between" style="padding-top: 16px;">
+			<form
+				method="POST"
+				action={ templ.SafeURL("/projects/" + data.ProjectID + "/dcs/create/back-to-step1") }
+				hx-post={ "/projects/" + data.ProjectID + "/dcs/create/back-to-step1" }
+				hx-target="#main-content"
+				hx-push-url="false"
+				style="margin: 0;"
+			>
+				<input type="hidden" name="dc_type" value={ data.DCType }/>
+				<input type="hidden" name="template_id" value={ data.TemplateID }/>
+				<input type="hidden" name="challan_date" value={ data.ChallanDate }/>
+				<input type="hidden" name="transporter_id" value={ data.TransporterID }/>
+				<input type="hidden" name="vehicle_id" value={ data.VehicleID }/>
+				<input type="hidden" name="eway_bill_number" value={ data.EwayBillNumber }/>
+				<input type="hidden" name="docket_number" value={ data.DocketNumber }/>
+				if data.ReverseCharge {
+					<input type="hidden" name="reverse_charge" value="on"/>
+				}
+				<button
+					type="submit"
+					style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); padding: 12px 24px; background-color: var(--bg-card); border: 1px solid var(--border-light); cursor: pointer; text-transform: uppercase;"
+				>
+					← BACK
+				</button>
+			</form>
+			<button
+				type="submit"
+				style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; color: white; padding: 12px 32px; background-color: var(--terracotta); border: none; cursor: pointer; text-transform: uppercase;"
+			>
+				NEXT: ITEMS &amp; SERIALS →
+			</button>
+		</div>
+	</form>
+}
+
+templ DCWizardStep2Page(data DCWizardStep2Data, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject("Create Delivery Challan — Destinations", headerData, sidebarData) {
+		@DCWizardStep2Content(data)
+	}
+}

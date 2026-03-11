@@ -15,8 +15,6 @@
     --text-xs--line-height: calc(1 / 0.75);
     --text-sm: 0.875rem;
     --text-sm--line-height: calc(1.25 / 0.875);
-    --text-lg: 1.125rem;
-    --text-lg--line-height: calc(1.75 / 1.125);
     --text-2xl: 1.5rem;
     --text-2xl--line-height: calc(2 / 1.5);
     --font-weight-medium: 500;
@@ -1975,6 +1973,36 @@
       max-width: 96rem;
     }
   }
+  .divider {
+    @layer daisyui.l1.l2.l3 {
+      display: flex;
+      height: calc(0.25rem * 4);
+      flex-direction: row;
+      align-items: center;
+      align-self: stretch;
+      white-space: nowrap;
+      margin: var(--divider-m, 1rem 0);
+      --divider-color: var(--color-base-content);
+      @supports (color: color-mix(in lab, red, red)) {
+        --divider-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+      }
+      &:before, &:after {
+        content: "";
+        height: calc(0.25rem * 0.5);
+        width: 100%;
+        flex-grow: 1;
+        background-color: var(--divider-color);
+      }
+      @media print {
+        &:before, &:after {
+          border: 0.5px solid;
+        }
+      }
+      &:not(:empty) {
+        gap: calc(0.25rem * 4);
+      }
+    }
+  }
   .filter {
     @layer daisyui.l1.l2.l3 {
       display: flex;
@@ -2310,6 +2338,12 @@
   .grid-cols-1 {
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
   .flex-col {
     flex-direction: column;
   }
@@ -2345,6 +2379,21 @@
   }
   .gap-4 {
     gap: calc(var(--spacing) * 4);
+  }
+  .gap-6 {
+    gap: calc(var(--spacing) * 6);
+  }
+  .gap-8 {
+    gap: calc(var(--spacing) * 8);
+  }
+  .gap-12 {
+    gap: calc(var(--spacing) * 12);
+  }
+  .gap-20 {
+    gap: calc(var(--spacing) * 20);
+  }
+  .gap-24 {
+    gap: calc(var(--spacing) * 24);
   }
   .truncate {
     overflow: hidden;
@@ -2395,13 +2444,15 @@
   .py-3 {
     padding-block: calc(var(--spacing) * 3);
   }
+  .text-center {
+    text-align: center;
+  }
+  .text-right {
+    text-align: right;
+  }
   .text-2xl {
     font-size: var(--text-2xl);
     line-height: var(--tw-leading, var(--text-2xl--line-height));
-  }
-  .text-lg {
-    font-size: var(--text-lg);
-    line-height: var(--tw-leading, var(--text-lg--line-height));
   }
   .text-sm {
     font-size: var(--text-sm);

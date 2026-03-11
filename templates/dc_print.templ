@@ -1,0 +1,640 @@
+package templates
+
+import "fmt"
+import "strings"
+
+type DCPrintAddress struct {
+	CompanyName  string
+	AddressLine1 string
+	AddressLine2 string
+	City         string
+	State        string
+	PinCode      string
+	GSTIN        string
+	ContactName  string
+	Phone        string
+}
+
+type DCPrintLineItem struct {
+	LineOrder   int
+	Description string
+	HSNCode     string
+	UOM         string
+	Qty         string
+	Rate        string
+	TaxPercent  string
+	Taxable     string
+	TaxAmount   string
+	Total       string
+	HasPricing  bool
+	Serials     []string
+}
+
+type DCPrintTransit struct {
+	TransporterName string
+	VehicleNumber   string
+	EwayBillNumber  string
+	DocketNumber    string
+}
+
+type DCPrintData struct {
+	CompanyName  string
+	LogoURL      string
+	DCNumber     string
+	DCType       string
+	Status       string
+	ChallanDate  string
+	BillFrom     *DCPrintAddress
+	DispatchFrom *DCPrintAddress
+	BillTo       *DCPrintAddress
+	ShipTo       *DCPrintAddress
+	LineItems    []DCPrintLineItem
+	TotalTaxable string
+	TotalTax     string
+	GrandTotal   string
+	Transit      *DCPrintTransit
+	HubAddress   string
+	Destinations []string
+}
+
+func dcPrintTypeLabel(dcType string) string {
+	switch dcType {
+	case "transit":
+		return "Transit DC"
+	case "official":
+		return "Official DC"
+	case "transfer":
+		return "Transfer DC"
+	default:
+		return dcType
+	}
+}
+
+templ DCPrintPage(data DCPrintData) {
+	<!DOCTYPE html>
+	<html lang="en">
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<title>{ data.DCNumber } — Delivery Challan</title>
+		<style>
+			@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+			* { margin: 0; padding: 0; box-sizing: border-box; }
+
+			body {
+				font-family: 'Inter', sans-serif;
+				font-size: 12px;
+				color: #1a1a1a;
+				background: #fff;
+				padding: 24px;
+				max-width: 210mm;
+				margin: 0 auto;
+			}
+
+			@media print {
+				body { padding: 0; margin: 0; }
+				.no-print { display: none !important; }
+				@page { margin: 12mm; size: A4; }
+			}
+
+			.print-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: flex-start;
+				border-bottom: 2px solid #1a1a1a;
+				padding-bottom: 12px;
+				margin-bottom: 16px;
+			}
+			.print-header .company {
+				font-family: 'Space Grotesk', sans-serif;
+				font-size: 18px;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
+			}
+			.print-header .dc-title {
+				text-align: right;
+			}
+			.print-header .dc-title h1 {
+				font-family: 'Space Grotesk', sans-serif;
+				font-size: 16px;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 1px;
+			}
+			.print-header .dc-title .dc-num {
+				font-size: 11px;
+				color: #555;
+				margin-top: 2px;
+			}
+
+			.meta-row {
+				display: flex;
+				gap: 0;
+				border: 1px solid #ccc;
+				margin-bottom: 12px;
+			}
+			.meta-cell {
+				flex: 1;
+				padding: 6px 10px;
+				border-right: 1px solid #ccc;
+			}
+			.meta-cell:last-child { border-right: none; }
+			.meta-label {
+				font-family: 'Space Grotesk', sans-serif;
+				font-size: 8px;
+				font-weight: 600;
+				letter-spacing: 0.5px;
+				text-transform: uppercase;
+				color: #888;
+				margin-bottom: 2px;
+			}
+			.meta-value { font-size: 11px; }
+
+			.addr-row {
+				display: flex;
+				gap: 0;
+				border: 1px solid #ccc;
+				margin-bottom: 12px;
+			}
+			.addr-cell {
+				flex: 1;
+				border-right: 1px solid #ccc;
+			}
+			.addr-cell:last-child { border-right: none; }
+			.addr-label {
+				font-family: 'Space Grotesk', sans-serif;
+				font-size: 8px;
+				font-weight: 600;
+				letter-spacing: 0.5px;
+				text-transform: uppercase;
+				color: #888;
+				padding: 4px 10px;
+				background: #f5f3ef;
+				border-bottom: 1px solid #ccc;
+			}
+			.addr-body { padding: 8px 10px; font-size: 11px; line-height: 1.5; }
+			.addr-body .name { font-weight: 600; }
+			.addr-body .gstin { font-size: 10px; color: #555; margin-top: 3px; }
+
+			.transport-section {
+				border: 1px solid #ccc;
+				margin-bottom: 12px;
+			}
+			.transport-header {
+				font-family: 'Space Grotesk', sans-serif;
+				font-size: 8px;
+				font-weight: 600;
+				letter-spacing: 0.5px;
+				text-transform: uppercase;
+				color: #888;
+				padding: 4px 10px;
+				background: #f5f3ef;
+				border-bottom: 1px solid #ccc;
+			}
+			.transport-body { display: flex; flex-wrap: wrap; padding: 6px 10px; }
+			.transport-item { width: 50%; padding: 3px 0; }
+			.transport-item .t-label {
+				font-family: 'Space Grotesk', sans-serif;
+				font-size: 8px;
+				font-weight: 600;
+				color: #888;
+				text-transform: uppercase;
+				letter-spacing: 0.3px;
+			}
+			.transport-item .t-value { font-size: 11px; }
+
+			table.items {
+				width: 100%;
+				border-collapse: collapse;
+				border: 1px solid #ccc;
+				margin-bottom: 0;
+				font-size: 11px;
+			}
+			table.items th {
+				font-family: 'Space Grotesk', sans-serif;
+				font-size: 8px;
+				font-weight: 600;
+				letter-spacing: 0.5px;
+				text-transform: uppercase;
+				background: #1a1a1a;
+				color: #fff;
+				padding: 6px 8px;
+				text-align: center;
+				border-right: 1px solid rgba(255,255,255,0.15);
+			}
+			table.items th:last-child { border-right: none; }
+			table.items th.left { text-align: left; }
+			table.items th.right { text-align: right; }
+			table.items td {
+				padding: 5px 8px;
+				border-top: 1px solid #ddd;
+				border-right: 1px solid #eee;
+			}
+			table.items td:last-child { border-right: none; }
+			table.items tr:nth-child(even) { background: #fafafa; }
+			table.items td.right { text-align: right; }
+			table.items td.center { text-align: center; }
+
+			.totals {
+				display: flex;
+				justify-content: flex-end;
+				border: 1px solid #ccc;
+				border-top: none;
+				margin-bottom: 12px;
+			}
+			.totals-inner { width: 280px; padding: 10px 14px; border-left: 1px solid #ccc; }
+			.totals-row {
+				display: flex;
+				justify-content: space-between;
+				padding: 3px 0;
+				font-size: 11px;
+			}
+			.totals-row.grand {
+				border-top: 2px solid #1a1a1a;
+				padding-top: 6px;
+				margin-top: 4px;
+				font-weight: 700;
+				font-size: 13px;
+			}
+			.totals-label {
+				font-family: 'Space Grotesk', sans-serif;
+				font-size: 9px;
+				font-weight: 600;
+				text-transform: uppercase;
+				letter-spacing: 0.3px;
+				color: #555;
+			}
+			.totals-row.grand .totals-label {
+				color: #1a1a1a;
+				font-size: 10px;
+			}
+
+			.serials-section {
+				border: 1px solid #ccc;
+				margin-bottom: 12px;
+			}
+			.serials-header {
+				font-family: 'Space Grotesk', sans-serif;
+				font-size: 8px;
+				font-weight: 600;
+				letter-spacing: 0.5px;
+				text-transform: uppercase;
+				color: #888;
+				padding: 4px 10px;
+				background: #f5f3ef;
+				border-bottom: 1px solid #ccc;
+			}
+			.serials-body { padding: 8px 10px; }
+			.serials-item-title { font-weight: 600; font-size: 10px; margin-bottom: 4px; }
+			.serials-list { font-size: 10px; color: #555; line-height: 1.6; margin-bottom: 8px; }
+
+			.dest-section {
+				border: 1px solid #ccc;
+				margin-bottom: 12px;
+			}
+			.dest-header {
+				font-family: 'Space Grotesk', sans-serif;
+				font-size: 8px;
+				font-weight: 600;
+				letter-spacing: 0.5px;
+				text-transform: uppercase;
+				color: #888;
+				padding: 4px 10px;
+				background: #f5f3ef;
+				border-bottom: 1px solid #ccc;
+			}
+			.dest-body { padding: 8px 10px; font-size: 11px; line-height: 1.6; }
+
+			.signatures {
+				display: flex;
+				justify-content: space-between;
+				margin-top: 48px;
+				padding-top: 0;
+			}
+			.sig-block { text-align: center; width: 200px; }
+			.sig-line {
+				border-top: 1px solid #1a1a1a;
+				padding-top: 6px;
+				font-family: 'Space Grotesk', sans-serif;
+				font-size: 9px;
+				font-weight: 600;
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
+				color: #555;
+			}
+
+			.print-btn {
+				display: block;
+				margin: 0 auto 24px;
+				padding: 10px 32px;
+				font-family: 'Space Grotesk', sans-serif;
+				font-size: 12px;
+				font-weight: 600;
+				letter-spacing: 1px;
+				text-transform: uppercase;
+				color: #fff;
+				background: #C05A3C;
+				border: none;
+				cursor: pointer;
+			}
+			.print-btn:hover { background: #A04A30; }
+		</style>
+	</head>
+	<body>
+		<!-- Print button -->
+		<button class="print-btn no-print" onclick="window.print()">PRINT</button>
+
+		<!-- Header -->
+		<div class="print-header">
+			<div>
+				if data.LogoURL != "" {
+					<img src={ data.LogoURL } alt="Logo" style="height: 40px; margin-bottom: 4px;"/>
+				}
+				<div class="company">{ data.CompanyName }</div>
+			</div>
+			<div class="dc-title">
+				<h1>DELIVERY CHALLAN</h1>
+				<div class="dc-num">{ data.DCNumber }</div>
+			</div>
+		</div>
+
+		<!-- Meta row -->
+		<div class="meta-row">
+			<div class="meta-cell">
+				<div class="meta-label">TYPE</div>
+				<div class="meta-value">{ dcPrintTypeLabel(data.DCType) }</div>
+			</div>
+			<div class="meta-cell">
+				<div class="meta-label">CHALLAN DATE</div>
+				<div class="meta-value">
+					if data.ChallanDate != "" {
+						{ data.ChallanDate }
+					} else {
+						—
+					}
+				</div>
+			</div>
+			<div class="meta-cell">
+				<div class="meta-label">STATUS</div>
+				<div class="meta-value" style="text-transform: uppercase;">{ data.Status }</div>
+			</div>
+		</div>
+
+		<!-- Addresses: Bill From / Dispatch From -->
+		<div class="addr-row">
+			<div class="addr-cell">
+				<div class="addr-label">BILL FROM</div>
+				<div class="addr-body">
+					@printAddrBlock(data.BillFrom)
+				</div>
+			</div>
+			<div class="addr-cell">
+				<div class="addr-label">DISPATCH FROM</div>
+				<div class="addr-body">
+					@printAddrBlock(data.DispatchFrom)
+				</div>
+			</div>
+		</div>
+
+		<!-- Addresses: Bill To / Ship To -->
+		<div class="addr-row">
+			<div class="addr-cell">
+				<div class="addr-label">BILL TO</div>
+				<div class="addr-body">
+					@printAddrBlock(data.BillTo)
+				</div>
+			</div>
+			<div class="addr-cell">
+				<div class="addr-label">SHIP TO</div>
+				<div class="addr-body">
+					@printAddrBlock(data.ShipTo)
+				</div>
+			</div>
+		</div>
+
+		<!-- Transport Details -->
+		if data.Transit != nil {
+			<div class="transport-section">
+				<div class="transport-header">TRANSPORT DETAILS</div>
+				<div class="transport-body">
+					if data.Transit.TransporterName != "" {
+						<div class="transport-item">
+							<div class="t-label">Transporter</div>
+							<div class="t-value">{ data.Transit.TransporterName }</div>
+						</div>
+					}
+					if data.Transit.VehicleNumber != "" {
+						<div class="transport-item">
+							<div class="t-label">Vehicle Number</div>
+							<div class="t-value">{ data.Transit.VehicleNumber }</div>
+						</div>
+					}
+					if data.Transit.EwayBillNumber != "" {
+						<div class="transport-item">
+							<div class="t-label">E-Way Bill</div>
+							<div class="t-value">{ data.Transit.EwayBillNumber }</div>
+						</div>
+					}
+					if data.Transit.DocketNumber != "" {
+						<div class="transport-item">
+							<div class="t-label">Docket Number</div>
+							<div class="t-value">{ data.Transit.DocketNumber }</div>
+						</div>
+					}
+				</div>
+			</div>
+		}
+
+		<!-- Line Items -->
+		if data.DCType == "official" {
+			<table class="items">
+				<thead>
+					<tr>
+						<th>SI No.</th>
+						<th class="left">Description</th>
+						<th>HSN Code</th>
+						<th>UOM</th>
+						<th class="right">Qty</th>
+					</tr>
+				</thead>
+				<tbody>
+					if len(data.LineItems) == 0 {
+						<tr><td colspan="5" style="text-align: center; padding: 16px; color: #888; font-style: italic;">No line items.</td></tr>
+					} else {
+						for _, item := range data.LineItems {
+							<tr>
+								<td class="center">{ fmtInt(item.LineOrder) }</td>
+								<td>{ item.Description }</td>
+								<td class="center">{ item.HSNCode }</td>
+								<td class="center">{ item.UOM }</td>
+								<td class="right">{ item.Qty }</td>
+							</tr>
+						}
+					}
+				</tbody>
+			</table>
+			<div style="margin-bottom: 12px;"></div>
+		} else {
+			<table class="items">
+				<thead>
+					<tr>
+						<th>SI No.</th>
+						<th class="left">Description</th>
+						<th>HSN</th>
+						<th class="right">Qty</th>
+						<th>UOM</th>
+						<th class="right">Rate</th>
+						<th class="right">Taxable</th>
+						<th>Tax %</th>
+						<th class="right">Tax Amt</th>
+						<th class="right">Total</th>
+					</tr>
+				</thead>
+				<tbody>
+					if len(data.LineItems) == 0 {
+						<tr><td colspan="10" style="text-align: center; padding: 16px; color: #888; font-style: italic;">No line items.</td></tr>
+					} else {
+						for _, item := range data.LineItems {
+							<tr>
+								<td class="center">{ fmtInt(item.LineOrder) }</td>
+								<td>{ item.Description }</td>
+								<td class="center">{ item.HSNCode }</td>
+								<td class="right">{ item.Qty }</td>
+								<td class="center">{ item.UOM }</td>
+								<td class="right">{ item.Rate }</td>
+								<td class="right">{ item.Taxable }</td>
+								<td class="center">{ item.TaxPercent }%</td>
+								<td class="right">{ item.TaxAmount }</td>
+								<td class="right">{ item.Total }</td>
+							</tr>
+						}
+					}
+				</tbody>
+			</table>
+
+			<!-- Totals -->
+			<div class="totals">
+				<div class="totals-inner">
+					<div class="totals-row">
+						<span class="totals-label">Taxable Amount</span>
+						<span>{ data.TotalTaxable }</span>
+					</div>
+					<div class="totals-row">
+						<span class="totals-label">Tax Amount</span>
+						<span>{ data.TotalTax }</span>
+					</div>
+					<div class="totals-row grand">
+						<span class="totals-label">Grand Total</span>
+						<span>{ data.GrandTotal }</span>
+					</div>
+				</div>
+			</div>
+		}
+
+		<!-- Transfer DC Destinations -->
+		if data.DCType == "transfer" && len(data.Destinations) > 0 {
+			<div class="dest-section">
+				<div class="dest-header">
+					{ fmt.Sprintf("DESTINATION PLAN (%d locations)", len(data.Destinations)) }
+				</div>
+				<div class="dest-body">
+					if data.HubAddress != "" {
+						<div style="margin-bottom: 6px;"><strong>Hub:</strong> { data.HubAddress }</div>
+					}
+					for i, dest := range data.Destinations {
+						<div>{ fmt.Sprintf("%d. %s", i+1, dest) }</div>
+					}
+				</div>
+			</div>
+		}
+
+		<!-- Serial Numbers -->
+		if printHasSerials(data.LineItems) {
+			<div class="serials-section">
+				<div class="serials-header">SERIAL NUMBERS</div>
+				<div class="serials-body">
+					for _, item := range data.LineItems {
+						if len(item.Serials) > 0 {
+							<div class="serials-item-title">
+								{ fmt.Sprintf("%s (%d serials)", item.Description, len(item.Serials)) }
+							</div>
+							<div class="serials-list">
+								{ strings.Join(item.Serials, ", ") }
+							</div>
+						}
+					}
+				</div>
+			</div>
+		}
+
+		<!-- Signatures -->
+		<div class="signatures">
+			<div class="sig-block">
+				<div class="sig-line">Receiver Signature</div>
+			</div>
+			<div class="sig-block">
+				<div class="sig-line">Authorized Signatory</div>
+			</div>
+		</div>
+	</body>
+	</html>
+}
+
+templ printAddrBlock(addr *DCPrintAddress) {
+	if addr != nil {
+		if addr.CompanyName != "" {
+			<div class="name">{ addr.CompanyName }</div>
+		}
+		if addr.AddressLine1 != "" {
+			<div>{ addr.AddressLine1 }</div>
+		}
+		if addr.AddressLine2 != "" {
+			<div>{ addr.AddressLine2 }</div>
+		}
+		if addr.City != "" || addr.State != "" || addr.PinCode != "" {
+			<div>
+				if addr.City != "" {
+					{ addr.City }
+				}
+				if addr.City != "" && addr.State != "" {
+					{ ", " }
+				}
+				if addr.State != "" {
+					{ addr.State }
+				}
+				if addr.PinCode != "" {
+					{ " — " }{ addr.PinCode }
+				}
+			</div>
+		}
+		if addr.GSTIN != "" {
+			<div class="gstin">GSTIN: { addr.GSTIN }</div>
+		}
+		if addr.ContactName != "" || addr.Phone != "" {
+			<div style="margin-top: 2px; font-size: 10px; color: #555;">
+				if addr.ContactName != "" {
+					{ addr.ContactName }
+				}
+				if addr.ContactName != "" && addr.Phone != "" {
+					{ " · " }
+				}
+				if addr.Phone != "" {
+					{ addr.Phone }
+				}
+			</div>
+		}
+	} else {
+		<span style="color: #888; font-style: italic;">Not specified</span>
+	}
+}
+
+func printHasSerials(items []DCPrintLineItem) bool {
+	for _, item := range items {
+		if len(item.Serials) > 0 {
+			return true
+		}
+	}
+	return false
+}

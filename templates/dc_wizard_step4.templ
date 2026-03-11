@@ -1,0 +1,537 @@
+package templates
+
+import "fmt"
+import "strconv"
+import "projectcreation/services"
+
+type DCWizardStep4ReviewItem struct {
+	SourceItemType string
+	SourceItemID   string
+	Description    string
+	HSNCode        string
+	UOM            string
+	Rate           float64
+	TaxPercentage  float64
+	SerialTracking string
+	Quantities     []int    // per-destination quantities
+	TotalQty       int
+	Serials        []string // parsed serial numbers
+	TaxableAmount  float64
+	TaxAmount      float64
+	TotalAmount    float64
+}
+
+type DCWizardStep4AddressDisplay struct {
+	Label       string
+	CompanyName string
+	Address     string
+	City        string
+	State       string
+	PinCode     string
+}
+
+type DCWizardStep4Data struct {
+	ProjectID      string
+	DCType         string
+	TemplateID     string
+	TemplateName   string
+	ChallanDate    string
+	TransporterID  string
+	TransporterName string
+	VehicleID      string
+	VehicleNumber  string
+	EwayBillNumber string
+	DocketNumber   string
+	ReverseCharge  bool
+	BillFromID     string
+	DispatchFromID string
+	BillToID       string
+	ShipToIDs      []string
+	HubAddressID   string
+	TaxType        string
+
+	// Display data
+	BillFrom     DCWizardStep4AddressDisplay
+	DispatchFrom DCWizardStep4AddressDisplay
+	BillTo       DCWizardStep4AddressDisplay
+	ShipTos      []DCWizardStep4AddressDisplay
+	HubAddress   DCWizardStep4AddressDisplay
+
+	Items         []DCWizardStep4ReviewItem
+	Destinations  []DCWizardDestination
+
+	// Totals
+	GrandTaxable float64
+	GrandTax     float64
+	GrandTotal   float64
+
+	// Raw form values for carry-forward
+	ItemKeys      []string
+	ItemFormData  map[string]map[string]string // itemKey -> field -> value
+	QtyFormData   map[string]string            // "qty_{key}_dest_{i}" -> value
+	SerialFormData map[string]string           // "serials_{key}" -> raw value
+
+	Errors map[string]string
+}
+
+func dcTypeLabel(dcType string) string {
+	if dcType == "transfer" {
+		return "Transfer DC"
+	}
+	return "Direct Shipment"
+}
+
+func taxTypeLabel(taxType string) string {
+	if taxType == "igst" {
+		return "IGST"
+	}
+	return "CGST + SGST"
+}
+
+templ DCWizardStep4Content(data DCWizardStep4Data) {
+	// Breadcrumbs
+	<div class="flex items-center" style="gap: 6px; margin-bottom: 16px;">
+		<a
+			href={ templ.SafeURL("/projects/" + data.ProjectID) }
+			hx-get={ "/projects/" + data.ProjectID }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;"
+		>
+			PROJECT
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<a
+			href={ templ.SafeURL("/projects/" + data.ProjectID + "/dcs/") }
+			hx-get={ "/projects/" + data.ProjectID + "/dcs/" }
+			hx-target="#main-content"
+			hx-push-url="true"
+			style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;"
+		>
+			DELIVERY CHALLANS
+		</a>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--text-muted);">/</span>
+		<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+			NEW DC
+		</span>
+	</div>
+
+	// Page header with step indicator
+	<div class="flex items-center justify-between">
+		<div>
+			<h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--text-primary); margin: 0;">
+				Create Delivery Challan
+			</h1>
+			<p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-top: 8px;">
+				Step 4 of 4 — Review &amp; Confirm
+			</p>
+		</div>
+		// Step progress
+		<div class="flex items-center" style="gap: 8px;">
+			<div style="width: 32px; height: 32px; background-color: var(--success); color: white; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;">&#x2713;</div>
+			<div style="width: 24px; height: 2px; background-color: var(--success);"></div>
+			<div style="width: 32px; height: 32px; background-color: var(--success); color: white; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;">&#x2713;</div>
+			<div style="width: 24px; height: 2px; background-color: var(--success);"></div>
+			<div style="width: 32px; height: 32px; background-color: var(--success); color: white; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;">&#x2713;</div>
+			<div style="width: 24px; height: 2px; background-color: var(--terracotta);"></div>
+			<div style="width: 32px; height: 32px; background-color: var(--terracotta); color: white; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;">4</div>
+		</div>
+	</div>
+
+	// Error display
+	if len(data.Errors) > 0 {
+		<div style="background-color: #FEE2E2; border: 1px solid #DC2626; padding: 16px 24px; margin-top: 24px;">
+			<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: #DC2626; text-transform: uppercase;">
+				VALIDATION ERRORS
+			</span>
+			<ul style="margin: 8px 0 0 0; padding-left: 16px;">
+				for _, errMsg := range data.Errors {
+					<li style="font-family: 'Inter', sans-serif; font-size: 13px; color: #DC2626; margin-bottom: 4px;">{ errMsg }</li>
+				}
+			</ul>
+		</div>
+	}
+
+	// Main creation form (posts to the actual DC create endpoint)
+	<form
+		method="POST"
+		action={ templ.SafeURL("/projects/" + data.ProjectID + "/dcs/create") }
+		hx-post={ "/projects/" + data.ProjectID + "/dcs/create" }
+		hx-target="#main-content"
+		hx-push-url="false"
+		style="margin-top: 24px;"
+	>
+		// Hidden fields: all wizard data for final submission
+		<input type="hidden" name="dc_type" value={ data.DCType }/>
+		<input type="hidden" name="template_id" value={ data.TemplateID }/>
+		<input type="hidden" name="challan_date" value={ data.ChallanDate }/>
+		<input type="hidden" name="transporter_id" value={ data.TransporterID }/>
+		<input type="hidden" name="vehicle_id" value={ data.VehicleID }/>
+		<input type="hidden" name="eway_bill_number" value={ data.EwayBillNumber }/>
+		<input type="hidden" name="docket_number" value={ data.DocketNumber }/>
+		if data.ReverseCharge {
+			<input type="hidden" name="reverse_charge" value="on"/>
+		}
+		<input type="hidden" name="bill_from_id" value={ data.BillFromID }/>
+		<input type="hidden" name="dispatch_from_id" value={ data.DispatchFromID }/>
+		<input type="hidden" name="bill_to_id" value={ data.BillToID }/>
+		<input type="hidden" name="num_destinations" value={ strconv.Itoa(len(data.ShipToIDs)) }/>
+		for i, sid := range data.ShipToIDs {
+			<input type="hidden" name={ fmt.Sprintf("ship_to_id_%d", i) } value={ sid }/>
+		}
+		<input type="hidden" name="hub_address_id" value={ data.HubAddressID }/>
+		<input type="hidden" name="tax_type" value={ data.TaxType }/>
+		// Item data
+		for _, key := range data.ItemKeys {
+			<input type="hidden" name="item_keys" value={ key }/>
+			if fields, ok := data.ItemFormData[key]; ok {
+				<input type="hidden" name={ fmt.Sprintf("item_type_%s", key) } value={ fields["type"] }/>
+				<input type="hidden" name={ fmt.Sprintf("item_id_%s", key) } value={ fields["id"] }/>
+				<input type="hidden" name={ fmt.Sprintf("item_rate_%s", key) } value={ fields["rate"] }/>
+				<input type="hidden" name={ fmt.Sprintf("item_tax_%s", key) } value={ fields["tax"] }/>
+				<input type="hidden" name={ fmt.Sprintf("item_serial_tracking_%s", key) } value={ fields["serial_tracking"] }/>
+			}
+		}
+		// Quantity data
+		for qtyKey, qtyVal := range data.QtyFormData {
+			<input type="hidden" name={ qtyKey } value={ qtyVal }/>
+		}
+		// Serial data
+		for serialKey, serialVal := range data.SerialFormData {
+			<input type="hidden" name={ serialKey } value={ serialVal }/>
+		}
+
+		// Section 1: Setup Summary
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					SETUP
+				</span>
+			</div>
+			<div style="padding: 20px 24px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+				@reviewField("DC Type", dcTypeLabel(data.DCType))
+				@reviewField("Template", data.TemplateName)
+				@reviewField("Challan Date", data.ChallanDate)
+				@reviewField("Tax Type", taxTypeLabel(data.TaxType))
+				if data.ReverseCharge {
+					@reviewField("Reverse Charge", "Yes")
+				}
+			</div>
+		</div>
+
+		// Section 2: Transport
+		if data.TransporterName != "" || data.EwayBillNumber != "" || data.DocketNumber != "" {
+			<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+				<div style="background-color: #E2DED6; padding: 16px 24px;">
+					<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+						TRANSPORT
+					</span>
+				</div>
+				<div style="padding: 20px 24px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+					if data.TransporterName != "" {
+						@reviewField("Transporter", data.TransporterName)
+					}
+					if data.VehicleNumber != "" {
+						@reviewField("Vehicle", data.VehicleNumber)
+					}
+					if data.EwayBillNumber != "" {
+						@reviewField("E-Way Bill", data.EwayBillNumber)
+					}
+					if data.DocketNumber != "" {
+						@reviewField("Docket Number", data.DocketNumber)
+					}
+				</div>
+			</div>
+		}
+
+		// Section 3: Addresses
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					ADDRESSES
+				</span>
+			</div>
+			<div style="padding: 20px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+				@reviewAddressCard(data.BillFrom)
+				@reviewAddressCard(data.DispatchFrom)
+				@reviewAddressCard(data.BillTo)
+				for _, shipTo := range data.ShipTos {
+					@reviewAddressCard(shipTo)
+				}
+				if data.DCType == "transfer" && data.HubAddress.CompanyName != "" {
+					@reviewAddressCard(data.HubAddress)
+				}
+			</div>
+		</div>
+
+		// Section 4: Items
+		<div style="background-color: var(--bg-card); margin-bottom: 24px;">
+			<div style="background-color: #E2DED6; padding: 16px 24px;">
+				<span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary);">
+					LINE ITEMS
+				</span>
+				<span style="font-family: 'Inter', sans-serif; font-size: 11px; color: var(--text-muted); margin-left: 8px;">
+					({ strconv.Itoa(len(data.Items)) } items)
+				</span>
+			</div>
+			<div style="padding: 0; overflow-x: auto;">
+				<table style="width: 100%; border-collapse: collapse;">
+					<thead>
+						<tr style="background-color: #E2DED6;">
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border-light);">
+								ITEM
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border-light);">
+								HSN
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border-light);">
+								UOM
+							</th>
+							for _, dest := range data.Destinations {
+								<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border-light);">
+									{ dest.DisplayName }
+								</th>
+							}
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border-light);">
+								TOTAL QTY
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--border-light);">
+								RATE
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--border-light);">
+								TAXABLE
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--border-light);">
+								TAX
+							</th>
+							<th style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase; padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--border-light);">
+								TOTAL
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, item := range data.Items {
+							<tr style="border-bottom: 1px solid var(--border-light);">
+								<td style="padding: 12px 16px;">
+									<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary); font-weight: 500;">
+										{ item.Description }
+									</div>
+									if item.SerialTracking != "none" && len(item.Serials) > 0 {
+										<div style="font-family: 'Inter', sans-serif; font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+											{ strconv.Itoa(len(item.Serials)) } serial(s) entered
+										</div>
+									}
+								</td>
+								<td style="padding: 12px; text-align: center; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary);">
+									{ item.HSNCode }
+								</td>
+								<td style="padding: 12px; text-align: center; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-secondary);">
+									{ item.UOM }
+								</td>
+								for _, qty := range item.Quantities {
+									<td style="padding: 12px; text-align: center; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+										{ strconv.Itoa(qty) }
+									</td>
+								}
+								<td style="padding: 12px; text-align: center; font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: var(--terracotta);">
+									{ strconv.Itoa(item.TotalQty) }
+								</td>
+								<td style="padding: 12px; text-align: right; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+									{ services.FormatINR(item.Rate) }
+								</td>
+								<td style="padding: 12px; text-align: right; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-primary);">
+									{ services.FormatINR(item.TaxableAmount) }
+								</td>
+								<td style="padding: 12px; text-align: right; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary);">
+									{ services.FormatINR(item.TaxAmount) }
+									<div style="font-size: 10px; color: var(--text-muted);">
+										{ fmt.Sprintf("%.1f%%", item.TaxPercentage) }
+									</div>
+								</td>
+								<td style="padding: 12px; text-align: right; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary);">
+									{ services.FormatINR(item.TotalAmount) }
+								</td>
+							</tr>
+							// Serial numbers (collapsed by default)
+							if item.SerialTracking != "none" && len(item.Serials) > 0 {
+								<tr style="border-bottom: 1px solid var(--border-light); background-color: var(--bg-page);">
+									<td colspan={ strconv.Itoa(len(data.Destinations) + 8) } style="padding: 0;">
+										<div x-data="{ open: false }">
+											<button
+												type="button"
+												@click="open = !open"
+												class="flex items-center"
+												style="width: 100%; padding: 8px 16px; background: none; border: none; cursor: pointer; gap: 8px;"
+											>
+												<svg
+													class="transition-transform duration-200"
+													:class="{ 'rotate-90': open }"
+													style="width: 12px; height: 12px; color: var(--text-muted);"
+													xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												>
+													<path d="m9 18 6-6-6-6"></path>
+												</svg>
+												<span style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;">
+													SERIALS ({ strconv.Itoa(len(item.Serials)) })
+												</span>
+											</button>
+											<div x-show="open" x-transition x-cloak style="padding: 0 16px 12px 36px;">
+												<div style="display: flex; flex-wrap: wrap; gap: 6px;">
+													for _, serial := range item.Serials {
+														<span style="font-family: 'Inter', sans-serif; font-size: 11px; color: var(--text-primary); background-color: white; border: 1px solid var(--border-light); padding: 2px 8px;">
+															{ serial }
+														</span>
+													}
+												</div>
+											</div>
+										</div>
+									</td>
+								</tr>
+							}
+						}
+					</tbody>
+				</table>
+			</div>
+			// Totals
+			<div style="border-top: 2px solid var(--border-light); padding: 16px 24px;">
+				<div style="display: flex; justify-content: flex-end; gap: 40px;">
+					<div>
+						<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase;">Taxable</div>
+						<div style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); margin-top: 4px;">{ services.FormatINR(data.GrandTaxable) }</div>
+					</div>
+					<div>
+						<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase;">Tax</div>
+						<div style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-secondary); margin-top: 4px;">{ services.FormatINR(data.GrandTax) }</div>
+					</div>
+					<div>
+						<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--terracotta); text-transform: uppercase;">Grand Total</div>
+						<div style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--terracotta); margin-top: 4px;">{ services.FormatINR(data.GrandTotal) }</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		// Actions
+		<div class="flex items-center justify-between" style="padding-top: 16px; padding-bottom: 40px;">
+			// Back button (separate form posting to back-to-step3)
+			<form
+				method="POST"
+				action={ templ.SafeURL("/projects/" + data.ProjectID + "/dcs/create/back-to-step3") }
+				hx-post={ "/projects/" + data.ProjectID + "/dcs/create/back-to-step3" }
+				hx-target="#main-content"
+				hx-push-url="false"
+				style="margin: 0;"
+			>
+				<input type="hidden" name="dc_type" value={ data.DCType }/>
+				<input type="hidden" name="template_id" value={ data.TemplateID }/>
+				<input type="hidden" name="challan_date" value={ data.ChallanDate }/>
+				<input type="hidden" name="transporter_id" value={ data.TransporterID }/>
+				<input type="hidden" name="vehicle_id" value={ data.VehicleID }/>
+				<input type="hidden" name="eway_bill_number" value={ data.EwayBillNumber }/>
+				<input type="hidden" name="docket_number" value={ data.DocketNumber }/>
+				if data.ReverseCharge {
+					<input type="hidden" name="reverse_charge" value="on"/>
+				}
+				<input type="hidden" name="bill_from_id" value={ data.BillFromID }/>
+				<input type="hidden" name="dispatch_from_id" value={ data.DispatchFromID }/>
+				<input type="hidden" name="bill_to_id" value={ data.BillToID }/>
+				<input type="hidden" name="num_destinations" value={ strconv.Itoa(len(data.ShipToIDs)) }/>
+				for i, sid := range data.ShipToIDs {
+					<input type="hidden" name={ fmt.Sprintf("ship_to_id_%d", i) } value={ sid }/>
+				}
+				<input type="hidden" name="hub_address_id" value={ data.HubAddressID }/>
+				<input type="hidden" name="tax_type" value={ data.TaxType }/>
+				// Item data for back navigation
+				for _, key := range data.ItemKeys {
+					<input type="hidden" name="item_keys" value={ key }/>
+					if fields, ok := data.ItemFormData[key]; ok {
+						<input type="hidden" name={ fmt.Sprintf("item_type_%s", key) } value={ fields["type"] }/>
+						<input type="hidden" name={ fmt.Sprintf("item_id_%s", key) } value={ fields["id"] }/>
+						<input type="hidden" name={ fmt.Sprintf("item_rate_%s", key) } value={ fields["rate"] }/>
+						<input type="hidden" name={ fmt.Sprintf("item_tax_%s", key) } value={ fields["tax"] }/>
+						<input type="hidden" name={ fmt.Sprintf("item_serial_tracking_%s", key) } value={ fields["serial_tracking"] }/>
+					}
+				}
+				for qtyKey, qtyVal := range data.QtyFormData {
+					<input type="hidden" name={ qtyKey } value={ qtyVal }/>
+				}
+				for serialKey, serialVal := range data.SerialFormData {
+					<input type="hidden" name={ serialKey } value={ serialVal }/>
+				}
+				<button
+					type="submit"
+					style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); padding: 12px 24px; background-color: var(--bg-card); border: 1px solid var(--border-light); cursor: pointer; text-transform: uppercase;"
+				>
+					&#x2190; BACK
+				</button>
+			</form>
+			<button
+				type="submit"
+				style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; color: white; padding: 12px 32px; background-color: var(--success); border: none; cursor: pointer; text-transform: uppercase;"
+			>
+				CREATE DELIVERY CHALLAN
+			</button>
+		</div>
+	</form>
+}
+
+templ reviewField(label, value string) {
+	<div>
+		<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
+			{ label }
+		</div>
+		<div style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary);">
+			if value != "" {
+				{ value }
+			} else {
+				<span style="color: var(--text-muted);">—</span>
+			}
+		</div>
+	</div>
+}
+
+templ reviewAddressCard(addr DCWizardStep4AddressDisplay) {
+	<div style="border: 1px solid var(--border-light); padding: 16px;">
+		<div style="font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--terracotta); text-transform: uppercase; margin-bottom: 8px;">
+			{ addr.Label }
+		</div>
+		if addr.CompanyName != "" {
+			<div style="font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-primary);">
+				{ addr.CompanyName }
+			</div>
+		}
+		if addr.Address != "" {
+			<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+				{ addr.Address }
+			</div>
+		}
+		if addr.City != "" || addr.State != "" || addr.PinCode != "" {
+			<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-secondary); margin-top: 2px;">
+				if addr.City != "" {
+					{ addr.City }
+				}
+				if addr.State != "" {
+					if addr.City != "" {
+						, { addr.State }
+					} else {
+						{ addr.State }
+					}
+				}
+				if addr.PinCode != "" {
+					 — { addr.PinCode }
+				}
+			</div>
+		}
+		if addr.CompanyName == "" && addr.Address == "" {
+			<div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted);">
+				Not selected
+			</div>
+		}
+	</div>
+}
+
+templ DCWizardStep4Page(data DCWizardStep4Data, headerData HeaderData, sidebarData SidebarData) {
+	@PageShellWithProject("Create Delivery Challan — Review", headerData, sidebarData) {
+		@DCWizardStep4Content(data)
+	}
+}

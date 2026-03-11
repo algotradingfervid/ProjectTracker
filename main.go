@@ -228,6 +228,41 @@ func main() {
 		se.Router.POST("/projects/{projectId}/transporters/{id}/vehicles", handlers.HandleVehicleAdd(app))
 		se.Router.DELETE("/projects/{projectId}/transporters/{id}/vehicles/{vid}", handlers.HandleVehicleDelete(app))
 
+		// ── DC Wizard ───────────────────────────────────────────
+		se.Router.GET("/projects/{projectId}/dcs/create", handlers.HandleDCWizardStep1(app))
+		se.Router.POST("/projects/{projectId}/dcs/create/step2", handlers.HandleDCWizardStep2(app))
+		se.Router.POST("/projects/{projectId}/dcs/create/back-to-step1", handlers.HandleDCWizardBackToStep1(app))
+		se.Router.POST("/projects/{projectId}/dcs/create/step3", handlers.HandleDCWizardStep3(app))
+		se.Router.POST("/projects/{projectId}/dcs/create/back-to-step2", handlers.HandleDCWizardBackToStep2(app))
+		se.Router.POST("/projects/{projectId}/dcs/create/step4", handlers.HandleDCWizardStep4(app))
+		se.Router.POST("/projects/{projectId}/dcs/create/back-to-step3", handlers.HandleDCWizardBackToStep3(app))
+		se.Router.POST("/projects/{projectId}/dcs/create", handlers.HandleDCCreate(app))
+		se.Router.POST("/projects/{projectId}/api/serials/validate", handlers.HandleSerialValidate(app))
+
+		// ── DC List, Detail, Issue, Edit, Delete ──────────────────
+		se.Router.GET("/projects/{projectId}/dcs/", handlers.HandleDCList(app))
+		se.Router.GET("/projects/{projectId}/dcs/{id}", handlers.HandleDCDetail(app))
+		se.Router.GET("/projects/{projectId}/dcs/{id}/edit", handlers.HandleDCEdit(app))
+		se.Router.POST("/projects/{projectId}/dcs/{id}/issue", handlers.HandleDCIssue(app))
+		se.Router.DELETE("/projects/{projectId}/dcs/{id}", handlers.HandleDCDelete(app))
+
+		// ── Split Wizard (Transfer DCs) ──────────────────────────
+		se.Router.GET("/projects/{projectId}/transfer-dcs/{id}/split", handlers.HandleSplitStep1(app))
+		se.Router.POST("/projects/{projectId}/transfer-dcs/{id}/split/step2", handlers.HandleSplitStep2(app))
+		se.Router.POST("/projects/{projectId}/transfer-dcs/{id}/split/step3", handlers.HandleSplitStep3(app))
+		se.Router.POST("/projects/{projectId}/transfer-dcs/{id}/split", handlers.HandleSplitCreate(app))
+		se.Router.POST("/projects/{projectId}/transfer-dcs/{id}/splits/{sid}/undo", handlers.HandleSplitUndo(app))
+
+		// ── DC Exports ──────────────────────────────────────────
+		se.Router.GET("/projects/{projectId}/dcs/{id}/export/pdf", handlers.HandleDCExportPDF(app))
+		se.Router.GET("/projects/{projectId}/dcs/{id}/export/excel", handlers.HandleDCExportExcel(app))
+		se.Router.GET("/projects/{projectId}/dcs/{id}/print", handlers.HandleDCPrint(app))
+
+		// ── Shipment Groups ─────────────────────────────────────
+		se.Router.GET("/projects/{projectId}/shipment-groups/{id}", handlers.HandleShipmentGroupDetail(app))
+		se.Router.POST("/projects/{projectId}/shipment-groups/{id}/issue", handlers.HandleShipmentGroupIssueAll(app))
+		se.Router.DELETE("/projects/{projectId}/shipment-groups/{id}", handlers.HandleShipmentGroupDelete(app))
+
 		// ── App Settings (global) ───────────────────────────────
 		se.Router.GET("/settings", handlers.HandleAppSettings(app))
 		se.Router.POST("/settings", handlers.HandleAppSettingsSave(app))
